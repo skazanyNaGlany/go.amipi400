@@ -15,14 +15,18 @@ var runnersBlocker components.RunnersBlocker
 
 func attachedBlockDevice(
 	name string,
-	size int,
+	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
-	readOnly bool) (bool, error) {
-	return true, nil
+	readOnly bool) {
+	log.Println("Found new block device", name)
 }
 
-func detachedBlockDevice(name string) (bool, error) {
-	return true, nil
+func detachedBlockDevice(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	log.Println("Removed block device", name)
 }
 
 func main() {

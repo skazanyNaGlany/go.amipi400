@@ -2,6 +2,6 @@ package interfaces
 
 type AttachedBlockDevice func(
 	name string,
-	size int,
+	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
-	readOnly bool) (bool, error)
+	readOnly bool)
