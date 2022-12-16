@@ -26,7 +26,7 @@ func (rb *RunnersBlocker) BlockUntilRunning() {
 			}
 		}
 
-		if runningCount == 0 {
+		if runningCount < len(rb.runners) {
 			break
 		}
 	}

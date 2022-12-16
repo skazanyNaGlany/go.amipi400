@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
@@ -10,6 +12,7 @@ import (
 const AppUnixname = "amiga_disk_devices"
 const AppVersion = "0.1"
 const systemInternalSdCardName = "mmcblk0"
+const fileSystemMount = "fs"
 
 var goUtils components.GoUtils
 var blockDevices components.BlockDevices
@@ -44,6 +47,16 @@ func detachedBlockDevice(
 	log.Println("Removed block device", name)
 }
 
+func getFsDir(parent string) string {
+	return filepath.Join(parent, fileSystemMount)
+}
+
+func createFsDir(fullFsPath string) {
+	if err := os.MkdirAll(fullFsPath, 0777); err != nil {
+		log.Panicln(err)
+	}
+}
+
 func main() {
 	exeDir := goUtils.CwdToExe()
 	logFilename := goUtils.DuplicateLog()
@@ -52,13 +65,20 @@ func main() {
 	log.Printf("Executable directory %v\n", exeDir)
 	log.Printf("Log filename %v\n", logFilename)
 
+	fullFsPath := getFsDir(exeDir)
+	createFsDir(fullFsPath)
+
+	fileSystem.SetMountDir(fullFsPath)
+
+	log.Println("File system directory " + fullFsPath)
+
 	blockDevices.AddAttachedHandler(attachedBlockDevice)
 	blockDevices.AddDetachedHandler(detachedBlockDevice)
 
 	fileSystem.Start()
-	defer fileSystem.Stop()
-
 	blockDevices.Start()
+
+	defer fileSystem.Stop()
 	defer blockDevices.Stop()
 
 	runnersBlocker.AddRunner(&blockDevices)

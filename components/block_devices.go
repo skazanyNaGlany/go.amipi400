@@ -23,8 +23,6 @@ type BlockDevices struct {
 func (bd *BlockDevices) loop() {
 	old_parsed_output := make(map[string]map[string]string)
 
-	bd.running = true
-
 	for bd.running {
 		time.Sleep(time.Millisecond * 10)
 
@@ -192,6 +190,8 @@ func (bd *BlockDevices) AddDetachedHandler(handler interfaces.DetachedBlockDevic
 
 func (bd *BlockDevices) Start() error {
 	log.Printf("Starting BlockDevices %p\n", bd)
+
+	bd.running = true
 
 	go bd.loop()
 
