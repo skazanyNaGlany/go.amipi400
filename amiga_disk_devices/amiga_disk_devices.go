@@ -2,22 +2,32 @@ package main
 
 import (
 	"log"
+	"strings"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
 )
 
 const AppUnixname = "amiga_disk_devices"
 const AppVersion = "0.1"
+const systemInternalSdCardName = "mmcblk0"
 
 var goUtils components.GoUtils
 var blockDevices components.BlockDevices
 var runnersBlocker components.RunnersBlocker
+
+func isInternalMedium(name string) bool {
+	return strings.HasPrefix(name, systemInternalSdCardName)
+}
 
 func attachedBlockDevice(
 	name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
+	if isInternalMedium(name) {
+		return
+	}
+
 	log.Println("Found new block device", name)
 }
 
@@ -26,6 +36,10 @@ func detachedBlockDevice(
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
+	if isInternalMedium(name) {
+		return
+	}
+
 	log.Println("Removed block device", name)
 }
 
