@@ -9,6 +9,8 @@ import (
 
 type GoUtils struct{}
 
+var regExUtils RegExUtils
+
 func (gu *GoUtils) GetExeDirectory() string {
 	return filepath.Dir(os.Args[0])
 }

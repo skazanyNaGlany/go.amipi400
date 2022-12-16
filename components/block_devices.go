@@ -12,7 +12,6 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
 
-var regExUtils RegExUtils
 var lsblkPattern *regexp.Regexp = regexp.MustCompile(`NAME="(?P<NAME>\w*)" SIZE="(?P<SIZE>\d*)" TYPE="(?P<TYPE>\w*)" MOUNTPOINT="(?P<MOUNTPOINT>.*)" LABEL="(?P<LABEL>.*)" PATH="(?P<PATH>.*)" FSTYPE="(?P<FSTYPE>.*)" PTTYPE="(?P<PTTYPE>.*)" RO="(?P<RO>.*)"`)
 
 type BlockDevices struct {

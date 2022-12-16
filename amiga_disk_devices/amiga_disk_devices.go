@@ -13,6 +13,7 @@ const systemInternalSdCardName = "mmcblk0"
 
 var goUtils components.GoUtils
 var blockDevices components.BlockDevices
+var fileSystem components.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
 
 func isInternalMedium(name string) bool {
@@ -54,9 +55,13 @@ func main() {
 	blockDevices.AddAttachedHandler(attachedBlockDevice)
 	blockDevices.AddDetachedHandler(detachedBlockDevice)
 
+	fileSystem.Start()
+	defer fileSystem.Stop()
+
 	blockDevices.Start()
 	defer blockDevices.Stop()
 
 	runnersBlocker.AddRunner(&blockDevices)
+	runnersBlocker.AddRunner(&fileSystem)
 	runnersBlocker.BlockUntilRunning()
 }
