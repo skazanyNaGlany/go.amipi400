@@ -124,5 +124,11 @@ func (gu *GoUtils) GetScriptOrExecutable() (string, error) {
 		return os.Executable()
 	}
 
-	return filepath.Join(pcwd, after), nil
+	fullPathname := filepath.Join(pcwd, after)
+
+	if _, err := os.Stat(fullPathname); err != nil {
+		return os.Executable()
+	}
+
+	return fullPathname, nil
 }
