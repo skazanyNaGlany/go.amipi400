@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
@@ -12,7 +11,7 @@ import (
 const AppUnixname = "amiga_disk_devices"
 const AppVersion = "0.1"
 const systemInternalSdCardName = "mmcblk0"
-const fileSystemMount = "fs"
+const fileSystemMount = "/tmp/amipi400/amiga_disk_devices"
 
 var goUtils components.GoUtils
 var blockDevices components.BlockDevices
@@ -47,30 +46,33 @@ func detachedBlockDevice(
 	log.Println("Removed block device", name)
 }
 
-func getFsDir(parent string) string {
-	return filepath.Join(parent, fileSystemMount)
-}
-
-func createFsDir(fullFsPath string) {
-	if err := os.MkdirAll(fullFsPath, 0777); err != nil {
+func createFsDir() {
+	if err := os.MkdirAll(fileSystemMount, 0777); err != nil {
 		log.Panicln(err)
 	}
 }
 
+func DuplicateLog(exeDir string) string {
+	logFilePathname, err := goUtils.DuplicateLog(exeDir)
+
+	if err != nil {
+		panic(err)
+	}
+
+	return logFilePathname
+}
+
 func main() {
-	exeDir := goUtils.CwdToExe()
-	logFilename := goUtils.DuplicateLog()
+	exeDir := goUtils.CwdToExeOrScript()
+	logFilename := DuplicateLog(exeDir)
 
 	log.Printf("%v v%v\n", AppUnixname, AppVersion)
 	log.Printf("Executable directory %v\n", exeDir)
 	log.Printf("Log filename %v\n", logFilename)
+	log.Println("File system directory " + fileSystemMount)
 
-	fullFsPath := getFsDir(exeDir)
-	createFsDir(fullFsPath)
-
-	fileSystem.SetMountDir(fullFsPath)
-
-	log.Println("File system directory " + fullFsPath)
+	createFsDir()
+	fileSystem.SetMountDir(fileSystemMount)
 
 	blockDevices.AddAttachedHandler(attachedBlockDevice)
 	blockDevices.AddDetachedHandler(detachedBlockDevice)

@@ -20,29 +20,48 @@ func (gu *GoUtils) GetExeDirectory() string {
 
 // Change current working directory to directory
 // where the executable file is located
-func (gu *GoUtils) CwdToExe() string {
-	exeDir := gu.GetExeDirectory()
+func (gu *GoUtils) CwdToExeOrScript() string {
+	exe, err := gu.GetScriptOrExecutable()
+
+	if err != nil {
+		panic(err)
+	}
+
+	exeDir := filepath.Dir(exe)
 
 	os.Chdir(exeDir)
 
 	return exeDir
 }
 
+// // Change current working directory to directory
+// // where the executable file is located
+// func (gu *GoUtils) CwdToExe() string {
+// 	exeDir := gu.GetExeDirectory()
+
+// 	os.Chdir(exeDir)
+
+// 	return exeDir
+// }
+
 // Set the logger to output to screen
 // as well to exe_name.txt
-func (gu *GoUtils) DuplicateLog() string {
-	logFilename := filepath.Base(os.Args[0]) + ".txt"
+func (gu *GoUtils) DuplicateLog(parentDir string) (string, error) {
+	logFilename := filepath.Join(
+		parentDir,
+		filepath.Base(os.Args[0])+".txt",
+	)
 	logFile, err := os.OpenFile(logFilename, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	mw := io.MultiWriter(os.Stdout, logFile)
 
 	log.SetOutput(mw)
 
-	return logFilename
+	return logFilename, nil
 }
 
 func (gu *GoUtils) GetProcess(pid int32) (*process.Process, error) {
