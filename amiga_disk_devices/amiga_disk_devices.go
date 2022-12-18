@@ -106,7 +106,7 @@ func detachedBlockDevice(
 		return
 	}
 
-	log.Println("Removed block device", name)
+	log.Println("Removed block device", path)
 	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 }
 
