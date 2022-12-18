@@ -14,5 +14,6 @@ require (
 	github.com/tklauser/numcpus v0.6.0 // indirect
 	github.com/winfsp/cgofuse v1.5.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
+	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15
 	golang.org/x/sys v0.2.0 // indirect
 )

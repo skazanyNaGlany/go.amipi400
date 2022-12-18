@@ -78,6 +78,7 @@ func attachedBlockDevice(
 	}
 
 	log.Println("Found new block device", path)
+
 	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
 	medium, err := ProbeMediumForDriver(path, size, _type, readOnly)
@@ -107,7 +108,10 @@ func detachedBlockDevice(
 	}
 
 	log.Println("Removed block device", path)
+
 	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+
+	fileSystem.RemoveMediumByDevicePathname(path)
 }
 
 func createFsDir() {

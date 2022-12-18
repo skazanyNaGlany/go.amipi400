@@ -6,6 +6,7 @@ import (
 
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
+	"golang.org/x/exp/slices"
 )
 
 type ADDFileSystem struct {
@@ -61,6 +62,18 @@ func (addfs *ADDFileSystem) IsRunning() bool {
 
 func (addfs *ADDFileSystem) AddMedium(medium interfaces.Medium) {
 	addfs.mediums = append(addfs.mediums, medium)
+}
+
+func (addfs *ADDFileSystem) RemoveMediumByDevicePathname(devicePathname string) interfaces.Medium {
+	for i, medium := range addfs.mediums {
+		if medium.GetDevicePathname() == devicePathname {
+			addfs.mediums = slices.Delete(addfs.mediums, i, i+1)
+
+			return medium
+		}
+	}
+
+	return nil
 }
 
 // getattr
