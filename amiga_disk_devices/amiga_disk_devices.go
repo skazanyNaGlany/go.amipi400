@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
@@ -106,7 +107,14 @@ func CwdToExeOrScript() string {
 	return exeDir
 }
 
+func checkPlatform() {
+	if runtime.GOOS != "linux" {
+		log.Fatalln("This app can be used only on Linux.")
+	}
+}
+
 func main() {
+	checkPlatform()
 	exeDir := CwdToExeOrScript()
 	logFilename := DuplicateLog(exeDir)
 
