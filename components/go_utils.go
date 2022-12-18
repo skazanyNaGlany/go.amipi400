@@ -20,18 +20,18 @@ func (gu *GoUtils) GetExeDirectory() string {
 
 // Change current working directory to directory
 // where the executable file is located
-func (gu *GoUtils) CwdToExeOrScript() string {
+func (gu *GoUtils) CwdToExeOrScript() (string, error) {
 	exe, err := gu.GetScriptOrExecutable()
 
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
 	exeDir := filepath.Dir(exe)
 
 	os.Chdir(exeDir)
 
-	return exeDir
+	return exeDir, nil
 }
 
 // // Change current working directory to directory
