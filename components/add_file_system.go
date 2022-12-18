@@ -14,42 +14,44 @@ type ADDFileSystem struct {
 	mountDir string
 }
 
-func (fs *ADDFileSystem) start() {
-	host := fuse.NewFileSystemHost(fs)
+func (addfs *ADDFileSystem) start() {
+	options := []string{"-d", "-o", "allow_other"}
 
-	if !host.Mount(fs.mountDir, []string{}) {
-		fs.running = false
+	host := fuse.NewFileSystemHost(addfs)
+
+	if !host.Mount(addfs.mountDir, options) {
+		addfs.running = false
 
 		return
 	}
 }
 
-func (fs *ADDFileSystem) SetMountDir(mountDir string) {
-	fs.mountDir = mountDir
+func (addfs *ADDFileSystem) SetMountDir(mountDir string) {
+	addfs.mountDir = mountDir
 }
 
-func (fs *ADDFileSystem) Start() error {
-	if fs.mountDir == "" {
+func (addfs *ADDFileSystem) Start() error {
+	if addfs.mountDir == "" {
 		return errors.New("ADDFileSystem.mountDir not set")
 	}
 
-	log.Printf("Starting ADDFileSystem %p\n", fs)
+	log.Printf("Starting ADDFileSystem %p\n", addfs)
 
-	fs.running = true
+	addfs.running = true
 
-	go fs.start()
-
-	return nil
-}
-
-func (fs *ADDFileSystem) Stop() error {
-	log.Printf("Stopping ADDFileSystem %p\n", fs)
-
-	fs.running = false
+	go addfs.start()
 
 	return nil
 }
 
-func (bd *ADDFileSystem) IsRunning() bool {
-	return bd.running
+func (addfs *ADDFileSystem) Stop() error {
+	log.Printf("Stopping ADDFileSystem %p\n", addfs)
+
+	addfs.running = false
+
+	return nil
+}
+
+func (addfs *ADDFileSystem) IsRunning() bool {
+	return addfs.running
 }
