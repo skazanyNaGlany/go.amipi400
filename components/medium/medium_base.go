@@ -1,4 +1,4 @@
-package components
+package medium
 
 import (
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
@@ -10,6 +10,27 @@ type MediumBase struct {
 	devicePathname string
 	publicPathname string
 	driver         interfaces.MediumDriver
+	fullyCached    bool
+}
+
+func (mb *MediumBase) IsFullyCached() bool {
+	return mb.fullyCached
+}
+
+func (mb *MediumBase) SetFullyCached(fullyCached bool) {
+	mb.fullyCached = fullyCached
+}
+
+func (mb *MediumBase) SetDevicePathname(devicePathname string) {
+	mb.devicePathname = devicePathname
+}
+
+func (mb *MediumBase) SetPublicPathname(publicPathname string) {
+	mb.publicPathname = publicPathname
+}
+
+func (mb *MediumBase) SetDriver(driver interfaces.MediumDriver) {
+	mb.driver = driver
 }
 
 func (mb *MediumBase) GetDevicePathname() string {

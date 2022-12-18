@@ -51,7 +51,7 @@ func printBlockDevice(
 func ProbeMediumForDriver(pathname string, size uint64, _type string, readOnly bool) (interfaces.Medium, error) {
 	floppyDriver := drivers.FloppyMediumDriver{}
 
-	medium, err := floppyDriver.Probe(pathname, size, _type, readOnly)
+	medium, err := floppyDriver.Probe(fileSystemMount, pathname, size, _type, readOnly)
 
 	if err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func attachedBlockDevice(
 		return
 	}
 
-	log.Printf("Medium %v will be handled by %T driver\n", path, medium.GetDriver())
+	log.Printf("Medium %v will be handled by %T driver (as %v)\n", path, medium.GetDriver(), medium.GetPublicPathname())
 
 	fileSystem.AddMedium(medium)
 }
