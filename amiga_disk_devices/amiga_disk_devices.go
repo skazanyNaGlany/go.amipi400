@@ -4,9 +4,12 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
+	"github.com/skazanyNaGlany/go.amipi400/components/drivers"
+	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
 
 const AppUnixname = "amiga_disk_devices"
@@ -24,6 +27,43 @@ func isInternalMedium(name string) bool {
 	return strings.HasPrefix(name, systemInternalSdCardName)
 }
 
+// Check if the medium is known to the system
+func isKnownMedium(name, mountpoint, label, path, fsType, ptType string) bool {
+	return mountpoint != "" || label != "" || fsType != "" || ptType != ""
+}
+
+func printBlockDevice(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	log.Println("\tName:          " + name)
+	log.Println("\tSize:          " + strconv.FormatUint(size, 10))
+	log.Println("\tType:          " + _type)
+	log.Println("\tMountpoint:    " + mountpoint)
+	log.Println("\tLabel:         " + label)
+	log.Println("\tPath:          " + path)
+	log.Println("\tFsType:        " + fsType)
+	log.Println("\tPtType:        " + ptType)
+	log.Println("\tRead-only:     " + strconv.FormatBool(readOnly))
+}
+
+func ProbeMediumForDriver(pathname string, size uint64, _type string, readOnly bool) (interfaces.Medium, error) {
+	floppyDriver := drivers.FloppyMediumDriver{}
+
+	medium, err := floppyDriver.Probe(pathname, size, _type, readOnly)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if medium != nil {
+		return medium, nil
+	}
+
+	return nil, nil
+}
+
 func attachedBlockDevice(
 	name string,
 	size uint64,
@@ -33,7 +73,28 @@ func attachedBlockDevice(
 		return
 	}
 
+	if isKnownMedium(name, mountpoint, label, path, fsType, ptType) {
+		return
+	}
+
 	log.Println("Found new block device", name)
+	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+
+	medium, err := ProbeMediumForDriver(path, size, _type, readOnly)
+
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	if medium == nil {
+		log.Println("Unable to find driver for medium", name)
+		return
+	}
+
+	log.Printf("Medium %v will be handled by %T driver\n", name, medium.GetDriver())
+
+	fileSystem.AddMedium(medium)
 }
 
 func detachedBlockDevice(
@@ -46,6 +107,7 @@ func detachedBlockDevice(
 	}
 
 	log.Println("Removed block device", name)
+	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 }
 
 func createFsDir() {
