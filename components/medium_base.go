@@ -9,7 +9,6 @@ import (
 type MediumBase struct {
 	devicePathname string
 	publicPathname string
-	publicName     string
 	driver         interfaces.MediumDriver
 }
 
@@ -19,10 +18,6 @@ func (mb *MediumBase) GetDevicePathname() string {
 
 func (mb *MediumBase) GetPublicPathname() string {
 	return mb.publicPathname
-}
-
-func (mb *MediumBase) GetPublicName() string {
-	return mb.publicName
 }
 
 func (mb *MediumBase) GetDriver() interfaces.MediumDriver {

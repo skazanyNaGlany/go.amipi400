@@ -7,7 +7,6 @@ import (
 type Medium interface {
 	GetDevicePathname() string
 	GetPublicPathname() string
-	GetPublicName() string
 	GetDriver() MediumDriver
 	Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc int)
 	Read(path string, buff []byte, ofst int64, fh uint64) (n int)
