@@ -42,7 +42,7 @@ func printBlockDevice(
 	log.Println("\tType:          " + _type)
 	log.Println("\tMountpoint:    " + mountpoint)
 	log.Println("\tLabel:         " + label)
-	log.Println("\tPath:          " + path)
+	log.Println("\tPathname:      " + path)
 	log.Println("\tFsType:        " + fsType)
 	log.Println("\tPtType:        " + ptType)
 	log.Println("\tRead-only:     " + strconv.FormatBool(readOnly))
@@ -77,7 +77,7 @@ func attachedBlockDevice(
 		return
 	}
 
-	log.Println("Found new block device", name)
+	log.Println("Found new block device", path)
 	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
 	medium, err := ProbeMediumForDriver(path, size, _type, readOnly)
@@ -88,11 +88,11 @@ func attachedBlockDevice(
 	}
 
 	if medium == nil {
-		log.Println("Unable to find driver for medium", name)
+		log.Println("Unable to find driver for medium", path)
 		return
 	}
 
-	log.Printf("Medium %v will be handled by %T driver\n", name, medium.GetDriver())
+	log.Printf("Medium %v will be handled by %T driver\n", path, medium.GetDriver())
 
 	fileSystem.AddMedium(medium)
 }
