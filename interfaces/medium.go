@@ -7,6 +7,7 @@ import (
 type Medium interface {
 	GetDevicePathname() string
 	GetPublicPathname() string
+	GetPublicName() string
 	GetDriver() MediumDriver
 	SetDevicePathname(devicePathname string)
 	SetPublicPathname(publicPathname string)

@@ -1,6 +1,8 @@
 package medium
 
 import (
+	"path/filepath"
+
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
 )
@@ -9,8 +11,13 @@ import (
 type MediumBase struct {
 	devicePathname string
 	publicPathname string
+	publicName     string
 	driver         interfaces.MediumDriver
 	fullyCached    bool
+}
+
+func (mb *MediumBase) GetPublicName() string {
+	return mb.publicName
 }
 
 func (mb *MediumBase) IsFullyCached() bool {
@@ -27,6 +34,7 @@ func (mb *MediumBase) SetDevicePathname(devicePathname string) {
 
 func (mb *MediumBase) SetPublicPathname(publicPathname string) {
 	mb.publicPathname = publicPathname
+	mb.publicName = filepath.Base(publicPathname)
 }
 
 func (mb *MediumBase) SetDriver(driver interfaces.MediumDriver) {

@@ -3,6 +3,7 @@ package components
 import (
 	"errors"
 	"log"
+	"path/filepath"
 
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
@@ -114,7 +115,18 @@ func (addfs *ADDFileSystem) Readdir(path string,
 	fh uint64) (errc int) {
 	fill(".", nil, 0)
 	fill("..", nil, 0)
-	// fill(filename, nil, 0)
+
+	fullPath := filepath.Join(addfs.mountDir, path)
+
+	for _, medium := range addfs.mediums {
+		publicPathname := medium.GetPublicPathname()
+		dirName := filepath.Dir(publicPathname)
+
+		if dirName == fullPath {
+			fill(medium.GetPublicName(), nil, 0)
+		}
+	}
+
 	return 0
 }
 
