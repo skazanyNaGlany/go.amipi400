@@ -46,6 +46,10 @@ func (fmd *FloppyMediumDriver) Probe(
 		filepath.Join(basePath, filename),
 	)
 
+	// in Linux all devices are readable by default
+	medium.SetReadable(true)
+	medium.SetWritable(!readOnly)
+
 	return &medium, nil
 }
 

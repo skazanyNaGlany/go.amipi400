@@ -14,6 +14,24 @@ type MediumBase struct {
 	publicName     string
 	driver         interfaces.MediumDriver
 	fullyCached    bool
+	readable       bool
+	writable       bool
+}
+
+func (mb *MediumBase) SetReadable(readable bool) {
+	mb.readable = readable
+}
+
+func (mb *MediumBase) SetWritable(writable bool) {
+	mb.writable = writable
+}
+
+func (mb *MediumBase) IsReadable() bool {
+	return mb.readable
+}
+
+func (mb *MediumBase) IsWritable() bool {
+	return mb.writable
 }
 
 func (mb *MediumBase) GetPublicName() string {
