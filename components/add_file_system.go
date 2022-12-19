@@ -103,20 +103,6 @@ func (addfs *ADDFileSystem) Truncate(path string, size int64, fh uint64) int {
 	return 0
 }
 
-// func (addfs *ADDFileSystem) Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc int) {
-// 	switch path {
-// 	case "/":
-// 		stat.Mode = fuse.S_IFDIR | 0555
-// 		return 0
-// 	// case "/" + filename:
-// 	// 	stat.Mode = fuse.S_IFREG | 0444
-// 	// 	stat.Size = int64(len(contents))
-// 	// 	return 0
-// 	default:
-// 		return -fuse.ENOENT
-// 	}
-// }
-
 func (addfs *ADDFileSystem) Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc int) {
 	if path == "/" {
 		stat.Mode = fuse.S_IFDIR | 0555

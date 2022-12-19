@@ -132,3 +132,18 @@ func (gu *GoUtils) GetScriptOrExecutable() (string, error) {
 
 	return fullPathname, nil
 }
+
+func (gu *GoUtils) Bool2int(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+func (gu *GoUtils) BoolToStrInt(b bool) string {
+	if b {
+		return "1"
+	}
+
+	return "0"
+}

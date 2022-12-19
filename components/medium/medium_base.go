@@ -99,11 +99,11 @@ func (mb *MediumBase) GetDriver() interfaces.MediumDriver {
 }
 
 func (mb *MediumBase) Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc int) {
-	return mb.driver.Getattr(path, stat, fh)
+	return mb.driver.Getattr(mb, path, stat, fh)
 }
 
 func (mb *MediumBase) Read(path string, buff []byte, ofst int64, fh uint64) (n int) {
-	return mb.driver.Read(path, buff, ofst, fh)
+	return mb.driver.Read(mb, path, buff, ofst, fh)
 }
 
 func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) int {
@@ -111,5 +111,5 @@ func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) int
 		return -fuse.EROFS
 	}
 
-	return mb.driver.Write(path, buff, ofst, fh)
+	return mb.driver.Write(mb, path, buff, ofst, fh)
 }
