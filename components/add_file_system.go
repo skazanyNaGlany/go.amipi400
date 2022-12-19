@@ -77,9 +77,12 @@ func (addfs *ADDFileSystem) RemoveMediumByDevicePathname(devicePathname string) 
 	return nil
 }
 
-// getattr
-// read
-// write
+// File-system related methods
+// Truncate
+// Getattr
+// Readdir
+// Read
+// Write
 
 // Truncate changes the size of a file.
 func (addfs *ADDFileSystem) Truncate(path string, size int64, fh uint64) int {
