@@ -1,7 +1,9 @@
 package medium
 
 import (
+	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
@@ -19,6 +21,9 @@ type MediumBase struct {
 	creationTime     int64
 	accessTime       int64
 	modificationTime int64
+	handle           *os.File
+	mutex            sync.Mutex
+	size             int64
 }
 
 func (mb *MediumBase) SetCreateTime(creationTime int64) {
@@ -107,13 +112,60 @@ func (mb *MediumBase) Read(path string, buff []byte, ofst int64, fh uint64) (n i
 }
 
 func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) int {
-	if !mb.IsWritable() {
-		return -fuse.EROFS
-	}
-
 	return mb.driver.Write(mb, path, buff, ofst, fh)
 }
 
 func (mb *MediumBase) Close() error {
+	if mb.handle != nil {
+		return mb.handle.Close()
+	}
+
 	return nil
+}
+
+func (mb *MediumBase) GetHandle() (*os.File, error) {
+	if mb.handle != nil {
+		return mb.handle, nil
+	}
+
+	isReadable := mb.IsReadable()
+	isWritable := mb.IsWritable()
+
+	flag := os.O_SYNC
+
+	if isReadable && isWritable {
+		flag |= os.O_RDWR
+	} else {
+		flag |= os.O_RDONLY
+	}
+
+	handle, err := os.OpenFile(
+		mb.GetDevicePathname(),
+		flag,
+		0,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	mb.handle = handle
+
+	return nil, nil
+}
+
+func (mb *MediumBase) SetHandle(handle *os.File) {
+	mb.handle = handle
+}
+
+func (mb *MediumBase) GetMutex() *sync.Mutex {
+	return &mb.mutex
+}
+
+func (mb *MediumBase) GetSize() int64 {
+	return mb.size
+}
+
+func (mb *MediumBase) SetSize(size int64) {
+	mb.size = size
 }

@@ -49,6 +49,7 @@ func (fmd *FloppyMediumDriver) Probe(
 	medium.SetPublicPathname(
 		filepath.Join(basePath, filename),
 	)
+	medium.SetSize(floppyAdfSize)
 
 	// in Linux all devices are readable by default
 	medium.SetReadable(true)

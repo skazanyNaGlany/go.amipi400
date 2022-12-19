@@ -1,6 +1,9 @@
 package interfaces
 
 import (
+	"os"
+	"sync"
+
 	"github.com/winfsp/cgofuse/fuse"
 )
 
@@ -25,6 +28,11 @@ type Medium interface {
 	GetAccessTime() int64
 	GetModificationTime() int64
 	Close() error
+	GetHandle() (*os.File, error)
+	SetHandle(handle *os.File)
+	GetMutex() *sync.Mutex
+	GetSize() int64
+	SetSize(size int64)
 	Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc int)
 	Read(path string, buff []byte, ofst int64, fh uint64) (n int)
 	Write(path string, buff []byte, ofst int64, fh uint64) int
