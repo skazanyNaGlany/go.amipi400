@@ -116,42 +116,11 @@ func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) int
 }
 
 func (mb *MediumBase) Close() error {
-	if mb.handle != nil {
-		return mb.handle.Close()
-	}
-
-	return nil
+	return mb.driver.CloseMedium(mb)
 }
 
 func (mb *MediumBase) GetHandle() (*os.File, error) {
-	if mb.handle != nil {
-		return mb.handle, nil
-	}
-
-	isReadable := mb.IsReadable()
-	isWritable := mb.IsWritable()
-
-	flag := os.O_SYNC
-
-	if isReadable && isWritable {
-		flag |= os.O_RDWR
-	} else {
-		flag |= os.O_RDONLY
-	}
-
-	handle, err := os.OpenFile(
-		mb.GetDevicePathname(),
-		flag,
-		0,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	mb.handle = handle
-
-	return handle, nil
+	return mb.handle, nil
 }
 
 func (mb *MediumBase) SetHandle(handle *os.File) {

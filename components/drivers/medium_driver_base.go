@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"os"
 	"strconv"
 	"time"
 
@@ -44,7 +45,7 @@ func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	handle, err := medium.GetHandle()
+	handle, err := mdb.getMediumHandle(medium)
 
 	if err != nil {
 		return -fuse.EIO
@@ -88,7 +89,7 @@ func (mdb *MediumDriverBase) Write(medium interfaces.Medium, path string, buff [
 		return -fuse.EROFS
 	}
 
-	handle, err := medium.GetHandle()
+	handle, err := mdb.getMediumHandle(medium)
 
 	if err != nil {
 		return -fuse.EIO
@@ -141,4 +142,53 @@ func (mdb *MediumDriverBase) generatePermIntMask(
 	mask, _ := strconv.ParseUint(binString, 2, 64)
 
 	return uint32(mask)
+}
+
+func (mdb *MediumDriverBase) getMediumHandle(medium interfaces.Medium) (*os.File, error) {
+	handle, err := medium.GetHandle()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if handle != nil {
+		return handle, nil
+	}
+
+	isReadable := medium.IsReadable()
+	isWritable := medium.IsWritable()
+
+	flag := os.O_SYNC
+
+	if isReadable && isWritable {
+		flag |= os.O_RDWR
+	} else {
+		flag |= os.O_RDONLY
+	}
+
+	handle, err = os.OpenFile(
+		medium.GetDevicePathname(),
+		flag,
+		0,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	medium.SetHandle(handle)
+
+	return handle, nil
+}
+
+func (mdb *MediumDriverBase) CloseMedium(medium interfaces.Medium) error {
+	handle, err := medium.GetHandle()
+
+	if err != nil {
+		return err
+	}
+
+	medium.SetHandle(nil)
+
+	return handle.Close()
 }
