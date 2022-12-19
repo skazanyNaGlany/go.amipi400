@@ -77,6 +77,20 @@ func (addfs *ADDFileSystem) RemoveMediumByDevicePathname(devicePathname string) 
 	return nil
 }
 
+// Find the medium by public file-system pathname
+// like /__dev__sda.adf , /__dev__sdb.adf etc.
+func (addfs *ADDFileSystem) FindMediumByPublicFSPathname(publicFSPathname string) interfaces.Medium {
+	fullWithMountPathname := filepath.Join(addfs.mountDir, publicFSPathname)
+
+	for _, medium := range addfs.mediums {
+		if medium.GetPublicPathname() == fullWithMountPathname {
+			return medium
+		}
+	}
+
+	return nil
+}
+
 // File-system related methods:
 // Truncate
 // Getattr
@@ -109,6 +123,10 @@ func (addfs *ADDFileSystem) Getattr(path string, stat *fuse.Stat_t, fh uint64) (
 		return 0
 	}
 
+	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
+		return medium.Getattr(path, stat, fh)
+	}
+
 	return -fuse.ENOENT
 }
 
@@ -119,13 +137,13 @@ func (addfs *ADDFileSystem) Readdir(path string,
 	fill(".", nil, 0)
 	fill("..", nil, 0)
 
-	fullPath := filepath.Join(addfs.mountDir, path)
+	fullMountPath := filepath.Join(addfs.mountDir, path)
 
 	for _, medium := range addfs.mediums {
 		publicPathname := medium.GetPublicPathname()
 		dirName := filepath.Dir(publicPathname)
 
-		if dirName == fullPath {
+		if dirName == fullMountPath {
 			fill(medium.GetPublicName(), nil, 0)
 		}
 	}
@@ -134,9 +152,17 @@ func (addfs *ADDFileSystem) Readdir(path string,
 }
 
 func (addfs *ADDFileSystem) Read(path string, buff []byte, ofst int64, fh uint64) (n int) {
+	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
+		return medium.Read(path, buff, ofst, fh)
+	}
+
 	return -fuse.ENOENT
 }
 
 func (addfs *ADDFileSystem) Write(path string, buff []byte, ofst int64, fh uint64) int {
+	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
+		return medium.Write(path, buff, ofst, fh)
+	}
+
 	return -fuse.ENOSYS
 }
