@@ -107,5 +107,9 @@ func (mb *MediumBase) Read(path string, buff []byte, ofst int64, fh uint64) (n i
 }
 
 func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) int {
+	if !mb.IsWritable() {
+		return -fuse.EROFS
+	}
+
 	return mb.driver.Write(path, buff, ofst, fh)
 }

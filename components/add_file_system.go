@@ -160,14 +160,8 @@ func (addfs *ADDFileSystem) Read(path string, buff []byte, ofst int64, fh uint64
 }
 
 func (addfs *ADDFileSystem) Write(path string, buff []byte, ofst int64, fh uint64) int {
-	medium := addfs.FindMediumByPublicFSPathname(path)
-
-	if medium == nil {
-		return -fuse.ENOSYS
-	}
-
-	if !medium.IsWritable() {
-		return -fuse.EROFS
+	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
+		return medium.Write(path, buff, ofst, fh)
 	}
 
 	return -fuse.ENOSYS
