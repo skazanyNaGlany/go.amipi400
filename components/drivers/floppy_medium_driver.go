@@ -10,12 +10,13 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
 
-const floppyDeviceSectorSize = 512
 const floppyDeviceSize = 1474560
 const floppyAdfSize = 901120
 const floppyAdfExtension = "adf"
-const floppyDeviceLastSector = floppyDeviceSize - floppyDeviceSectorSize
 const floppyDeviceType = "disk"
+
+// const floppyDeviceSectorSize = 512
+// const floppyDeviceLastSector = floppyDeviceSize - floppyDeviceSectorSize
 
 var goUtils components.GoUtils
 
