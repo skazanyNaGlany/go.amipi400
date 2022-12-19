@@ -77,7 +77,7 @@ func (addfs *ADDFileSystem) RemoveMediumByDevicePathname(devicePathname string) 
 	return nil
 }
 
-// File-system related methods
+// File-system related methods:
 // Truncate
 // Getattr
 // Readdir
