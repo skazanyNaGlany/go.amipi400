@@ -111,7 +111,9 @@ func detachedBlockDevice(
 
 	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
-	fileSystem.RemoveMediumByDevicePathname(path)
+	if _, err := fileSystem.RemoveMediumByDevicePathname(path); err != nil {
+		log.Println("Unable to close medium", path)
+	}
 }
 
 func createFsDir() {

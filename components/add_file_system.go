@@ -65,16 +65,20 @@ func (addfs *ADDFileSystem) AddMedium(medium interfaces.Medium) {
 	addfs.mediums = append(addfs.mediums, medium)
 }
 
-func (addfs *ADDFileSystem) RemoveMediumByDevicePathname(devicePathname string) interfaces.Medium {
+func (addfs *ADDFileSystem) RemoveMediumByDevicePathname(devicePathname string) (interfaces.Medium, error) {
 	for i, medium := range addfs.mediums {
 		if medium.GetDevicePathname() == devicePathname {
 			addfs.mediums = slices.Delete(addfs.mediums, i, i+1)
 
-			return medium
+			if err := medium.Close(); err != nil {
+				return medium, err
+			}
+
+			return medium, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // Find the medium by public file-system pathname

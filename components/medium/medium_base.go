@@ -113,3 +113,7 @@ func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) int
 
 	return mb.driver.Write(mb, path, buff, ofst, fh)
 }
+
+func (mb *MediumBase) Close() error {
+	return nil
+}
