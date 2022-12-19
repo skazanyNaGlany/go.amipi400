@@ -9,13 +9,40 @@ import (
 
 // Implements Medium
 type MediumBase struct {
-	devicePathname string
-	publicPathname string
-	publicName     string
-	driver         interfaces.MediumDriver
-	fullyCached    bool
-	readable       bool
-	writable       bool
+	devicePathname   string
+	publicPathname   string
+	publicName       string
+	driver           interfaces.MediumDriver
+	fullyCached      bool
+	readable         bool
+	writable         bool
+	creationTime     int64
+	accessTime       int64
+	modificationTime int64
+}
+
+func (mb *MediumBase) SetCreateTime(creationTime int64) {
+	mb.creationTime = creationTime
+}
+
+func (mb *MediumBase) SetAccessTime(accessTime int64) {
+	mb.accessTime = accessTime
+}
+
+func (mb *MediumBase) SetModificationTime(modificationTime int64) {
+	mb.modificationTime = modificationTime
+}
+
+func (mb *MediumBase) GetCreateTime() int64 {
+	return mb.creationTime
+}
+
+func (mb *MediumBase) GetAccessTime() int64 {
+	return mb.accessTime
+}
+
+func (mb *MediumBase) GetModificationTime() int64 {
+	return mb.modificationTime
 }
 
 func (mb *MediumBase) SetReadable(readable bool) {

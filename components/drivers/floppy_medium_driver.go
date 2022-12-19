@@ -3,6 +3,7 @@ package drivers
 import (
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
@@ -49,6 +50,12 @@ func (fmd *FloppyMediumDriver) Probe(
 	// in Linux all devices are readable by default
 	medium.SetReadable(true)
 	medium.SetWritable(!readOnly)
+
+	now := time.Now().Unix()
+
+	medium.SetCreateTime(now)
+	medium.SetAccessTime(now)
+	medium.SetModificationTime(now)
 
 	return &medium, nil
 }
