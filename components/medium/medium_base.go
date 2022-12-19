@@ -151,7 +151,7 @@ func (mb *MediumBase) GetHandle() (*os.File, error) {
 
 	mb.handle = handle
 
-	return nil, nil
+	return handle, nil
 }
 
 func (mb *MediumBase) SetHandle(handle *os.File) {
