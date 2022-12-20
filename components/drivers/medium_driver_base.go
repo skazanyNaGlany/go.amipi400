@@ -10,8 +10,6 @@ import (
 	"github.com/winfsp/cgofuse/fuse"
 )
 
-var fileUtils components.FileUtils
-
 // Implements MediumDriver
 type MediumDriverBase struct{}
 
@@ -63,7 +61,7 @@ func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []
 		toReadSize = int(fileSize) - int(ofst)
 	}
 
-	data, n, err := fileUtils.FileReadBytes(
+	data, n, err := components.FileUtilsInstance.FileReadBytes(
 		"",
 		ofst,
 		uint64(toReadSize),
@@ -106,7 +104,7 @@ func (mdb *MediumDriverBase) Write(medium interfaces.Medium, path string, buff [
 		return -fuse.ENOSPC
 	}
 
-	n, err := fileUtils.FileWriteBytes("", ofst, buff, 0, 0, handle)
+	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
 
 	if err != nil {
 		return -fuse.EIO
