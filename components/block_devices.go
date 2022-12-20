@@ -26,6 +26,7 @@ func (bd *BlockDevices) loop() {
 	for bd.running {
 		time.Sleep(time.Millisecond * 10)
 
+		// lsblk -P -o name,size,type,mountpoint,label,path,fstype,pttype,ro -n -b
 		output, err := exec.Command(
 			"lsblk",
 			"-P",
