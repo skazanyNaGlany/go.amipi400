@@ -22,7 +22,6 @@ type ADDFileSystem struct {
 }
 
 func (addfs *ADDFileSystem) start() {
-	// options := []string{"-d", "-o", "allow_other"}
 	options := []string{"-o", "allow_other"}
 
 	host := fuse.NewFileSystemHost(addfs)
