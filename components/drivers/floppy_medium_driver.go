@@ -25,10 +25,14 @@ type FloppyMediumDriver struct {
 }
 
 func (fmd *FloppyMediumDriver) Probe(
-	basePath, pathname string,
+	basePath, name string,
 	size uint64,
-	_type string,
+	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) (interfaces.Medium, error) {
+	if fmd.isKnownMedium(name, mountpoint, label, path, fsType, ptType) {
+		return nil, nil
+	}
+
 	if size != floppyDeviceSize {
 		return nil, nil
 	}
@@ -38,7 +42,7 @@ func (fmd *FloppyMediumDriver) Probe(
 	}
 
 	filename := strings.ReplaceAll(
-		pathname,
+		path,
 		"/",
 		"__")
 	filename = filename + "." + floppyAdfExtension
@@ -46,7 +50,7 @@ func (fmd *FloppyMediumDriver) Probe(
 	medium := medium.FloppyMedium{}
 
 	medium.SetDriver(fmd)
-	medium.SetDevicePathname(pathname)
+	medium.SetDevicePathname(path)
 	medium.SetPublicPathname(
 		filepath.Join(basePath, filename),
 	)

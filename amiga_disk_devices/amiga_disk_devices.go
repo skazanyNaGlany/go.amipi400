@@ -43,10 +43,24 @@ func printBlockDevice(
 	log.Println("\tRead-only:     " + strconv.FormatBool(readOnly))
 }
 
-func ProbeMediumForDriver(pathname string, size uint64, _type string, readOnly bool) (interfaces.Medium, error) {
+func ProbeMediumForDriver(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) (interfaces.Medium, error) {
 	floppyDriver := drivers.FloppyMediumDriver{}
 
-	medium, err := floppyDriver.Probe(fileSystemMount, pathname, size, _type, readOnly)
+	medium, err := floppyDriver.Probe(
+		fileSystemMount,
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly)
 
 	if err != nil {
 		return nil, err
@@ -72,7 +86,7 @@ func attachedBlockDevice(
 
 	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
-	medium, err := ProbeMediumForDriver(path, size, _type, readOnly)
+	medium, err := ProbeMediumForDriver(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
 	if err != nil {
 		log.Println(err)
