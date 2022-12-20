@@ -61,20 +61,30 @@ func (bd *BlockDevices) loop() {
 }
 
 func (bd *BlockDevices) notifyHandlers(old_block_devices, block_devices map[string]map[string]string) error {
-	err := bd.notifyAttachedHandlers(old_block_devices, block_devices)
+	err := bd.notifyDetachedHandlers(old_block_devices, block_devices)
 
 	if err != nil {
 		return err
 	}
 
-	return bd.notifyDetachedHandlers(old_block_devices, block_devices)
+	return bd.notifyAttachedHandlers(old_block_devices, block_devices)
 }
 
 func (bd *BlockDevices) notifyAttachedHandlers(old_block_devices, block_devices map[string]map[string]string) error {
 	for name := range block_devices {
-		if _, exists := old_block_devices[name]; !exists {
-			data := block_devices[name]
-			converted, err := bd.convertDataMap(data)
+		new_block_device_data := block_devices[name]
+		old_block_device_data, exists := old_block_devices[name]
+
+		if exists {
+			property_changed := bd.blockDevicePropertyChanged(
+				old_block_device_data,
+				new_block_device_data)
+
+			exists = !property_changed
+		}
+
+		if !exists {
+			converted, err := bd.convertDataMap(new_block_device_data)
 
 			if err != nil {
 				return err
@@ -100,9 +110,19 @@ func (bd *BlockDevices) notifyAttachedHandlers(old_block_devices, block_devices 
 
 func (bd *BlockDevices) notifyDetachedHandlers(old_block_devices, block_devices map[string]map[string]string) error {
 	for name := range old_block_devices {
-		if _, exists := block_devices[name]; !exists {
-			data := old_block_devices[name]
-			converted, err := bd.convertDataMap(data)
+		old_block_device_data := old_block_devices[name]
+		new_block_device_data, exists := block_devices[name]
+
+		if exists {
+			property_changed := bd.blockDevicePropertyChanged(
+				old_block_device_data,
+				new_block_device_data)
+
+			exists = !property_changed
+		}
+
+		if !exists {
+			converted, err := bd.convertDataMap(old_block_device_data)
 
 			if err != nil {
 				return err
@@ -124,6 +144,19 @@ func (bd *BlockDevices) notifyDetachedHandlers(old_block_devices, block_devices 
 	}
 
 	return nil
+}
+
+func (*BlockDevices) blockDevicePropertyChanged(
+	current_block_device_data map[string]string,
+	new_block_device_data map[string]string) bool {
+	property_changed := current_block_device_data["SIZE"] != new_block_device_data["SIZE"] ||
+		current_block_device_data["TYPE"] != new_block_device_data["TYPE"] ||
+		current_block_device_data["LABEL"] != new_block_device_data["LABEL"] ||
+		current_block_device_data["FSTYPE"] != new_block_device_data["FSTYPE"] ||
+		current_block_device_data["PTTYPE"] != new_block_device_data["PTTYPE"] ||
+		current_block_device_data["RO"] != new_block_device_data["RO"]
+
+	return property_changed
 }
 
 func (bd *BlockDevices) convertDataMap(data map[string]string) (map[string]any, error) {
