@@ -27,11 +27,6 @@ func isInternalMedium(name string) bool {
 	return strings.HasPrefix(name, systemInternalSdCardName)
 }
 
-// Check if the medium is known to the system
-func isKnownMedium(name, mountpoint, label, path, fsType, ptType string) bool {
-	return mountpoint != "" || label != "" || fsType != "" || ptType != ""
-}
-
 func printBlockDevice(
 	name string,
 	size uint64,
@@ -70,10 +65,6 @@ func attachedBlockDevice(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	if isInternalMedium(name) {
-		return
-	}
-
-	if isKnownMedium(name, mountpoint, label, path, fsType, ptType) {
 		return
 	}
 

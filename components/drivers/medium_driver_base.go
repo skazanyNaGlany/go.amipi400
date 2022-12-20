@@ -200,3 +200,8 @@ func (mdb *MediumDriverBase) CloseMedium(medium interfaces.Medium) error {
 
 	return err
 }
+
+// Check if the medium is known to the system
+func (mdb *MediumDriverBase) isKnownMedium(name, mountpoint, label, path, fsType, ptType string) bool {
+	return mountpoint != "" || label != "" || fsType != "" || ptType != ""
+}
