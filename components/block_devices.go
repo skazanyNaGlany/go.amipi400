@@ -16,8 +16,8 @@ var lsblkPattern *regexp.Regexp = regexp.MustCompile(`NAME="(?P<NAME>\w*)" SIZE=
 
 type BlockDevices struct {
 	running          bool
-	attachedHandlers []interfaces.AttachedBlockDevice
-	detachedHandlers []interfaces.DetachedBlockDevice
+	attachedHandlers []interfaces.AttachedBlockDeviceCallback
+	detachedHandlers []interfaces.DetachedBlockDeviceCallback
 }
 
 func (bd *BlockDevices) loop() {
@@ -180,11 +180,11 @@ func (bd *BlockDevices) parseLsblkOutput(output string) (map[string]map[string]s
 	return parsed, nil
 }
 
-func (bd *BlockDevices) AddAttachedHandler(handler interfaces.AttachedBlockDevice) {
+func (bd *BlockDevices) AddAttachedHandler(handler interfaces.AttachedBlockDeviceCallback) {
 	bd.attachedHandlers = append(bd.attachedHandlers, handler)
 }
 
-func (bd *BlockDevices) AddDetachedHandler(handler interfaces.DetachedBlockDevice) {
+func (bd *BlockDevices) AddDetachedHandler(handler interfaces.DetachedBlockDeviceCallback) {
 	bd.detachedHandlers = append(bd.detachedHandlers, handler)
 }
 
