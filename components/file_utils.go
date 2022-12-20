@@ -8,6 +8,8 @@ import (
 
 type FileUtils struct{}
 
+var FileUtilsInstance FileUtils
+
 func (fu *FileUtils) FileReadBytes(
 	name string,
 	offset int64,

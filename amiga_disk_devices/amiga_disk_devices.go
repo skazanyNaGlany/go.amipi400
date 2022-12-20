@@ -48,9 +48,34 @@ func ProbeMediumForDriver(
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) (interfaces.Medium, error) {
+
+	// try FloppyMediumDriver
 	floppyDriver := drivers.FloppyMediumDriver{}
 
 	medium, err := floppyDriver.Probe(
+		fileSystemMount,
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if medium != nil {
+		return medium, nil
+	}
+
+	// try CDMediumDriver
+	cdDriver := drivers.CDMediumDriver{}
+
+	medium, err = cdDriver.Probe(
 		fileSystemMount,
 		name,
 		size,
