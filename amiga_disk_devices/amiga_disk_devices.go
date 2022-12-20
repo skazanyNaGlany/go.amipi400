@@ -15,7 +15,7 @@ import (
 const AppUnixname = "amiga_disk_devices"
 const AppVersion = "0.1"
 const systemInternalSdCardName = "mmcblk0"
-const fileSystemMount = "/tmp/amipi400/amiga_disk_devices"
+const fileSystemMount = "/tmp/amiga_disk_devices"
 
 var goUtils components.GoUtils
 var blockDevices components.BlockDevices
