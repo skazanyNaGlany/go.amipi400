@@ -112,7 +112,7 @@ func detachedBlockDevice(
 	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
 	if _, err := fileSystem.RemoveMediumByDevicePathname(path); err != nil {
-		log.Println("Unable to close medium", path)
+		log.Println("Unable to close medium:", path, ":", err)
 	}
 }
 

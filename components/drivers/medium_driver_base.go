@@ -189,7 +189,14 @@ func (mdb *MediumDriverBase) CloseMedium(medium interfaces.Medium) error {
 		return err
 	}
 
+	if handle == nil {
+		// handle not open yet, or already closed
+		return nil
+	}
+
+	err = handle.Close()
+
 	medium.SetHandle(nil)
 
-	return handle.Close()
+	return err
 }
