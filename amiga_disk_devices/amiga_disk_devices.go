@@ -136,6 +136,26 @@ func postReadCallback(medium interfaces.Medium, path string, buff []byte, ofst i
 		opTime)
 }
 
+func preWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+	log.Println(
+		"preWriteCallback ",
+		path,
+		len(buff),
+		ofst,
+		fh)
+}
+
+func postWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTime int64) {
+	log.Println(
+		"postWriteCallback",
+		path,
+		len(buff),
+		ofst,
+		fh,
+		n,
+		opTime)
+}
+
 func createFsDir() {
 	if err := os.MkdirAll(fileSystemMount, 0777); err != nil {
 		log.Fatalln(err)
@@ -215,6 +235,8 @@ func main() {
 	fileSystem.SetMountDir(fileSystemMount)
 	fileSystem.AddPreReadCallback(preReadCallback)
 	fileSystem.AddPostReadCallback(postReadCallback)
+	fileSystem.AddPreWriteCallback(preWriteCallback)
+	fileSystem.AddPostWriteCallback(postWriteCallback)
 
 	discoverDriveDevices()
 	printFloppyDevices()

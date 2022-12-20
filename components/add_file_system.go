@@ -14,11 +14,13 @@ import (
 type ADDFileSystem struct {
 	fuse.FileSystemBase
 
-	running           bool
-	mountDir          string
-	mediums           []interfaces.Medium
-	preReadCallbacks  []interfaces.PreReadCallback
-	postReadCallbacks []interfaces.PostReadCallback
+	running            bool
+	mountDir           string
+	mediums            []interfaces.Medium
+	preReadCallbacks   []interfaces.PreReadCallback
+	postReadCallbacks  []interfaces.PostReadCallback
+	preWriteCallbacks  []interfaces.PreWriteCallback
+	postWriteCallbacks []interfaces.PostWriteCallback
 }
 
 func (addfs *ADDFileSystem) start() {
@@ -173,7 +175,19 @@ func (addfs *ADDFileSystem) Read(path string, buff []byte, ofst int64, fh uint64
 
 func (addfs *ADDFileSystem) Write(path string, buff []byte, ofst int64, fh uint64) int {
 	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
-		return medium.Write(path, buff, ofst, fh)
+		for _, callback := range addfs.preWriteCallbacks {
+			callback(medium, path, buff, ofst, fh)
+		}
+
+		startTime := time.Now().Unix()
+		result := medium.Write(path, buff, ofst, fh)
+		totalTime := time.Now().Unix() - startTime
+
+		for _, callback := range addfs.postWriteCallbacks {
+			callback(medium, path, buff, ofst, fh, result, totalTime)
+		}
+
+		return result
 	}
 
 	return -fuse.ENOSYS
@@ -185,4 +199,12 @@ func (addfs *ADDFileSystem) AddPreReadCallback(preReadCallback interfaces.PreRea
 
 func (addfs *ADDFileSystem) AddPostReadCallback(postReadCallback interfaces.PostReadCallback) {
 	addfs.postReadCallbacks = append(addfs.postReadCallbacks, postReadCallback)
+}
+
+func (addfs *ADDFileSystem) AddPreWriteCallback(preWriteCallback interfaces.PreWriteCallback) {
+	addfs.preWriteCallbacks = append(addfs.preWriteCallbacks, preWriteCallback)
+}
+
+func (addfs *ADDFileSystem) AddPostWriteCallback(postWriteCallback interfaces.PostWriteCallback) {
+	addfs.postWriteCallbacks = append(addfs.postWriteCallbacks, postWriteCallback)
 }
