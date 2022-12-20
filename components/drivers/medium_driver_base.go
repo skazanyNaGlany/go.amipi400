@@ -35,6 +35,7 @@ func (mdb *MediumDriverBase) Getattr(medium interfaces.Medium, path string, stat
 	stat.Ctim = fuse.Timespec{Sec: creationTime}
 	stat.Atim = fuse.Timespec{Sec: accessTime}
 	stat.Mtim = fuse.Timespec{Sec: modificationTime}
+	stat.Nlink = 1
 
 	return 0
 }

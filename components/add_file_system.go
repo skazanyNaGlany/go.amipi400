@@ -105,7 +105,15 @@ func (addfs *ADDFileSystem) FindMediumByPublicFSPathname(publicFSPathname string
 // Read
 // Write
 
-// Truncate changes the size of a file.
+func (addfs *ADDFileSystem) Open(path string, flags int) (errc int, fh uint64) {
+	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
+		return 0, 0
+	}
+
+	return -fuse.ENOENT, ^uint64(0)
+}
+
+// Block device cannot be truncated, so just return here
 func (addfs *ADDFileSystem) Truncate(path string, size int64, fh uint64) int {
 	return 0
 }
