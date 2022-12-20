@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"path/filepath"
+	"time"
 
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
@@ -13,9 +14,11 @@ import (
 type ADDFileSystem struct {
 	fuse.FileSystemBase
 
-	running  bool
-	mountDir string
-	mediums  []interfaces.Medium
+	running           bool
+	mountDir          string
+	mediums           []interfaces.Medium
+	preReadCallbacks  []interfaces.PreReadCallback
+	postReadCallbacks []interfaces.PostReadCallback
 }
 
 func (addfs *ADDFileSystem) start() {
@@ -143,7 +146,19 @@ func (addfs *ADDFileSystem) Readdir(path string,
 
 func (addfs *ADDFileSystem) Read(path string, buff []byte, ofst int64, fh uint64) (n int) {
 	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
-		return medium.Read(path, buff, ofst, fh)
+		for _, callback := range addfs.preReadCallbacks {
+			callback(medium, path, buff, ofst, fh)
+		}
+
+		startTime := time.Now().Unix()
+		result := medium.Read(path, buff, ofst, fh)
+		totalTime := time.Now().Unix() - startTime
+
+		for _, callback := range addfs.postReadCallbacks {
+			callback(medium, path, buff, ofst, fh, result, totalTime)
+		}
+
+		return result
 	}
 
 	return -fuse.ENOENT
@@ -155,4 +170,12 @@ func (addfs *ADDFileSystem) Write(path string, buff []byte, ofst int64, fh uint6
 	}
 
 	return -fuse.ENOSYS
+}
+
+func (addfs *ADDFileSystem) AddPreReadCallback(preReadCallback interfaces.PreReadCallback) {
+	addfs.preReadCallbacks = append(addfs.preReadCallbacks, preReadCallback)
+}
+
+func (addfs *ADDFileSystem) AddPostReadCallback(postReadCallback interfaces.PostReadCallback) {
+	addfs.postReadCallbacks = append(addfs.postReadCallbacks, postReadCallback)
 }

@@ -116,6 +116,14 @@ func detachedBlockDevice(
 	}
 }
 
+func preReadCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+	log.Println("preReadCallback", path, len(buff), ofst, fh)
+}
+
+func postReadCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTime int64) {
+	log.Println("postReadCallback", path, len(buff), ofst, fh, n, opTime)
+}
+
 func createFsDir() {
 	if err := os.MkdirAll(fileSystemMount, 0777); err != nil {
 		log.Fatalln(err)
@@ -193,6 +201,8 @@ func main() {
 
 	createFsDir()
 	fileSystem.SetMountDir(fileSystemMount)
+	fileSystem.AddPreReadCallback(preReadCallback)
+	fileSystem.AddPostReadCallback(postReadCallback)
 
 	discoverDriveDevices()
 	printFloppyDevices()
