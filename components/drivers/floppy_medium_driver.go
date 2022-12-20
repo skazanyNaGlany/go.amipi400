@@ -29,6 +29,14 @@ func (fmd *FloppyMediumDriver) Probe(
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) (interfaces.Medium, error) {
+	// ignore medium which has MBR, or other known header
+	// or known file-system or partition type, or just a label
+	// detected by the system
+	// Amiga ADF file is not known to the system
+	// some games like Pinball Dreams Disc 2 has no valid DOS
+	// header, but it is valid ADF file for the emulator
+	// so we can use only these mediums which are unknown to the
+	// system
 	if fmd.isKnownMedium(name, mountpoint, label, path, fsType, ptType) {
 		return nil, nil
 	}
