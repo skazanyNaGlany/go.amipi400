@@ -51,7 +51,7 @@ func (cdmd *CDMediumDriver) Probe(
 		"__")
 	filename = filename + "." + cdIsoExtension
 
-	medium := medium.FloppyMedium{}
+	medium := medium.MediumBase{}
 
 	medium.SetDriver(cdmd)
 	medium.SetDevicePathname(path)
