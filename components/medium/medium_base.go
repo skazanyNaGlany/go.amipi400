@@ -15,7 +15,6 @@ type MediumBase struct {
 	publicPathname   string
 	publicName       string
 	driver           interfaces.MediumDriver
-	fullyCached      bool
 	readable         bool
 	writable         bool
 	creationTime     int64
@@ -68,14 +67,6 @@ func (mb *MediumBase) IsWritable() bool {
 
 func (mb *MediumBase) GetPublicName() string {
 	return mb.publicName
-}
-
-func (mb *MediumBase) IsFullyCached() bool {
-	return mb.fullyCached
-}
-
-func (mb *MediumBase) SetFullyCached(fullyCached bool) {
-	mb.fullyCached = fullyCached
 }
 
 func (mb *MediumBase) SetDevicePathname(devicePathname string) {

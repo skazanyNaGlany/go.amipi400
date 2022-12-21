@@ -15,8 +15,6 @@ type Medium interface {
 	SetDevicePathname(devicePathname string)
 	SetPublicPathname(publicPathname string)
 	SetDriver(driver MediumDriver)
-	IsFullyCached() bool
-	SetFullyCached(fullyCached bool)
 	SetReadable(readable bool)
 	SetWritable(writable bool)
 	IsReadable() bool
