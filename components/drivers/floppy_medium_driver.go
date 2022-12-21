@@ -79,7 +79,7 @@ func (fmd *FloppyMediumDriver) Probe(
 	return &medium, nil
 }
 
-func (mdb *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (n int) {
+func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (n int) {
 	mutex := _medium.GetMutex()
 
 	mutex.Lock()
@@ -102,7 +102,7 @@ func (mdb *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff
 		return -fuse.EIO
 	}
 
-	data, n_int64, err := mdb.read(floppyMedium, ofst, toReadSize)
+	data, n_int64, err := fmd.read(floppyMedium, ofst, toReadSize)
 
 	if err != nil {
 		return -fuse.EIO
