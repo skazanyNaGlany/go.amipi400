@@ -8,7 +8,10 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
+	"golang.org/x/sys/unix"
 )
+
+const defaultReadAhead = 256
 
 // Implements MediumDriver
 type MediumDriverBase struct{}
@@ -143,7 +146,7 @@ func (mdb *MediumDriverBase) generatePermIntMask(
 	return uint32(mask)
 }
 
-func (mdb *MediumDriverBase) getMediumHandle(medium interfaces.Medium) (*os.File, error) {
+func (mdb *MediumDriverBase) getMediumHandle(medium interfaces.Medium, readAhead ...int) (*os.File, error) {
 	handle, err := medium.GetHandle()
 
 	if err != nil {
@@ -172,6 +175,26 @@ func (mdb *MediumDriverBase) getMediumHandle(medium interfaces.Medium) (*os.File
 	)
 
 	if err != nil {
+		return nil, err
+	}
+
+	_readAhead := defaultReadAhead
+
+	if len(readAhead) == 1 {
+		_readAhead = readAhead[0]
+	}
+
+	// set read-a-head value for block-device
+	if err = unix.IoctlSetInt(int(handle.Fd()), unix.BLKRASET, _readAhead); err != nil {
+		handle.Close()
+
+		return nil, err
+	}
+
+	// set read-a-head value for file-system
+	if err = unix.IoctlSetInt(int(handle.Fd()), unix.BLKFRASET, _readAhead); err != nil {
+		handle.Close()
+
 		return nil, err
 	}
 
