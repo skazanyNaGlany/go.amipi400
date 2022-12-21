@@ -113,6 +113,50 @@ func (mdb *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff
 	return int(n_int64)
 }
 
+// Almost the same as MediumDriverBase.Write, but calling SetFullyCached also
+func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) int {
+	mutex := _medium.GetMutex()
+
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if !_medium.IsWritable() {
+		return -fuse.EROFS
+	}
+
+	handle, err := fmd.getMediumHandle(_medium)
+
+	if err != nil {
+		return -fuse.EIO
+	}
+
+	_medium.SetModificationTime(
+		time.Now().Unix())
+
+	fileSize := _medium.GetSize()
+	lenBuff := len(buff)
+
+	if ofst+int64(lenBuff) > fileSize || ofst >= fileSize {
+		return -fuse.ENOSPC
+	}
+
+	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+
+	if !castOk {
+		return -fuse.EIO
+	}
+
+	floppyMedium.SetFullyCached(false)
+
+	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
+
+	if err != nil {
+		return -fuse.EIO
+	}
+
+	return n
+}
+
 func (mdb *FloppyMediumDriver) read(medium *medium.FloppyMedium, offset int64, size int64) ([]byte, int64, error) {
 	// "rr" stand for "read_result"
 	_floppyAdfSize := int64(floppyAdfSize)
