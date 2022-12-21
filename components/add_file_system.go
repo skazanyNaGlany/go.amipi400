@@ -159,9 +159,9 @@ func (addfs *ADDFileSystem) Read(path string, buff []byte, ofst int64, fh uint64
 			callback(medium, path, buff, ofst, fh)
 		}
 
-		startTime := time.Now().Unix()
+		startTime := time.Now().UnixMilli()
 		result := medium.Read(path, buff, ofst, fh)
-		totalTime := time.Now().Unix() - startTime
+		totalTime := time.Now().UnixMilli() - startTime
 
 		for _, callback := range addfs.postReadCallbacks {
 			callback(medium, path, buff, ofst, fh, result, totalTime)
@@ -179,9 +179,9 @@ func (addfs *ADDFileSystem) Write(path string, buff []byte, ofst int64, fh uint6
 			callback(medium, path, buff, ofst, fh)
 		}
 
-		startTime := time.Now().Unix()
+		startTime := time.Now().UnixMilli()
 		result := medium.Write(path, buff, ofst, fh)
-		totalTime := time.Now().Unix() - startTime
+		totalTime := time.Now().UnixMilli() - startTime
 
 		for _, callback := range addfs.postWriteCallbacks {
 			callback(medium, path, buff, ofst, fh, result, totalTime)
