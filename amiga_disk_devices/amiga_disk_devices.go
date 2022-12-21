@@ -95,6 +95,29 @@ func ProbeMediumForDriver(
 		return medium, nil
 	}
 
+	// try HardDiskMediumDriver
+	hdDriver := drivers.HardDiskMediumDriver{}
+
+	medium, err = hdDriver.Probe(
+		fileSystemMount,
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if medium != nil {
+		return medium, nil
+	}
+
 	return nil, nil
 }
 
