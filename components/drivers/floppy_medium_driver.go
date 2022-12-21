@@ -124,7 +124,7 @@ func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buf
 		return -fuse.EROFS
 	}
 
-	handle, err := fmd.getMediumHandle(_medium)
+	handle, err := fmd.getMediumHandle(_medium, floppyReadAhead)
 
 	if err != nil {
 		return -fuse.EIO
