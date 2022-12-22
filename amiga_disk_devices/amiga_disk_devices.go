@@ -209,6 +209,8 @@ func postReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst 
 			len(buff),
 			ofst,
 			fh,
+			n,
+			opTimeMs,
 			floppyMedium.IsFullyCached(),
 			floppyMedium.IsCachingNow())
 
