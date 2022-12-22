@@ -51,13 +51,9 @@ func (fmd *FloppyMediumDriver) Probe(
 		return nil, nil
 	}
 
-	filename := strings.ReplaceAll(
-		path,
-		"/",
-		"__")
-	filename = filename + "." + floppyAdfExtension
-
 	_medium := medium.FloppyMedium{}
+
+	filename := _medium.DevicePathnameToPublicFilename(path, floppyAdfExtension)
 
 	_medium.SetDriver(fmd)
 	_medium.SetDevicePathname(path)

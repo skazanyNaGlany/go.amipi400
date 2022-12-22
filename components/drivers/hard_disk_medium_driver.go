@@ -46,13 +46,9 @@ func (hdmd *HardDiskMediumDriver) Probe(
 		return nil, nil
 	}
 
-	filename := strings.ReplaceAll(
-		path,
-		"/",
-		"__")
-	filename = filename + "." + hdHdfExtension
-
 	medium := medium.MediumBase{}
+
+	filename := medium.DevicePathnameToPublicFilename(path, hdHdfExtension)
 
 	medium.SetDriver(hdmd)
 	medium.SetDevicePathname(path)

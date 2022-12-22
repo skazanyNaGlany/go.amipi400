@@ -190,3 +190,12 @@ func (mb *MediumBase) CallPostWriteCallbacks(_medium interfaces.Medium, path str
 		callback(_medium, path, buff, ofst, fh, n, opTimeMs)
 	}
 }
+
+func (mb *MediumBase) DevicePathnameToPublicFilename(devicePathname string, extension string) string {
+	filename := strings.ReplaceAll(
+		devicePathname,
+		"/",
+		"__")
+
+	return filename + "." + extension
+}

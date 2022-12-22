@@ -45,13 +45,9 @@ func (cdmd *CDMediumDriver) Probe(
 
 	// ok should be data CD, perhaps we will need to check for FsType == iso9660 also
 
-	filename := strings.ReplaceAll(
-		path,
-		"/",
-		"__")
-	filename = filename + "." + cdIsoExtension
-
 	medium := medium.MediumBase{}
+
+	filename := medium.DevicePathnameToPublicFilename(path, cdIsoExtension)
 
 	medium.SetDriver(cdmd)
 	medium.SetDevicePathname(path)

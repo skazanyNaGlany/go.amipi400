@@ -39,6 +39,7 @@ type Medium interface {
 	CallPreWriteCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64)
 	CallPostReadCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64)
 	CallPostWriteCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64)
+	DevicePathnameToPublicFilename(devicePathname string, extension string) string
 	Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc int)
 	Read(path string, buff []byte, ofst int64, fh uint64) (n int)
 	Write(path string, buff []byte, ofst int64, fh uint64) int
