@@ -18,6 +18,8 @@ const AppVersion = "0.1"
 const systemInternalSdCardName = "mmcblk0"
 const fileSystemMount = "/tmp/amiga_disk_devices"
 const floppyReadMuteSecs = 4
+const floppyWriteMuteSecs = 4
+const floppyWriteBlinkPowerSecs = 4
 
 var goUtils components.GoUtils
 var blockDevices components.BlockDevices
@@ -25,6 +27,7 @@ var fileSystem components.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var volumeControl components.VolumeControl
+var ledControl components.LEDControl
 
 func isInternalMedium(name string) bool {
 	return strings.HasPrefix(name, systemInternalSdCardName)
@@ -177,12 +180,10 @@ func detachedBlockDevice(
 	}
 }
 
-func preReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
-	// do not put too much logic here, since it will slow down MediumBase.Read
-	// or FloppyMediumDriver.Read, same for callv=backs related for Write
-	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+func onFloppyRead(_medium interfaces.Medium) {
+	floppyMedium, isFloppy := _medium.(*medium.FloppyMedium)
 
-	if castOk {
+	if isFloppy {
 		if !floppyMedium.IsFullyCached() {
 			// reading from non-cached floppy
 			volumeControl.MuteForSecs(floppyReadMuteSecs)
@@ -190,13 +191,36 @@ func preReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst i
 	}
 }
 
+func onFloppyWrite(_medium interfaces.Medium) {
+	_, isFloppy := _medium.(*medium.FloppyMedium)
+
+	if isFloppy {
+		volumeControl.MuteForSecs(floppyWriteMuteSecs)
+	}
+}
+
+func onMediumWrite(_medium interfaces.Medium) {
+	ledControl.BlinkPowerLEDSecs(floppyWriteBlinkPowerSecs)
+}
+
+func preReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+	// do not put too much logic here, since it will slow down MediumBase.Read
+	// or FloppyMediumDriver.Read, same for callv=backs related for Write
+	onFloppyRead(_medium)
+}
+
 func postReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+	onFloppyRead(_medium)
 }
 
-func preWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+func preWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+	onFloppyWrite(_medium)
+	onMediumWrite(_medium)
 }
 
-func postWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+func postWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+	onFloppyWrite(_medium)
+	onMediumWrite(_medium)
 }
 
 func createFsDir() {
@@ -287,13 +311,16 @@ func main() {
 	fileSystem.Start()
 	blockDevices.Start()
 	volumeControl.Start()
+	ledControl.Start()
 
 	defer fileSystem.Stop()
 	defer blockDevices.Stop()
 	defer volumeControl.Stop()
+	defer ledControl.Stop()
 
 	runnersBlocker.AddRunner(&blockDevices)
 	runnersBlocker.AddRunner(&fileSystem)
 	runnersBlocker.AddRunner(&volumeControl)
+	runnersBlocker.AddRunner(&ledControl)
 	runnersBlocker.BlockUntilRunning()
 }
