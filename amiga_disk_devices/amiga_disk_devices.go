@@ -9,7 +9,6 @@ import (
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/drivers"
-	"github.com/skazanyNaGlany/go.amipi400/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
 
@@ -176,75 +175,23 @@ func detachedBlockDevice(
 }
 
 func preReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
-	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+	// do not put too much logic here, since it will slow down MediumBase.Read
+	// or FloppyMediumDriver.Read
+	// floppyMedium, castOk := _medium.(*medium.FloppyMedium)
 
-	if castOk {
-		log.Println(
-			"preReadCallback floppyMedium",
-			path,
-			len(buff),
-			ofst,
-			fh,
-			floppyMedium.IsFullyCached(),
-			floppyMedium.IsCachingNow())
-
-		return
-	}
-
-	log.Println(
-		"preReadCallback ",
-		path,
-		len(buff),
-		ofst,
-		fh)
+	// if castOk {
+	// 	floppyMedium.IsFullyCached()
+	// 	floppyMedium.IsCachingNow()
+	// }
 }
 
 func postReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
-	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
-
-	if castOk {
-		log.Println(
-			"postReadCallback floppyMedium",
-			path,
-			len(buff),
-			ofst,
-			fh,
-			n,
-			opTimeMs,
-			floppyMedium.IsFullyCached(),
-			floppyMedium.IsCachingNow())
-
-		return
-	}
-
-	log.Println(
-		"postReadCallback",
-		path,
-		len(buff),
-		ofst,
-		fh,
-		n,
-		opTimeMs)
 }
 
 func preWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
-	log.Println(
-		"preWriteCallback ",
-		path,
-		len(buff),
-		ofst,
-		fh)
 }
 
 func postWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
-	log.Println(
-		"postWriteCallback",
-		path,
-		len(buff),
-		ofst,
-		fh,
-		n,
-		opTimeMs)
 }
 
 func createFsDir() {
