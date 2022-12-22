@@ -2,7 +2,6 @@ package drivers
 
 import (
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
