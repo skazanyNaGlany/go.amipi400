@@ -9,6 +9,7 @@ import (
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/drivers"
+	"github.com/skazanyNaGlany/go.amipi400/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
 
@@ -16,12 +17,14 @@ const AppUnixname = "amiga_disk_devices"
 const AppVersion = "0.1"
 const systemInternalSdCardName = "mmcblk0"
 const fileSystemMount = "/tmp/amiga_disk_devices"
+const floppyReadMuteSecs = 4
 
 var goUtils components.GoUtils
 var blockDevices components.BlockDevices
 var fileSystem components.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
 var driveDevicesDiscovery components.DriveDevicesDiscovery
+var volumeControl components.VolumeControl
 
 func isInternalMedium(name string) bool {
 	return strings.HasPrefix(name, systemInternalSdCardName)
@@ -176,13 +179,15 @@ func detachedBlockDevice(
 
 func preReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
 	// do not put too much logic here, since it will slow down MediumBase.Read
-	// or FloppyMediumDriver.Read
-	// floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+	// or FloppyMediumDriver.Read, same for callv=backs related for Write
+	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
 
-	// if castOk {
-	// 	floppyMedium.IsFullyCached()
-	// 	floppyMedium.IsCachingNow()
-	// }
+	if castOk {
+		if !floppyMedium.IsFullyCached() {
+			// reading from non-cached floppy
+			volumeControl.MuteForSecs(floppyReadMuteSecs)
+		}
+	}
 }
 
 func postReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
@@ -281,11 +286,14 @@ func main() {
 
 	fileSystem.Start()
 	blockDevices.Start()
+	volumeControl.Start()
 
 	defer fileSystem.Stop()
 	defer blockDevices.Stop()
+	defer volumeControl.Stop()
 
 	runnersBlocker.AddRunner(&blockDevices)
 	runnersBlocker.AddRunner(&fileSystem)
+	runnersBlocker.AddRunner(&volumeControl)
 	runnersBlocker.BlockUntilRunning()
 }
