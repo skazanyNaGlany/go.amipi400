@@ -31,6 +31,14 @@ type Medium interface {
 	GetMutex() *sync.Mutex
 	GetSize() int64
 	SetSize(size int64)
+	AddPreReadCallback(preReadCallback PreReadCallback)
+	AddPostReadCallback(postReadCallback PostReadCallback)
+	AddPreWriteCallback(preWriteCallback PreWriteCallback)
+	AddPostWriteCallback(postWriteCallback PostWriteCallback)
+	CallPreReadCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64)
+	CallPreWriteCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64)
+	CallPostReadCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64)
+	CallPostWriteCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64)
 	Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc int)
 	Read(path string, buff []byte, ofst int64, fh uint64) (n int)
 	Write(path string, buff []byte, ofst int64, fh uint64) int

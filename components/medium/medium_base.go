@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
@@ -11,18 +12,22 @@ import (
 
 // Implements Medium
 type MediumBase struct {
-	devicePathname   string
-	publicPathname   string
-	publicName       string
-	driver           interfaces.MediumDriver
-	readable         bool
-	writable         bool
-	creationTime     int64
-	accessTime       int64
-	modificationTime int64
-	handle           *os.File
-	mutex            sync.Mutex
-	size             int64
+	devicePathname     string
+	publicPathname     string
+	publicName         string
+	driver             interfaces.MediumDriver
+	readable           bool
+	writable           bool
+	creationTime       int64
+	accessTime         int64
+	modificationTime   int64
+	handle             *os.File
+	mutex              sync.Mutex
+	size               int64
+	preReadCallbacks   []interfaces.PreReadCallback
+	postReadCallbacks  []interfaces.PostReadCallback
+	preWriteCallbacks  []interfaces.PreWriteCallback
+	postWriteCallbacks []interfaces.PostWriteCallback
 }
 
 func (mb *MediumBase) SetCreateTime(creationTime int64) {
@@ -99,11 +104,27 @@ func (mb *MediumBase) Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc i
 }
 
 func (mb *MediumBase) Read(path string, buff []byte, ofst int64, fh uint64) (n int) {
-	return mb.driver.Read(mb, path, buff, ofst, fh)
+	mb.CallPreReadCallbacks(mb, path, buff, ofst, fh)
+
+	startTime := time.Now().UnixMilli()
+	result := mb.driver.Read(mb, path, buff, ofst, fh)
+	totalTime := time.Now().UnixMilli() - startTime
+
+	mb.CallPostReadCallbacks(mb, path, buff, ofst, fh, result, totalTime)
+
+	return result
 }
 
 func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) int {
-	return mb.driver.Write(mb, path, buff, ofst, fh)
+	mb.CallPreWriteCallbacks(mb, path, buff, ofst, fh)
+
+	startTime := time.Now().UnixMilli()
+	result := mb.driver.Write(mb, path, buff, ofst, fh)
+	totalTime := time.Now().UnixMilli() - startTime
+
+	mb.CallPostWriteCallbacks(mb, path, buff, ofst, fh, result, totalTime)
+
+	return result
 }
 
 func (mb *MediumBase) Close() error {
@@ -128,4 +149,44 @@ func (mb *MediumBase) GetSize() int64 {
 
 func (mb *MediumBase) SetSize(size int64) {
 	mb.size = size
+}
+
+func (mb *MediumBase) AddPreReadCallback(preReadCallback interfaces.PreReadCallback) {
+	mb.preReadCallbacks = append(mb.preReadCallbacks, preReadCallback)
+}
+
+func (mb *MediumBase) AddPostReadCallback(postReadCallback interfaces.PostReadCallback) {
+	mb.postReadCallbacks = append(mb.postReadCallbacks, postReadCallback)
+}
+
+func (mb *MediumBase) AddPreWriteCallback(preWriteCallback interfaces.PreWriteCallback) {
+	mb.preWriteCallbacks = append(mb.preWriteCallbacks, preWriteCallback)
+}
+
+func (mb *MediumBase) AddPostWriteCallback(postWriteCallback interfaces.PostWriteCallback) {
+	mb.postWriteCallbacks = append(mb.postWriteCallbacks, postWriteCallback)
+}
+
+func (mb *MediumBase) CallPreReadCallbacks(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+	for _, callback := range mb.preReadCallbacks {
+		callback(_medium, path, buff, ofst, fh)
+	}
+}
+
+func (mb *MediumBase) CallPreWriteCallbacks(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+	for _, callback := range mb.preWriteCallbacks {
+		callback(_medium, path, buff, ofst, fh)
+	}
+}
+
+func (mb *MediumBase) CallPostReadCallbacks(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+	for _, callback := range mb.postReadCallbacks {
+		callback(_medium, path, buff, ofst, fh, n, opTimeMs)
+	}
+}
+
+func (mb *MediumBase) CallPostWriteCallbacks(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+	for _, callback := range mb.postWriteCallbacks {
+		callback(_medium, path, buff, ofst, fh, n, opTimeMs)
+	}
 }

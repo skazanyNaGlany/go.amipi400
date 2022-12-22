@@ -9,6 +9,7 @@ import (
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/drivers"
+	"github.com/skazanyNaGlany/go.amipi400/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
 
@@ -148,6 +149,11 @@ func attachedBlockDevice(
 
 	log.Printf("Medium %v will be handled by %T driver (as %v)\n", path, medium.GetDriver(), medium.GetPublicPathname())
 
+	medium.AddPreReadCallback(preReadCallback)
+	medium.AddPostReadCallback(postReadCallback)
+	medium.AddPreWriteCallback(preWriteCallback)
+	medium.AddPostWriteCallback(postWriteCallback)
+
 	fileSystem.AddMedium(medium)
 }
 
@@ -169,7 +175,22 @@ func detachedBlockDevice(
 	}
 }
 
-func preReadCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+func preReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+
+	if castOk {
+		log.Println(
+			"preReadCallback floppyMedium",
+			path,
+			len(buff),
+			ofst,
+			fh,
+			floppyMedium.IsFullyCached(),
+			floppyMedium.IsCachingNow())
+
+		return
+	}
+
 	log.Println(
 		"preReadCallback ",
 		path,
@@ -178,7 +199,22 @@ func preReadCallback(medium interfaces.Medium, path string, buff []byte, ofst in
 		fh)
 }
 
-func postReadCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTime int64) {
+func postReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+
+	if castOk {
+		log.Println(
+			"postReadCallback floppyMedium",
+			path,
+			len(buff),
+			ofst,
+			fh,
+			floppyMedium.IsFullyCached(),
+			floppyMedium.IsCachingNow())
+
+		return
+	}
+
 	log.Println(
 		"postReadCallback",
 		path,
@@ -186,7 +222,7 @@ func postReadCallback(medium interfaces.Medium, path string, buff []byte, ofst i
 		ofst,
 		fh,
 		n,
-		opTime)
+		opTimeMs)
 }
 
 func preWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
@@ -198,7 +234,7 @@ func preWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst i
 		fh)
 }
 
-func postWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTime int64) {
+func postWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
 	log.Println(
 		"postWriteCallback",
 		path,
@@ -206,7 +242,7 @@ func postWriteCallback(medium interfaces.Medium, path string, buff []byte, ofst 
 		ofst,
 		fh,
 		n,
-		opTime)
+		opTimeMs)
 }
 
 func createFsDir() {
@@ -286,10 +322,6 @@ func main() {
 
 	createFsDir()
 	fileSystem.SetMountDir(fileSystemMount)
-	fileSystem.AddPreReadCallback(preReadCallback)
-	fileSystem.AddPostReadCallback(postReadCallback)
-	fileSystem.AddPreWriteCallback(preWriteCallback)
-	fileSystem.AddPostWriteCallback(postWriteCallback)
 
 	discoverDriveDevices()
 	printFloppyDevices()

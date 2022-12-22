@@ -57,26 +57,26 @@ func (fmd *FloppyMediumDriver) Probe(
 		"__")
 	filename = filename + "." + floppyAdfExtension
 
-	medium := medium.FloppyMedium{}
+	_medium := medium.FloppyMedium{}
 
-	medium.SetDriver(fmd)
-	medium.SetDevicePathname(path)
-	medium.SetPublicPathname(
+	_medium.SetDriver(fmd)
+	_medium.SetDevicePathname(path)
+	_medium.SetPublicPathname(
 		filepath.Join(basePath, filename),
 	)
-	medium.SetSize(floppyAdfSize)
+	_medium.SetSize(floppyAdfSize)
 
 	// in Linux all devices are readable by default
-	medium.SetReadable(true)
-	medium.SetWritable(!readOnly)
+	_medium.SetReadable(true)
+	_medium.SetWritable(!readOnly)
 
 	now := time.Now().Unix()
 
-	medium.SetCreateTime(now)
-	medium.SetAccessTime(now)
-	medium.SetModificationTime(now)
+	_medium.SetCreateTime(now)
+	_medium.SetAccessTime(now)
+	_medium.SetModificationTime(now)
 
-	return &medium, nil
+	return &_medium, nil
 }
 
 func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (n int) {
@@ -102,7 +102,7 @@ func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff
 		return -fuse.EIO
 	}
 
-	data, n_int64, err := fmd.read(floppyMedium, ofst, toReadSize)
+	data, n_int64, err := fmd.read(floppyMedium, path, ofst, toReadSize, fh)
 
 	if err != nil {
 		return -fuse.EIO
@@ -147,17 +147,29 @@ func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buf
 	}
 
 	floppyMedium.SetFullyCached(false)
+	floppyMedium.CallPreWriteCallbacks(floppyMedium, path, buff, ofst, fh)
 
+	startTime := time.Now().UnixMilli()
 	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
+	totalTime := time.Now().UnixMilli() - startTime
 
 	if err != nil {
+		floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, -fuse.EIO, totalTime)
+
 		return -fuse.EIO
 	}
+
+	floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, n, totalTime)
 
 	return n
 }
 
-func (mdb *FloppyMediumDriver) read(medium *medium.FloppyMedium, offset int64, size int64) ([]byte, int64, error) {
+func (mdb *FloppyMediumDriver) read(
+	medium *medium.FloppyMedium,
+	path string,
+	offset int64,
+	size int64,
+	fh uint64) ([]byte, int64, error) {
 	// "rr" stand for "read_result"
 	_floppyAdfSize := int64(floppyAdfSize)
 	_floppySectorReadTimeMs := int64(floppySectorReadTimeMs)
@@ -167,7 +179,7 @@ func (mdb *FloppyMediumDriver) read(medium *medium.FloppyMedium, offset int64, s
 		medium.SetLastCachingTime(currentTime)
 	}
 
-	rr_all_data, rr_total_read_time_ms, _, rr_err := mdb.partialRead(medium, offset, size, nil, nil)
+	rr_all_data, rr_total_read_time_ms, _, rr_err := mdb.partialRead(medium, path, offset, size, nil, nil, fh)
 
 	if rr_total_read_time_ms > floppySectorReadTimeMs {
 		medium.SetFullyCached(false)
@@ -185,10 +197,12 @@ func (mdb *FloppyMediumDriver) read(medium *medium.FloppyMedium, offset int64, s
 
 		_, rr2_total_read_time_ms, _, _ := mdb.partialRead(
 			medium,
+			path,
 			0,
 			floppyDeviceSectorSize,
 			&_floppyAdfSize,
-			&_floppySectorReadTimeMs)
+			&_floppySectorReadTimeMs,
+			fh)
 
 		medium.SetCachingNow(false)
 		medium.SetLastCachingTime(currentTime)
@@ -203,10 +217,12 @@ func (mdb *FloppyMediumDriver) read(medium *medium.FloppyMedium, offset int64, s
 
 func (mdb *FloppyMediumDriver) partialRead(
 	medium *medium.FloppyMedium,
+	path string,
 	offset int64,
 	size int64,
 	max_read_size *int64,
-	min_total_read_time_ms *int64) ([]byte, int64, int64, error) {
+	min_total_read_time_ms *int64,
+	fh uint64) ([]byte, int64, int64, error) {
 	all_data := make([]byte, 0)
 	total_read_time_ms := int64(0)
 	count_real_read_sectors := int64(0)
@@ -224,6 +240,13 @@ func (mdb *FloppyMediumDriver) partialRead(
 	for {
 		start_time := time.Now().UnixMilli()
 
+		medium.CallPreReadCallbacks(
+			medium,
+			path,
+			all_data,
+			dynamic_offset,
+			fh)
+
 		data, len_data, err := components.FileUtilsInstance.FileReadBytes(
 			"",
 			dynamic_offset,
@@ -232,15 +255,19 @@ func (mdb *FloppyMediumDriver) partialRead(
 			0,
 			handle)
 
+		read_time_ms = time.Now().UnixMilli() - start_time
+		total_read_time_ms += read_time_ms
+
 		if err != nil {
+			medium.CallPostReadCallbacks(medium, path, data, dynamic_offset, fh, -fuse.EIO, read_time_ms)
+
 			return data, 0, 0, err
 		}
 
 		dynamic_offset += int64(len_data)
 		total_len_data += int64(len_data)
 
-		read_time_ms = time.Now().UnixMilli() - start_time
-		total_read_time_ms += read_time_ms
+		medium.CallPostReadCallbacks(medium, path, data, dynamic_offset, fh, len_data, read_time_ms)
 
 		if read_time_ms > floppySectorReadTimeMs {
 			count_real_read_sectors += 1
