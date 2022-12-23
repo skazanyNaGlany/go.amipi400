@@ -28,6 +28,7 @@ var runnersBlocker components.RunnersBlocker
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var volumeControl components.VolumeControl
 var ledControl components.LEDControl
+var asyncFileOps components.AsyncFileOps
 
 func isInternalMedium(name string) bool {
 	return strings.HasPrefix(name, systemInternalSdCardName)
@@ -180,13 +181,23 @@ func detachedBlockDevice(
 	}
 }
 
-func onFloppyRead(_medium interfaces.Medium) {
+func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 	floppyMedium, isFloppy := _medium.(*medium.FloppyMedium)
 
 	if isFloppy {
 		if !floppyMedium.IsFullyCached() {
-			// reading from non-cached floppy
+			// reading from non-cached floppy medium
 			volumeControl.MuteForSecs(floppyReadMuteSecs)
+		} else {
+			// reading from cached floppy medium
+			asyncFileOps.FileReadBytesDirect(
+				floppyMedium.GetDevicePathname(),
+				ofst,
+				0,
+				0,
+				nil,
+				4,
+				nil)
 		}
 	}
 }
@@ -205,12 +216,12 @@ func onMediumWrite(_medium interfaces.Medium) {
 
 func preReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
 	// do not put too much logic here, since it will slow down MediumBase.Read
-	// or FloppyMediumDriver.Read, same for callv=backs related for Write
-	onFloppyRead(_medium)
+	// or FloppyMediumDriver.Read, same for callbacks related for Write
+	onFloppyRead(_medium, ofst)
 }
 
 func postReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
-	onFloppyRead(_medium)
+	onFloppyRead(_medium, ofst)
 }
 
 func preWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
@@ -312,15 +323,18 @@ func main() {
 	blockDevices.Start()
 	volumeControl.Start()
 	ledControl.Start()
+	asyncFileOps.Start()
 
 	defer fileSystem.Stop()
 	defer blockDevices.Stop()
 	defer volumeControl.Stop()
 	defer ledControl.Stop()
+	defer asyncFileOps.Stop()
 
 	runnersBlocker.AddRunner(&blockDevices)
 	runnersBlocker.AddRunner(&fileSystem)
 	runnersBlocker.AddRunner(&volumeControl)
 	runnersBlocker.AddRunner(&ledControl)
+	runnersBlocker.AddRunner(&asyncFileOps)
 	runnersBlocker.BlockUntilRunning()
 }
