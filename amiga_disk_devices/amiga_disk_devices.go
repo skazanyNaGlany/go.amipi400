@@ -16,6 +16,7 @@ import (
 const AppUnixname = "amiga_disk_devices"
 const AppVersion = "0.1"
 const systemInternalSdCardName = "mmcblk0"
+const poolDeviceName = "loop"
 const fileSystemMount = "/tmp/amiga_disk_devices"
 const floppyReadMuteSecs = 4
 const floppyWriteMuteSecs = 4
@@ -32,6 +33,10 @@ var asyncFileOps components.AsyncFileOps
 
 func isInternalMedium(name string) bool {
 	return strings.HasPrefix(name, systemInternalSdCardName)
+}
+
+func isPoolMedium(name string) bool {
+	return strings.HasPrefix(name, poolDeviceName)
 }
 
 func printBlockDevice(
@@ -137,6 +142,10 @@ func attachedBlockDevice(
 		return
 	}
 
+	if isPoolMedium(name) {
+		return
+	}
+
 	log.Println("Found new block device", path)
 
 	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
@@ -169,6 +178,10 @@ func detachedBlockDevice(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	if isInternalMedium(name) {
+		return
+	}
+
+	if isPoolMedium(name) {
 		return
 	}
 
