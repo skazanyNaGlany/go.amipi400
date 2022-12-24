@@ -33,6 +33,7 @@ var driveDevicesDiscovery components.DriveDevicesDiscovery
 var volumeControl components.VolumeControl
 var ledControl components.LEDControl
 var asyncFileOps components.AsyncFileOps
+var keyboardControl components.KeyboardControl
 
 func isInternalMedium(name string) bool {
 	return strings.HasPrefix(name, systemInternalSdCardName)
@@ -349,6 +350,8 @@ func main() {
 	ledControl.SetDebugMode(runnersDebugMode)
 	asyncFileOps.SetVerboseMode(runnersVerboseMode)
 	asyncFileOps.SetDebugMode(runnersDebugMode)
+	keyboardControl.SetVerboseMode(runnersVerboseMode)
+	keyboardControl.SetDebugMode(runnersDebugMode)
 
 	blockDevices.AddAttachedHandler(attachedBlockDevice)
 	blockDevices.AddDetachedHandler(detachedBlockDevice)
@@ -358,6 +361,7 @@ func main() {
 	volumeControl.Start(&volumeControl)
 	ledControl.Start(&ledControl)
 	asyncFileOps.Start(&asyncFileOps)
+	keyboardControl.Start(&keyboardControl)
 
 	defer fileSystem.Stop(&fileSystem)
 	defer blockDevices.Stop(&blockDevices)
@@ -371,5 +375,6 @@ func main() {
 	runnersBlocker.AddRunner(&volumeControl)
 	runnersBlocker.AddRunner(&ledControl)
 	runnersBlocker.AddRunner(&asyncFileOps)
+	runnersBlocker.AddRunner(&keyboardControl)
 	runnersBlocker.BlockUntilRunning()
 }
