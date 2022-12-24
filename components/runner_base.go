@@ -24,9 +24,9 @@ func (rb *RunnerBase) Start(_runner interfaces.Runner) error {
 	return nil
 }
 
-func (rb *RunnerBase) Stop() error {
+func (rb *RunnerBase) Stop(_runner interfaces.Runner) error {
 	if rb.verboseMode {
-		log.Printf("Stopping %T %p\n", rb, rb)
+		log.Printf("Stopping %T %p\n", _runner, &_runner)
 	}
 
 	rb.running = false

@@ -359,11 +359,12 @@ func main() {
 	ledControl.Start(&ledControl)
 	asyncFileOps.Start(&asyncFileOps)
 
-	defer fileSystem.Stop()
-	defer blockDevices.Stop()
-	defer volumeControl.Stop()
-	defer ledControl.Stop()
-	defer asyncFileOps.Stop()
+	defer fileSystem.Stop(&fileSystem)
+	defer blockDevices.Stop(&blockDevices)
+	defer volumeControl.Stop(&volumeControl)
+	defer ledControl.Stop(&ledControl)
+	defer asyncFileOps.Stop(&asyncFileOps)
+	defer keyboardControl.Stop(&keyboardControl)
 
 	runnersBlocker.AddRunner(&blockDevices)
 	runnersBlocker.AddRunner(&fileSystem)
