@@ -22,9 +22,11 @@ func (hdmd *HardDiskMediumDriver) Probe(
 	basePath, name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
-	readOnly bool) (interfaces.Medium, error) {
-	if hdmd.isKnownMedium(name, mountpoint, label, path, fsType, ptType) {
-		return nil, nil
+	readOnly, force bool) (interfaces.Medium, error) {
+	if !force {
+		if hdmd.isKnownMedium(name, mountpoint, label, path, fsType, ptType) {
+			return nil, nil
+		}
 	}
 
 	if size < hdDeviceMinSize {

@@ -29,7 +29,7 @@ func (fmd *FloppyMediumDriver) Probe(
 	basePath, name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
-	readOnly bool) (interfaces.Medium, error) {
+	readOnly, force bool) (interfaces.Medium, error) {
 	// ignore medium which has MBR, or other known header
 	// or known file-system or partition type, or just a label
 	// detected by the system
@@ -38,8 +38,10 @@ func (fmd *FloppyMediumDriver) Probe(
 	// header, but it is valid ADF file for the emulator
 	// so we can use only these mediums which are unknown to the
 	// system
-	if fmd.isKnownMedium(name, mountpoint, label, path, fsType, ptType) {
-		return nil, nil
+	if !force {
+		if fmd.isKnownMedium(name, mountpoint, label, path, fsType, ptType) {
+			return nil, nil
+		}
 	}
 
 	if size != floppyDeviceSize {

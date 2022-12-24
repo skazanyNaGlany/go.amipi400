@@ -23,6 +23,7 @@ const floppyWriteMuteSecs = 4
 const floppyWriteBlinkPowerSecs = 4
 const runnersVerboseMode = true
 const runnersDebugMode = true
+const forceInsertKey = "L_SHIFT"
 
 var goUtils components.GoUtils
 var unixUtils components.UnixUtils
@@ -65,6 +66,10 @@ func ProbeMediumForDriver(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) (interfaces.Medium, error) {
 
+	forceInsert := keyboardControl.IsKeyPressed(forceInsertKey)
+
+	keyboardControl.ClearPressedKeys()
+
 	// try FloppyMediumDriver
 	floppyDriver := drivers.FloppyMediumDriver{}
 
@@ -78,7 +83,8 @@ func ProbeMediumForDriver(
 		path,
 		fsType,
 		ptType,
-		readOnly)
+		readOnly,
+		forceInsert)
 
 	if err != nil {
 		return nil, err
@@ -101,7 +107,8 @@ func ProbeMediumForDriver(
 		path,
 		fsType,
 		ptType,
-		readOnly)
+		readOnly,
+		forceInsert)
 
 	if err != nil {
 		return nil, err
@@ -124,7 +131,8 @@ func ProbeMediumForDriver(
 		path,
 		fsType,
 		ptType,
-		readOnly)
+		readOnly,
+		forceInsert)
 
 	if err != nil {
 		return nil, err
