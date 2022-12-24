@@ -25,6 +25,7 @@ const runnersVerboseMode = true
 const runnersDebugMode = true
 
 var goUtils components.GoUtils
+var unixUtils components.UnixUtils
 var blockDevices components.BlockDevices
 var fileSystem components.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
@@ -314,8 +315,15 @@ func checkPlatform() {
 	}
 }
 
+func checkForRoot() {
+	if !unixUtils.IsRoot() {
+		log.Fatalln("Must be run as root.")
+	}
+}
+
 func main() {
 	checkPlatform()
+	checkForRoot()
 	exeDir := CwdToExeOrScript()
 	logFilename := DuplicateLog(exeDir)
 
