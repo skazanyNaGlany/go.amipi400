@@ -1,8 +1,6 @@
 package components
 
 import (
-	"errors"
-	"log"
 	"path/filepath"
 
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
@@ -11,14 +9,20 @@ import (
 )
 
 type ADDFileSystem struct {
+	RunnerBase
 	fuse.FileSystemBase
 
-	running  bool
 	mountDir string
 	mediums  []interfaces.Medium
 }
 
 func (addfs *ADDFileSystem) start() {
+	if addfs.mountDir == "" {
+		addfs.running = false
+
+		return
+	}
+
 	options := []string{"-o", "allow_other", "-o", "direct_io"}
 
 	host := fuse.NewFileSystemHost(addfs)
@@ -32,32 +36,6 @@ func (addfs *ADDFileSystem) start() {
 
 func (addfs *ADDFileSystem) SetMountDir(mountDir string) {
 	addfs.mountDir = mountDir
-}
-
-func (addfs *ADDFileSystem) Start() error {
-	if addfs.mountDir == "" {
-		return errors.New("ADDFileSystem.mountDir not set")
-	}
-
-	log.Printf("Starting ADDFileSystem %p\n", addfs)
-
-	addfs.running = true
-
-	go addfs.start()
-
-	return nil
-}
-
-func (addfs *ADDFileSystem) Stop() error {
-	log.Printf("Stopping ADDFileSystem %p\n", addfs)
-
-	addfs.running = false
-
-	return nil
-}
-
-func (addfs *ADDFileSystem) IsRunning() bool {
-	return addfs.running
 }
 
 func (addfs *ADDFileSystem) AddMedium(medium interfaces.Medium) {
@@ -162,4 +140,8 @@ func (addfs *ADDFileSystem) Write(path string, buff []byte, ofst int64, fh uint6
 	}
 
 	return -fuse.ENOSYS
+}
+
+func (addfs *ADDFileSystem) Run() {
+	addfs.start()
 }

@@ -8,7 +8,7 @@ import (
 )
 
 type VolumeControl struct {
-	running     bool
+	RunnerBase
 	muteForSecs int
 }
 
@@ -28,7 +28,9 @@ func (vc *VolumeControl) loop() {
 
 func (vc *VolumeControl) mute() {
 	if err := volume.Mute(); err != nil {
-		log.Println(err)
+		if vc.debugMode {
+			log.Println(err)
+		}
 
 		vc.muteForSecs = 0
 
@@ -46,7 +48,9 @@ func (vc *VolumeControl) mute() {
 	}
 
 	if err := volume.Unmute(); err != nil {
-		log.Println(err)
+		if vc.debugMode {
+			log.Println(err)
+		}
 	}
 }
 
@@ -54,24 +58,6 @@ func (vc *VolumeControl) MuteForSecs(seconds int) {
 	vc.muteForSecs = seconds
 }
 
-func (vc *VolumeControl) Start() error {
-	log.Printf("Starting VolumeControl %p\n", vc)
-
-	vc.running = true
-
-	go vc.loop()
-
-	return nil
-}
-
-func (vc *VolumeControl) Stop() error {
-	log.Printf("Stopping VolumeControl %p\n", vc)
-
-	vc.running = false
-
-	return nil
-}
-
-func (vc *VolumeControl) IsRunning() bool {
-	return vc.running
+func (vc *VolumeControl) Run() {
+	vc.loop()
 }

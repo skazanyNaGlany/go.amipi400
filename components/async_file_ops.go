@@ -3,7 +3,6 @@ package components
 import (
 	"io"
 	"io/fs"
-	"log"
 	"os"
 	"time"
 
@@ -13,7 +12,7 @@ import (
 )
 
 type AsyncFileOps struct {
-	running    bool
+	RunnerBase
 	operations []map[string]any
 }
 
@@ -141,24 +140,6 @@ func (afo *AsyncFileOps) getCountOpsForName(name string) int {
 	return count
 }
 
-func (afo *AsyncFileOps) Start() error {
-	log.Printf("Starting AsyncFileOps %p\n", afo)
-
-	afo.running = true
-
-	go afo.loop()
-
-	return nil
-}
-
-func (afo *AsyncFileOps) Stop() error {
-	log.Printf("Stopping AsyncFileOps %p\n", afo)
-
-	afo.running = false
-
-	return nil
-}
-
-func (afo *AsyncFileOps) IsRunning() bool {
-	return afo.running
+func (afo *AsyncFileOps) Run() {
+	afo.loop()
 }

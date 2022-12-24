@@ -1,7 +1,6 @@
 package components
 
 import (
-	"log"
 	"os"
 	"strconv"
 	"time"
@@ -10,39 +9,39 @@ import (
 const led0brightnessPathname = "/sys/class/leds/led0/brightness"
 
 type LEDControl struct {
-	running           bool
+	RunnerBase
 	blinkPowerLedSecs int
 }
 
-func (vc *LEDControl) loop() {
-	for vc.running {
-		if vc.blinkPowerLedSecs <= 0 {
+func (lc *LEDControl) loop() {
+	for lc.running {
+		if lc.blinkPowerLedSecs <= 0 {
 			time.Sleep(time.Millisecond * 10)
 		}
 
-		if vc.blinkPowerLedSecs > 0 {
-			vc.blinkPowerLed()
+		if lc.blinkPowerLedSecs > 0 {
+			lc.blinkPowerLed()
 		}
 	}
 
-	vc.running = false
+	lc.running = false
 }
 
-func (vc *LEDControl) blinkPowerLed() {
-	for vc.blinkPowerLedSecs > 0 {
-		vc.disablePowerLed()
+func (lc *LEDControl) blinkPowerLed() {
+	for lc.blinkPowerLedSecs > 0 {
+		lc.disablePowerLed()
 
 		time.Sleep(time.Second * 1)
 
-		vc.enablePowerLed()
+		lc.enablePowerLed()
 
 		time.Sleep(time.Second * 1)
 
-		vc.blinkPowerLedSecs--
+		lc.blinkPowerLedSecs--
 	}
 }
 
-func (vc *LEDControl) setPowerLedBrightness(brightness int) {
+func (lc *LEDControl) setPowerLedBrightness(brightness int) {
 	brightnessStr := strconv.FormatInt(int64(brightness), 10)
 
 	FileUtilsInstance.FileWriteBytes(
@@ -54,36 +53,18 @@ func (vc *LEDControl) setPowerLedBrightness(brightness int) {
 		nil)
 }
 
-func (vc *LEDControl) disablePowerLed() {
-	vc.setPowerLedBrightness(0)
+func (lc *LEDControl) disablePowerLed() {
+	lc.setPowerLedBrightness(0)
 }
 
-func (vc *LEDControl) enablePowerLed() {
-	vc.setPowerLedBrightness(100)
+func (lc *LEDControl) enablePowerLed() {
+	lc.setPowerLedBrightness(100)
 }
 
-func (vc *LEDControl) BlinkPowerLEDSecs(seconds int) {
-	vc.blinkPowerLedSecs = seconds
+func (lc *LEDControl) BlinkPowerLEDSecs(seconds int) {
+	lc.blinkPowerLedSecs = seconds
 }
 
-func (vc *LEDControl) Start() error {
-	log.Printf("Starting LEDControl %p\n", vc)
-
-	vc.running = true
-
-	go vc.loop()
-
-	return nil
-}
-
-func (vc *LEDControl) Stop() error {
-	log.Printf("Stopping LEDControl %p\n", vc)
-
-	vc.running = false
-
-	return nil
-}
-
-func (vc *LEDControl) IsRunning() bool {
-	return vc.running
+func (lc *LEDControl) Run() {
+	lc.loop()
 }

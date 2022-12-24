@@ -21,6 +21,8 @@ const fileSystemMount = "/tmp/amiga_disk_devices"
 const floppyReadMuteSecs = 4
 const floppyWriteMuteSecs = 4
 const floppyWriteBlinkPowerSecs = 4
+const runnersVerboseMode = true
+const runnersDebugMode = true
 
 var goUtils components.GoUtils
 var blockDevices components.BlockDevices
@@ -329,14 +331,25 @@ func main() {
 	printFloppyDevices()
 	printCDROMDevices()
 
+	blockDevices.SetVerboseMode(runnersVerboseMode)
+	blockDevices.SetDebugMode(runnersDebugMode)
+	fileSystem.SetVerboseMode(runnersVerboseMode)
+	fileSystem.SetDebugMode(runnersDebugMode)
+	volumeControl.SetVerboseMode(runnersVerboseMode)
+	volumeControl.SetDebugMode(runnersDebugMode)
+	ledControl.SetVerboseMode(runnersVerboseMode)
+	ledControl.SetDebugMode(runnersDebugMode)
+	asyncFileOps.SetVerboseMode(runnersVerboseMode)
+	asyncFileOps.SetDebugMode(runnersDebugMode)
+
 	blockDevices.AddAttachedHandler(attachedBlockDevice)
 	blockDevices.AddDetachedHandler(detachedBlockDevice)
 
-	fileSystem.Start()
-	blockDevices.Start()
-	volumeControl.Start()
-	ledControl.Start()
-	asyncFileOps.Start()
+	fileSystem.Start(&fileSystem)
+	blockDevices.Start(&blockDevices)
+	volumeControl.Start(&volumeControl)
+	ledControl.Start(&ledControl)
+	asyncFileOps.Start(&asyncFileOps)
 
 	defer fileSystem.Stop()
 	defer blockDevices.Stop()

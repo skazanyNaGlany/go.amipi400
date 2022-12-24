@@ -15,7 +15,7 @@ import (
 var lsblkPattern *regexp.Regexp = regexp.MustCompile(`NAME="(?P<NAME>\w*)" SIZE="(?P<SIZE>\d*)" TYPE="(?P<TYPE>\w*)" MOUNTPOINT="(?P<MOUNTPOINT>.*)" LABEL="(?P<LABEL>.*)" PATH="(?P<PATH>.*)" FSTYPE="(?P<FSTYPE>.*)" PTTYPE="(?P<PTTYPE>.*)" RO="(?P<RO>.*)"`)
 
 type BlockDevices struct {
-	running          bool
+	RunnerBase
 	attachedHandlers []interfaces.AttachedBlockDeviceCallback
 	detachedHandlers []interfaces.DetachedBlockDeviceCallback
 }
@@ -36,21 +36,30 @@ func (bd *BlockDevices) loop() {
 			"-b").CombinedOutput()
 
 		if err != nil {
-			log.Println("lsblk:", err)
+			if bd.debugMode {
+				log.Println("lsblk:", err)
+			}
+
 			break
 		}
 
 		parsed_output, err := bd.parseLsblkOutput(string(output))
 
 		if err != nil {
-			log.Println("lsblk:", err)
+			if bd.debugMode {
+				log.Println("lsblk:", err)
+			}
+
 			break
 		}
 
 		err = bd.notifyHandlers(old_parsed_output, parsed_output)
 
 		if err != nil {
-			log.Println("lsblk:", err)
+			if bd.debugMode {
+				log.Println("lsblk:", err)
+			}
+
 			break
 		}
 
@@ -222,24 +231,6 @@ func (bd *BlockDevices) AddDetachedHandler(handler interfaces.DetachedBlockDevic
 	bd.detachedHandlers = append(bd.detachedHandlers, handler)
 }
 
-func (bd *BlockDevices) Start() error {
-	log.Printf("Starting BlockDevices %p\n", bd)
-
-	bd.running = true
-
-	go bd.loop()
-
-	return nil
-}
-
-func (bd *BlockDevices) Stop() error {
-	log.Printf("Stopping BlockDevices %p\n", bd)
-
-	bd.running = false
-
-	return nil
-}
-
-func (bd *BlockDevices) IsRunning() bool {
-	return bd.running
+func (bd *BlockDevices) Run() {
+	bd.loop()
 }
