@@ -67,7 +67,10 @@ func (afo *AsyncFileOps) executeDirectReadOperation(ioperation map[string]any, h
 			useHandle, err = directio.OpenFile(name, flag, perm)
 
 			if err != nil {
-				callback(name, nil, n, offset, useHandle, err)
+				if callback != nil {
+					callback(name, nil, n, offset, useHandle, err)
+				}
+
 				return
 			}
 
@@ -78,7 +81,10 @@ func (afo *AsyncFileOps) executeDirectReadOperation(ioperation map[string]any, h
 	useHandle = handles[name]
 
 	if _, err = useHandle.Seek(offset, io.SeekStart); err != nil {
-		callback(name, nil, n, offset, useHandle, err)
+		if callback != nil {
+			callback(name, nil, n, offset, useHandle, err)
+		}
+
 		return
 	}
 
@@ -87,11 +93,16 @@ func (afo *AsyncFileOps) executeDirectReadOperation(ioperation map[string]any, h
 	n, err = io.ReadFull(useHandle, block)
 
 	if err != nil {
-		callback(name, block, n, offset, useHandle, err)
+		if callback != nil {
+			callback(name, block, n, offset, useHandle, err)
+		}
+
 		return
 	}
 
-	callback(name, block, n, offset, useHandle, nil)
+	if callback != nil {
+		callback(name, block, n, offset, useHandle, nil)
+	}
 }
 
 func (afo *AsyncFileOps) executeOperation(ioperation map[string]any, handles map[string]*os.File) {
