@@ -7,12 +7,11 @@ import (
 	"time"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
+	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
 	"golang.org/x/sys/unix"
 )
-
-const DEFAULT_READ_AHEAD = 256
 
 // Implements MediumDriver
 type MediumDriverBase struct {
@@ -184,7 +183,7 @@ func (mdb *MediumDriverBase) getMediumHandle(medium interfaces.Medium, readAhead
 		return nil, err
 	}
 
-	_readAhead := DEFAULT_READ_AHEAD
+	_readAhead := consts.DEFAULT_READ_AHEAD
 
 	if len(readAhead) == 1 {
 		_readAhead = readAhead[0]

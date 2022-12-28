@@ -4,9 +4,9 @@ import (
 	"os"
 	"strconv"
 	"time"
-)
 
-const LED0_BRIGHTNESS_PATHNAME = "/sys/class/leds/led0/brightness"
+	"github.com/skazanyNaGlany/go.amipi400/consts"
+)
 
 type LEDControl struct {
 	RunnerBase
@@ -45,7 +45,7 @@ func (lc *LEDControl) setPowerLedBrightness(brightness int) {
 	brightnessStr := strconv.FormatInt(int64(brightness), 10)
 
 	FileUtilsInstance.FileWriteBytes(
-		LED0_BRIGHTNESS_PATHNAME,
+		consts.LED0_BRIGHTNESS_PATHNAME,
 		0,
 		[]byte(brightnessStr),
 		os.O_WRONLY,

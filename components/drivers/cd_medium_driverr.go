@@ -6,12 +6,9 @@ import (
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
+	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
-
-const CD_ISO_EXTENSION = "iso"
-const CD_DEVICE_TYPE = "rom"
-const CD_DEVICE_SECTOR_SIZE = 2048
 
 type CDMediumDriver struct {
 	MediumDriverBase
@@ -29,16 +26,16 @@ func (cdmd *CDMediumDriver) Probe(
 		return nil, nil
 	}
 
-	if _type != CD_DEVICE_TYPE {
+	if _type != consts.CD_DEVICE_TYPE {
 		return nil, nil
 	}
 
 	// last chance, try to read at least 2048 bytes (CD sector size) from the medium
 	// non-inserted medium or audio CDs will report just error
 	// here, or count of the readed bytes will be less than 2048
-	data, n, err := components.FileUtilsInstance.FileReadBytes(path, 0, CD_DEVICE_SECTOR_SIZE, 0, 0, nil)
+	data, n, err := components.FileUtilsInstance.FileReadBytes(path, 0, consts.CD_DEVICE_SECTOR_SIZE, 0, 0, nil)
 
-	if len(data) < CD_DEVICE_SECTOR_SIZE || n < CD_DEVICE_SECTOR_SIZE || err != nil {
+	if len(data) < consts.CD_DEVICE_SECTOR_SIZE || n < consts.CD_DEVICE_SECTOR_SIZE || err != nil {
 		return nil, nil
 	}
 
@@ -46,7 +43,7 @@ func (cdmd *CDMediumDriver) Probe(
 
 	medium := medium.MediumBase{}
 
-	filename := medium.DevicePathnameToPublicFilename(path, CD_ISO_EXTENSION)
+	filename := medium.DevicePathnameToPublicFilename(path, consts.CD_ISO_EXTENSION)
 
 	medium.SetDriver(cdmd)
 	medium.SetDevicePathname(path)
