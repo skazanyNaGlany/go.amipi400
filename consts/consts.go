@@ -1,7 +1,7 @@
 package consts
 
 // global
-const AMIPI400_APP_UNIXNAME = "amipi400"
+const AMIPI400_UNIXNAME = "amipi400"
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"

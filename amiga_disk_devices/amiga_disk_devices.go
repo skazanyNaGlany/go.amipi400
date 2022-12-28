@@ -65,7 +65,7 @@ func ProbeMediumForDriver(
 	// try FloppyMediumDriver
 	floppyDriver := drivers.FloppyMediumDriver{
 		CachedAdfsDirectory:   cachedAdfsDir,
-		CachedAdfsHeaderMagic: strings.ToUpper(consts.AMIPI400_APP_UNIXNAME),
+		CachedAdfsHeaderMagic: strings.ToUpper(consts.AMIPI400_UNIXNAME),
 	}
 
 	floppyDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
