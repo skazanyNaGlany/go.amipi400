@@ -100,32 +100,32 @@ func (mb *MediumBase) GetDriver() interfaces.MediumDriver {
 	return mb.driver
 }
 
-func (mb *MediumBase) Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc int) {
+func (mb *MediumBase) Getattr(path string, stat *fuse.Stat_t, fh uint64) (int, error) {
 	return mb.driver.Getattr(mb, path, stat, fh)
 }
 
-func (mb *MediumBase) Read(path string, buff []byte, ofst int64, fh uint64) (n int) {
+func (mb *MediumBase) Read(path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	mb.CallPreReadCallbacks(mb, path, buff, ofst, fh)
 
 	startTime := time.Now().UnixMilli()
-	result := mb.driver.Read(mb, path, buff, ofst, fh)
+	result, err := mb.driver.Read(mb, path, buff, ofst, fh)
 	totalTime := time.Now().UnixMilli() - startTime
 
 	mb.CallPostReadCallbacks(mb, path, buff, ofst, fh, result, totalTime)
 
-	return result
+	return result, err
 }
 
-func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) int {
+func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	mb.CallPreWriteCallbacks(mb, path, buff, ofst, fh)
 
 	startTime := time.Now().UnixMilli()
-	result := mb.driver.Write(mb, path, buff, ofst, fh)
+	result, err := mb.driver.Write(mb, path, buff, ofst, fh)
 	totalTime := time.Now().UnixMilli() - startTime
 
 	mb.CallPostWriteCallbacks(mb, path, buff, ofst, fh, result, totalTime)
 
-	return result
+	return result, err
 }
 
 func (mb *MediumBase) Close() error {

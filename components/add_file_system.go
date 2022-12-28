@@ -1,6 +1,7 @@
 package components
 
 import (
+	"log"
 	"path/filepath"
 
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
@@ -99,7 +100,23 @@ func (addfs *ADDFileSystem) Getattr(path string, stat *fuse.Stat_t, fh uint64) (
 	}
 
 	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
-		return medium.Getattr(path, stat, fh)
+		result, err := medium.Getattr(path, stat, fh)
+
+		if err != nil {
+			if addfs.debugMode {
+				log.Printf("%v: %v\n", path, err)
+
+				return -fuse.EIO
+			}
+		}
+
+		if result < 0 {
+			log.Printf("%v: %v\n", path, result)
+
+			return result
+		}
+
+		return 0
 	}
 
 	return -fuse.ENOENT
@@ -128,7 +145,23 @@ func (addfs *ADDFileSystem) Readdir(path string,
 
 func (addfs *ADDFileSystem) Read(path string, buff []byte, ofst int64, fh uint64) (n int) {
 	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
-		return medium.Read(path, buff, ofst, fh)
+		n, err := medium.Read(path, buff, ofst, fh)
+
+		if err != nil {
+			if addfs.debugMode {
+				log.Printf("%v: %v\n", path, err)
+
+				return -fuse.EIO
+			}
+		}
+
+		if n < 0 {
+			log.Printf("%v: %v\n", path, n)
+
+			return n
+		}
+
+		return n
 	}
 
 	return -fuse.ENOENT
@@ -136,7 +169,23 @@ func (addfs *ADDFileSystem) Read(path string, buff []byte, ofst int64, fh uint64
 
 func (addfs *ADDFileSystem) Write(path string, buff []byte, ofst int64, fh uint64) int {
 	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
-		return medium.Write(path, buff, ofst, fh)
+		n, err := medium.Write(path, buff, ofst, fh)
+
+		if err != nil {
+			if addfs.debugMode {
+				log.Printf("%v: %v\n", path, err)
+
+				return -fuse.EIO
+			}
+		}
+
+		if n < 0 {
+			log.Printf("%v: %v\n", path, n)
+
+			return n
+		}
+
+		return n
 	}
 
 	return -fuse.ENOSYS

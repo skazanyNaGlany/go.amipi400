@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"errors"
 	"os"
 	"strconv"
 	"time"
@@ -14,9 +15,12 @@ import (
 const defaultReadAhead = 256
 
 // Implements MediumDriver
-type MediumDriverBase struct{}
+type MediumDriverBase struct {
+	verboseMode bool
+	debugMode   bool
+}
 
-func (mdb *MediumDriverBase) Getattr(medium interfaces.Medium, path string, stat *fuse.Stat_t, fh uint64) (errc int) {
+func (mdb *MediumDriverBase) Getattr(medium interfaces.Medium, path string, stat *fuse.Stat_t, fh uint64) (int, error) {
 	// TODO move to MediumDriverBase
 	creationTime := medium.GetCreateTime()
 	accessTime := medium.GetAccessTime()
@@ -38,10 +42,10 @@ func (mdb *MediumDriverBase) Getattr(medium interfaces.Medium, path string, stat
 	stat.Mtim = fuse.Timespec{Sec: modificationTime}
 	stat.Nlink = 1
 
-	return 0
+	return 0, nil
 }
 
-func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (n int) {
+func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	mutex := medium.GetMutex()
 
 	mutex.Lock()
@@ -50,7 +54,7 @@ func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []
 	handle, err := mdb.getMediumHandle(medium)
 
 	if err != nil {
-		return -fuse.EIO
+		return 0, err
 	}
 
 	medium.SetAccessTime(
@@ -73,28 +77,28 @@ func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []
 		handle)
 
 	if err != nil {
-		return -fuse.EIO
+		return 0, err
 	}
 
 	copy(buff, data)
 
-	return n
+	return n, nil
 }
 
-func (mdb *MediumDriverBase) Write(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) int {
+func (mdb *MediumDriverBase) Write(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	mutex := medium.GetMutex()
 
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	if !medium.IsWritable() {
-		return -fuse.EROFS
+		return 0, errors.New("medium is not writable")
 	}
 
 	handle, err := mdb.getMediumHandle(medium)
 
 	if err != nil {
-		return -fuse.EIO
+		return 0, err
 	}
 
 	medium.SetModificationTime(
@@ -104,16 +108,16 @@ func (mdb *MediumDriverBase) Write(medium interfaces.Medium, path string, buff [
 	lenBuff := len(buff)
 
 	if ofst+int64(lenBuff) > fileSize || ofst >= fileSize {
-		return -fuse.ENOSPC
+		return 0, errors.New("write outside the medium data")
 	}
 
 	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
 
 	if err != nil {
-		return -fuse.EIO
+		return 0, err
 	}
 
-	return n
+	return n, nil
 }
 
 func (mdb *MediumDriverBase) generatePermIntMask(
@@ -128,6 +132,8 @@ func (mdb *MediumDriverBase) generatePermIntMask(
 	otherCanExecute bool,
 ) uint32 {
 	binString := ""
+
+	goUtils := components.GoUtilsInstance
 
 	binString += goUtils.BoolToStrInt(userCanRead)
 	binString += goUtils.BoolToStrInt(userCanWrite)
@@ -225,4 +231,20 @@ func (mdb *MediumDriverBase) CloseMedium(medium interfaces.Medium) error {
 // Check if the medium is known to the system
 func (mdb *MediumDriverBase) isKnownMedium(name, mountpoint, label, path, fsType, ptType string) bool {
 	return mountpoint != "" || label != "" || fsType != "" || ptType != ""
+}
+
+func (mdb *MediumDriverBase) SetVerboseMode(verboseMode bool) {
+	mdb.verboseMode = verboseMode
+}
+
+func (mdb *MediumDriverBase) SetDebugMode(debugMode bool) {
+	mdb.debugMode = debugMode
+}
+
+func (mdb *MediumDriverBase) GetVerboseMode() bool {
+	return mdb.verboseMode
+}
+
+func (mdb *MediumDriverBase) GetDebugMode() bool {
+	return mdb.debugMode
 }

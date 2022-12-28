@@ -1,6 +1,8 @@
 package components
 
 import (
+	"bytes"
+	"encoding/binary"
 	"io"
 	"log"
 	"os"
@@ -12,7 +14,7 @@ import (
 
 type GoUtils struct{}
 
-var regExUtils RegExUtils
+var GoUtilsInstance GoUtils
 
 func (gu *GoUtils) GetExeDirectory() string {
 	return filepath.Dir(os.Args[0])
@@ -146,4 +148,22 @@ func (gu *GoUtils) BoolToStrInt(b bool) string {
 	}
 
 	return "0"
+}
+
+func (gu *GoUtils) ByteSliceToStruct(data []byte, target any) error {
+	reader := bytes.NewReader(data)
+
+	if err := binary.Read(reader, binary.LittleEndian, target); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (gu *GoUtils) StructToByteSlice(source any) ([]byte, error) {
+	var buffer bytes.Buffer
+
+	err := binary.Write(&buffer, binary.LittleEndian, source)
+
+	return buffer.Bytes(), err
 }

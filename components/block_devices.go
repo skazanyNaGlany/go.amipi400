@@ -211,7 +211,7 @@ func (bd *BlockDevices) parseLsblkOutput(output string) (map[string]map[string]s
 			continue
 		}
 
-		matches := regExUtils.FindNamedMatches(lsblkPattern, line)
+		matches := RegExInstance.FindNamedMatches(lsblkPattern, line)
 
 		if len(matches) != 9 {
 			return nil, errors.New("cannot parse line: " + line)

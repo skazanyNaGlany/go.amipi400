@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"path"
 	"runtime"
 	"strconv"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/drivers"
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
+	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
 
@@ -18,11 +20,14 @@ const AppVersion = "0.1"
 const systemInternalSdCardName = "mmcblk0"
 const poolDeviceName = "loop"
 const fileSystemMount = "/tmp/amiga_disk_devices"
+const cachedAdfs = "./cached_adfs"
 const floppyReadMuteSecs = 4
 const floppyWriteMuteSecs = 4
 const floppyWriteBlinkPowerSecs = 4
 const runnersVerboseMode = true
 const runnersDebugMode = true
+const driversVerboseMode = true
+const driversDebugMode = true
 const forceInsertKey = "L_SHIFT"
 
 var goUtils components.GoUtils
@@ -35,6 +40,7 @@ var volumeControl components.VolumeControl
 var ledControl components.LEDControl
 var asyncFileOps components.AsyncFileOps
 var keyboardControl components.KeyboardControl
+var cachedAdfsDir = ""
 
 func isInternalMedium(name string) bool {
 	return strings.HasPrefix(name, systemInternalSdCardName)
@@ -68,10 +74,17 @@ func ProbeMediumForDriver(
 
 	forceInsert := keyboardControl.IsKeyPressed(forceInsertKey)
 
+	// perform only one special action at a time
 	keyboardControl.ClearPressedKeys()
 
 	// try FloppyMediumDriver
-	floppyDriver := drivers.FloppyMediumDriver{}
+	floppyDriver := drivers.FloppyMediumDriver{
+		CachedAdfsDirectory:   cachedAdfsDir,
+		CachedAdfsHeaderMagic: strings.ToUpper(consts.AmiPi400Unixname),
+	}
+
+	floppyDriver.SetVerboseMode(driversVerboseMode)
+	floppyDriver.SetDebugMode(driversDebugMode)
 
 	medium, err := floppyDriver.Probe(
 		fileSystemMount,
@@ -97,6 +110,9 @@ func ProbeMediumForDriver(
 	// try CDMediumDriver
 	cdDriver := drivers.CDMediumDriver{}
 
+	cdDriver.SetVerboseMode(driversVerboseMode)
+	cdDriver.SetDebugMode(driversDebugMode)
+
 	medium, err = cdDriver.Probe(
 		fileSystemMount,
 		name,
@@ -120,6 +136,9 @@ func ProbeMediumForDriver(
 
 	// try HardDiskMediumDriver
 	hdDriver := drivers.HardDiskMediumDriver{}
+
+	hdDriver.SetVerboseMode(driversVerboseMode)
+	hdDriver.SetDebugMode(driversDebugMode)
 
 	medium, err = hdDriver.Probe(
 		fileSystemMount,
@@ -259,8 +278,14 @@ func postWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst
 	onMediumWrite(_medium)
 }
 
-func createFsDir() {
+func initCreateDirs(exeDir string) {
 	if err := os.MkdirAll(fileSystemMount, 0777); err != nil {
+		log.Fatalln(err)
+	}
+
+	cachedAdfsDir = path.Join(exeDir, cachedAdfs)
+
+	if err := os.MkdirAll(cachedAdfsDir, 0777); err != nil {
 		log.Fatalln(err)
 	}
 }
@@ -336,12 +361,14 @@ func main() {
 	exeDir := CwdToExeOrScript()
 	logFilename := DuplicateLog(exeDir)
 
+	initCreateDirs(exeDir)
+
 	log.Printf("%v v%v\n", AppUnixname, AppVersion)
 	log.Printf("Executable directory %v\n", exeDir)
 	log.Printf("Log filename %v\n", logFilename)
 	log.Println("File system directory " + fileSystemMount)
+	log.Println("Cached ADFs directory " + cachedAdfsDir)
 
-	createFsDir()
 	fileSystem.SetMountDir(fileSystemMount)
 
 	discoverDriveDevices()

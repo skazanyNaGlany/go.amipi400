@@ -1,10 +1,17 @@
 package drivers
 
 import (
+	"errors"
+	"fmt"
+	"log"
+	"os"
+	"path"
 	"path/filepath"
 	"time"
+	"unsafe"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
+	"github.com/skazanyNaGlany/go.amipi400/components/drivers/headers"
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
@@ -18,11 +25,13 @@ const floppyReadAhead = 16
 const floppySectorReadTimeMs = int64(100)
 const floppyCacheDataBetweenSecs = 3
 const floppyDeviceSectorSize = 512
-
-var goUtils components.GoUtils
+const floppyDeviceLastSector = 1474048
 
 type FloppyMediumDriver struct {
 	MediumDriverBase
+
+	CachedAdfsDirectory   string
+	CachedAdfsHeaderMagic string
 }
 
 func (fmd *FloppyMediumDriver) Probe(
@@ -73,10 +82,191 @@ func (fmd *FloppyMediumDriver) Probe(
 	_medium.SetAccessTime(now)
 	_medium.SetModificationTime(now)
 
+	// fail or not, we will re-cache the ADF again
+	// if needed, sha512Id of the ADF should be set
+	// in the FloppyMedium properly if it is known
+	// (eg. ADF has its ID already, but cached ADF
+	// does not exists)
+	fmd.DecodeCachedADFHeader(&_medium)
+
 	return &_medium, nil
 }
 
-func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (n int) {
+func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) error {
+	var sha512Id string
+	var err error
+	var n int
+
+	handle, err := fmd.getMediumHandle(_medium, floppyReadAhead)
+
+	if err != nil {
+		return err
+	}
+
+	data, len_data, err := components.FileUtilsInstance.FileReadBytes(
+		"",
+		0,
+		floppyAdfSize,
+		0,
+		0,
+		handle)
+
+	if err != nil {
+		return err
+	}
+
+	if len_data < floppyAdfSize {
+		return errors.New("cannot read medium data")
+	}
+
+	if len(data) < floppyAdfSize {
+		return errors.New("cannot read medium data")
+	}
+
+	sha512Id = _medium.GetCachedAdfSha512()
+
+	if sha512Id == "" {
+		sha512Id = components.CryptoUtilsInstance.BytesToSha512Hex(data)
+
+		_medium.SetCachedAdfSha512(sha512Id)
+	}
+
+	cachedAdfPathname := path.Join(
+		fmd.CachedAdfsDirectory,
+		fmd.buildCachedAdfFilename(sha512Id, floppyAdfExtension))
+
+	// stat, err := os.Stat(cachedAdfPathname)
+
+	// it seems that cached ADF does not exists
+	// or it is invalid, create it
+	n, err = components.FileUtilsInstance.FileWriteBytes(
+		cachedAdfPathname,
+		0,
+		data,
+		os.O_CREATE|os.O_WRONLY,
+		0777,
+		nil)
+
+	if err != nil {
+		return err
+	}
+
+	if n < len(data) {
+		return errors.New("cannot create cached ADF file")
+	}
+
+	// save the CachedADFHeader to the
+	// last sector of the medium
+	header := headers.CachedADFHeader{}
+	stat, _ := os.Stat(cachedAdfPathname)
+
+	// TODO move "CachedADFHeader" to the consts
+	header.SetMagic(fmd.CachedAdfsHeaderMagic)
+	header.SetHeaderType("CachedADFHeader")
+	header.SetSha512(sha512Id)
+	header.SetMTime(stat.ModTime().Unix())
+
+	data, err = components.GoUtilsInstance.StructToByteSlice(&header)
+
+	if err != nil {
+		return err
+	}
+
+	n, err = components.FileUtilsInstance.FileWriteBytes(
+		"",
+		floppyDeviceLastSector,
+		data,
+		0,
+		0,
+		handle)
+
+	if err != nil {
+		return err
+	}
+
+	if n < len(data) {
+		return errors.New("cannot write CachedADFHeader to the medium")
+	}
+
+	_medium.SetCachedAdfPathname(cachedAdfPathname)
+
+	if fmd.verboseMode {
+		log.Printf("ADF in medium %v have been cached\n", _medium.GetDevicePathname())
+		log.Printf("\tCached ADF: %v\n", cachedAdfPathname)
+		log.Printf("\tSHA512 ID:  %v\n", sha512Id)
+	}
+
+	return nil
+}
+
+func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMedium) error {
+	header := headers.CachedADFHeader{}
+	headerSize := unsafe.Sizeof(header)
+
+	deviceRawHeader, n, err := components.FileUtilsInstance.FileReadBytes(
+		_medium.GetDevicePathname(),
+		floppyDeviceLastSector,
+		floppyDeviceSectorSize,
+		os.O_RDONLY,
+		0,
+		nil)
+
+	if err != nil {
+		return err
+	}
+
+	if n < int(headerSize) {
+		return fmt.Errorf("cannot read device's data, FileReadBytes returns %v", n)
+	}
+
+	if err = components.GoUtilsInstance.ByteSliceToStruct(deviceRawHeader, &header); err != nil {
+		return err
+	}
+
+	if !header.IsValid(fmd.CachedAdfsHeaderMagic) {
+		// CachedADFHeader is invalid or does not exists
+		return nil
+	}
+
+	sha512Id := header.GetSha512()
+
+	_medium.SetCachedAdfSha512(sha512Id)
+
+	cachedAdfPathname := path.Join(
+		fmd.CachedAdfsDirectory,
+		fmd.buildCachedAdfFilename(sha512Id, floppyAdfExtension))
+
+	stat, err := os.Stat(cachedAdfPathname)
+
+	if err != nil {
+		return err
+	}
+
+	if stat.IsDir() {
+		return errors.New("cached ADF file is a directory")
+	}
+
+	if stat.Size() < floppyAdfSize {
+		return errors.New("cached ADF file has wrong size")
+	}
+
+	// it seems that ADF is properly cached
+	_medium.SetCachedAdfPathname(cachedAdfPathname)
+
+	if fmd.verboseMode {
+		log.Printf("ADF in medium %v is cached\n", _medium.GetDevicePathname())
+		log.Printf("\tCached ADF: %v\n", cachedAdfPathname)
+		log.Printf("\tSHA512 ID:  %v\n", sha512Id)
+	}
+
+	return nil
+}
+
+func (fmd *FloppyMediumDriver) buildCachedAdfFilename(sha512Id, extension string) string {
+	return sha512Id + "." + extension
+}
+
+func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	mutex := _medium.GetMutex()
 
 	mutex.Lock()
@@ -96,35 +286,35 @@ func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff
 	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
 
 	if !castOk {
-		return -fuse.EIO
+		return 0, errors.New("cannot cast Medium to FloppyMedium")
 	}
 
 	data, n_int64, err := fmd.read(floppyMedium, path, ofst, toReadSize, fh)
 
 	if err != nil {
-		return -fuse.EIO
+		return 0, err
 	}
 
 	copy(buff, data)
 
-	return int(n_int64)
+	return int(n_int64), nil
 }
 
 // Almost the same as MediumDriverBase.Write, but calling SetFullyCached also
-func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) int {
+func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	mutex := _medium.GetMutex()
 
 	mutex.Lock()
 	defer mutex.Unlock()
 
 	if !_medium.IsWritable() {
-		return -fuse.EROFS
+		return 0, errors.New("device is not writable")
 	}
 
 	handle, err := fmd.getMediumHandle(_medium, floppyReadAhead)
 
 	if err != nil {
-		return -fuse.EIO
+		return 0, err
 	}
 
 	_medium.SetModificationTime(
@@ -134,13 +324,13 @@ func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buf
 	lenBuff := len(buff)
 
 	if ofst+int64(lenBuff) > fileSize || ofst >= fileSize {
-		return -fuse.ENOSPC
+		return 0, errors.New("Write outside the medium")
 	}
 
 	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
 
 	if !castOk {
-		return -fuse.EIO
+		return 0, errors.New("cannot cast Medium to FloppyMedium")
 	}
 
 	floppyMedium.SetFullyCached(false)
@@ -153,12 +343,12 @@ func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buf
 	if err != nil {
 		floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, -fuse.EIO, totalTime)
 
-		return -fuse.EIO
+		return 0, err
 	}
 
 	floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, n, totalTime)
 
-	return n
+	return n, nil
 }
 
 func (mdb *FloppyMediumDriver) read(
@@ -206,6 +396,8 @@ func (mdb *FloppyMediumDriver) read(
 
 		if rr2_total_read_time_ms < floppySectorReadTimeMs {
 			medium.SetFullyCached(true)
+
+			mdb.FloppyCacheAdf(medium)
 		}
 	}
 
@@ -298,3 +490,7 @@ func (mdb *FloppyMediumDriver) partialRead(
 
 	return all_data, total_read_time_ms, count_real_read_sectors, nil
 }
+
+// func (mdb *FloppyMediumDriver) SetCachedAdfsDirectory(cachedAdfsDir string) {
+// 	mdb.CachedAdfsDirectory = cachedAdfsDir
+// }

@@ -8,8 +8,12 @@ type MediumDriver interface {
 		size uint64,
 		_type, mountpoint, label, path, fsType, ptType string,
 		readOnly, force bool) (Medium, error)
-	Getattr(medium Medium, path string, stat *fuse.Stat_t, fh uint64) (errc int)
-	Read(medium Medium, path string, buff []byte, ofst int64, fh uint64) (n int)
-	Write(medium Medium, path string, buff []byte, ofst int64, fh uint64) int
+	Getattr(medium Medium, path string, stat *fuse.Stat_t, fh uint64) (int, error)
+	Read(medium Medium, path string, buff []byte, ofst int64, fh uint64) (int, error)
+	Write(medium Medium, path string, buff []byte, ofst int64, fh uint64) (int, error)
 	CloseMedium(medium Medium) error
+	SetVerboseMode(verboseMode bool)
+	SetDebugMode(debugMode bool)
+	GetVerboseMode() bool
+	GetDebugMode() bool
 }

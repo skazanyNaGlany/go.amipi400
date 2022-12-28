@@ -4,6 +4,8 @@ import "regexp"
 
 type RegExUtils struct{}
 
+var RegExInstance RegExUtils
+
 func (ru RegExUtils) FindNamedMatches(regex *regexp.Regexp, str string) map[string]string {
 	match := regex.FindStringSubmatch(str)
 	results := map[string]string{}
