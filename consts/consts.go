@@ -1,3 +1,4 @@
 package consts
 
-const AmiPi400Unixname = "amipi400"
+// global
+const AMIPI400_APP_UNIXNAME = "amipi400"

@@ -12,7 +12,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const defaultReadAhead = 256
+const DEFAULT_READ_AHEAD = 256
 
 // Implements MediumDriver
 type MediumDriverBase struct {
@@ -184,7 +184,7 @@ func (mdb *MediumDriverBase) getMediumHandle(medium interfaces.Medium, readAhead
 		return nil, err
 	}
 
-	_readAhead := defaultReadAhead
+	_readAhead := DEFAULT_READ_AHEAD
 
 	if len(readAhead) == 1 {
 		_readAhead = readAhead[0]

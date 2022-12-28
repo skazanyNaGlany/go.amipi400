@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const led0brightnessPathname = "/sys/class/leds/led0/brightness"
+const LED0_BRIGHTNESS_PATHNAME = "/sys/class/leds/led0/brightness"
 
 type LEDControl struct {
 	RunnerBase
@@ -45,7 +45,7 @@ func (lc *LEDControl) setPowerLedBrightness(brightness int) {
 	brightnessStr := strconv.FormatInt(int64(brightness), 10)
 
 	FileUtilsInstance.FileWriteBytes(
-		led0brightnessPathname,
+		LED0_BRIGHTNESS_PATHNAME,
 		0,
 		[]byte(brightnessStr),
 		os.O_WRONLY,
