@@ -257,30 +257,19 @@ func (fmd *FloppyMediumDriver) buildCachedAdfFilename(sha512Id, extension string
 	return sha512Id + "." + extension
 }
 
-func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
-	mutex := _medium.GetMutex()
-
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	_medium.SetAccessTime(
+func (fmd *FloppyMediumDriver) realRead(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+	floppyMedium.SetAccessTime(
 		time.Now().Unix())
 
 	lenBuff := int64(len(buff))
 	toReadSize := lenBuff
-	fileSize := _medium.GetSize()
+	fileSize := floppyMedium.GetSize()
 
 	if ofst+int64(toReadSize) > int64(fileSize) {
 		toReadSize = fileSize - ofst
 	}
 
-	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
-
-	if !castOk {
-		return 0, errors.New("cannot cast Medium to FloppyMedium")
-	}
-
-	data, n_int64, err := fmd.read(floppyMedium, path, ofst, toReadSize, fh)
+	data, n_int64, err := fmd.realRead2(floppyMedium, path, ofst, toReadSize, fh)
 
 	if err != nil {
 		return 0, err
@@ -291,32 +280,15 @@ func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff
 	return int(n_int64), nil
 }
 
-// Almost the same as MediumDriverBase.Write, but calling SetFullyCached also
-func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+func (fmd *FloppyMediumDriver) cachedRead(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+	return -fuse.EIO, nil
+}
+
+func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	mutex := _medium.GetMutex()
 
 	mutex.Lock()
 	defer mutex.Unlock()
-
-	if !_medium.IsWritable() {
-		return 0, errors.New("device is not writable")
-	}
-
-	handle, err := fmd.getMediumHandle(_medium, consts.FLOPPY_READ_AHEAD)
-
-	if err != nil {
-		return 0, err
-	}
-
-	_medium.SetModificationTime(
-		time.Now().Unix())
-
-	fileSize := _medium.GetSize()
-	lenBuff := len(buff)
-
-	if ofst+int64(lenBuff) > fileSize || ofst >= fileSize {
-		return 0, errors.New("Write outside the medium")
-	}
 
 	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
 
@@ -324,26 +296,15 @@ func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buf
 		return 0, errors.New("cannot cast Medium to FloppyMedium")
 	}
 
-	floppyMedium.SetFullyCached(false)
-	floppyMedium.CallPreWriteCallbacks(floppyMedium, path, buff, ofst, fh)
-
-	startTime := time.Now().UnixMilli()
-	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
-	totalTime := time.Now().UnixMilli() - startTime
-
-	if err != nil {
-		floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, -fuse.EIO, totalTime)
-
-		return 0, err
+	if floppyMedium.GetCachedAdfPathname() == "" {
+		return fmd.realRead(floppyMedium, path, buff, ofst, fh)
 	}
 
-	floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, n, totalTime)
-
-	return n, nil
+	return fmd.cachedRead(floppyMedium, path, buff, ofst, fh)
 }
 
-func (mdb *FloppyMediumDriver) read(
-	medium *medium.FloppyMedium,
+func (mdb *FloppyMediumDriver) realRead2(
+	floppyMedium *medium.FloppyMedium,
 	path string,
 	offset int64,
 	size int64,
@@ -353,28 +314,28 @@ func (mdb *FloppyMediumDriver) read(
 	_floppySectorReadTimeMs := int64(consts.FLOPPY_SECTOR_READ_TIME_MS)
 	currentTime := time.Now().UnixMilli()
 
-	if medium.GetLastCachingTime() == 0 {
-		medium.SetLastCachingTime(currentTime)
+	if floppyMedium.GetLastCachingTime() == 0 {
+		floppyMedium.SetLastCachingTime(currentTime)
 	}
 
-	rr_all_data, rr_total_read_time_ms, _, rr_err := mdb.partialRead(medium, path, offset, size, nil, nil, fh)
+	rr_all_data, rr_total_read_time_ms, _, rr_err := mdb.partialRead(floppyMedium, path, offset, size, nil, nil, fh)
 
 	if rr_total_read_time_ms > consts.FLOPPY_SECTOR_READ_TIME_MS {
-		medium.SetFullyCached(false)
+		floppyMedium.SetFullyCached(false)
 	}
 
-	if medium.IsFullyCached() {
+	if floppyMedium.IsFullyCached() {
 		// TODO spin
 		return rr_all_data, int64(len(rr_all_data)), rr_err
 	}
 
-	if rr_total_read_time_ms < consts.FLOPPY_SECTOR_READ_TIME_MS && !medium.IsFullyCached() &&
-		currentTime-medium.GetLastCachingTime() >= consts.FLOPPY_CACHE_DATA_BETWEEN_SECS {
+	if rr_total_read_time_ms < consts.FLOPPY_SECTOR_READ_TIME_MS && !floppyMedium.IsFullyCached() &&
+		currentTime-floppyMedium.GetLastCachingTime() >= consts.FLOPPY_CACHE_DATA_BETWEEN_SECS {
 
-		medium.SetCachingNow(true)
+		floppyMedium.SetCachingNow(true)
 
 		_, rr2_total_read_time_ms, _, _ := mdb.partialRead(
-			medium,
+			floppyMedium,
 			path,
 			0,
 			consts.FLOPPY_DEVICE_SECTOR_SIZE,
@@ -382,13 +343,13 @@ func (mdb *FloppyMediumDriver) read(
 			&_floppySectorReadTimeMs,
 			fh)
 
-		medium.SetCachingNow(false)
-		medium.SetLastCachingTime(currentTime)
+		floppyMedium.SetCachingNow(false)
+		floppyMedium.SetLastCachingTime(currentTime)
 
 		if rr2_total_read_time_ms < consts.FLOPPY_SECTOR_READ_TIME_MS {
-			medium.SetFullyCached(true)
+			floppyMedium.SetFullyCached(true)
 
-			mdb.FloppyCacheAdf(medium)
+			mdb.FloppyCacheAdf(floppyMedium)
 		}
 	}
 
@@ -480,6 +441,69 @@ func (mdb *FloppyMediumDriver) partialRead(
 	all_data = all_data[:size]
 
 	return all_data, total_read_time_ms, count_real_read_sectors, nil
+}
+
+func (fmd *FloppyMediumDriver) realWrite(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+	handle, err := fmd.getMediumHandle(floppyMedium, consts.FLOPPY_READ_AHEAD)
+
+	if err != nil {
+		return 0, err
+	}
+
+	floppyMedium.SetModificationTime(
+		time.Now().Unix())
+
+	fileSize := floppyMedium.GetSize()
+	lenBuff := len(buff)
+
+	if ofst+int64(lenBuff) > fileSize || ofst >= fileSize {
+		return 0, errors.New("Write outside the medium")
+	}
+
+	floppyMedium.SetFullyCached(false)
+	floppyMedium.CallPreWriteCallbacks(floppyMedium, path, buff, ofst, fh)
+
+	startTime := time.Now().UnixMilli()
+	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
+	totalTime := time.Now().UnixMilli() - startTime
+
+	if err != nil {
+		floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, -fuse.EIO, totalTime)
+
+		return 0, err
+	}
+
+	floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, n, totalTime)
+
+	return n, nil
+}
+
+func (fmd *FloppyMediumDriver) cachedWrite(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+	return -fuse.EIO, nil
+}
+
+// Almost the same as MediumDriverBase.Write, but calling SetFullyCached also
+func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+	mutex := _medium.GetMutex()
+
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if !_medium.IsWritable() {
+		return 0, errors.New("device is not writable")
+	}
+
+	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+
+	if !castOk {
+		return 0, errors.New("cannot cast Medium to FloppyMedium")
+	}
+
+	if floppyMedium.GetCachedAdfPathname() == "" {
+		return fmd.realWrite(floppyMedium, path, buff, ofst, fh)
+	}
+
+	return fmd.cachedWrite(floppyMedium, path, buff, ofst, fh)
 }
 
 func (mdb *FloppyMediumDriver) SetCachedAdfsDirectory(cachedAdfsDirectory string) {

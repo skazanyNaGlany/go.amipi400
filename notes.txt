@@ -72,3 +72,17 @@ pi@raspberrypi:~/projects.local/go.amipi400 $
 ---  sdb       --0x168000/0x168000------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+
+
+
+
+
+
+Mortal Kombat 1
+Mortal Kombat 2
+Lotus Turbo 2
+Lotus 3
+Skaut Kwtermaster
+Monkey Island 2
+Kajko I kokosz
+
