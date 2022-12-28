@@ -490,7 +490,3 @@ func (mdb *FloppyMediumDriver) partialRead(
 
 	return all_data, total_read_time_ms, count_real_read_sectors, nil
 }
-
-// func (mdb *FloppyMediumDriver) SetCachedAdfsDirectory(cachedAdfsDir string) {
-// 	mdb.CachedAdfsDirectory = cachedAdfsDir
-// }
