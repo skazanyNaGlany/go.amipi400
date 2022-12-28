@@ -21,8 +21,8 @@ import (
 type FloppyMediumDriver struct {
 	MediumDriverBase
 
-	CachedAdfsDirectory   string
-	CachedAdfsHeaderMagic string
+	cachedAdfsDirectory   string
+	cachedAdfsHeaderMagic string
 }
 
 func (fmd *FloppyMediumDriver) Probe(
@@ -123,7 +123,7 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 	}
 
 	cachedAdfPathname := path.Join(
-		fmd.CachedAdfsDirectory,
+		fmd.cachedAdfsDirectory,
 		fmd.buildCachedAdfFilename(sha512Id, consts.FLOPPY_ADF_EXTENSION))
 
 	// stat, err := os.Stat(cachedAdfPathname)
@@ -152,7 +152,7 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 	stat, _ := os.Stat(cachedAdfPathname)
 
 	// TODO move "CachedADFHeader" to the consts
-	header.SetMagic(fmd.CachedAdfsHeaderMagic)
+	header.SetMagic(fmd.cachedAdfsHeaderMagic)
 	header.SetHeaderType("CachedADFHeader")
 	header.SetSha512(sha512Id)
 	header.SetMTime(stat.ModTime().Unix())
@@ -214,7 +214,7 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 		return err
 	}
 
-	if !header.IsValid(fmd.CachedAdfsHeaderMagic) {
+	if !header.IsValid(fmd.cachedAdfsHeaderMagic) {
 		// CachedADFHeader is invalid or does not exists
 		return nil
 	}
@@ -224,7 +224,7 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 	_medium.SetCachedAdfSha512(sha512Id)
 
 	cachedAdfPathname := path.Join(
-		fmd.CachedAdfsDirectory,
+		fmd.cachedAdfsDirectory,
 		fmd.buildCachedAdfFilename(sha512Id, consts.FLOPPY_ADF_EXTENSION))
 
 	stat, err := os.Stat(cachedAdfPathname)
@@ -480,4 +480,12 @@ func (mdb *FloppyMediumDriver) partialRead(
 	all_data = all_data[:size]
 
 	return all_data, total_read_time_ms, count_real_read_sectors, nil
+}
+
+func (mdb *FloppyMediumDriver) SetCachedAdfsDirectory(cachedAdfsDirectory string) {
+	mdb.cachedAdfsDirectory = cachedAdfsDirectory
+}
+
+func (mdb *FloppyMediumDriver) SetCachedAdfsHeaderMagic(cachedAdfsHeaderMagic string) {
+	mdb.cachedAdfsHeaderMagic = cachedAdfsHeaderMagic
 }

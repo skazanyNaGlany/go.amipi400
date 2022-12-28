@@ -63,11 +63,10 @@ func ProbeMediumForDriver(
 	keyboardControl.ClearPressedKeys()
 
 	// try FloppyMediumDriver
-	floppyDriver := drivers.FloppyMediumDriver{
-		CachedAdfsDirectory:   cachedAdfsDir,
-		CachedAdfsHeaderMagic: strings.ToUpper(consts.AMIPI400_UNIXNAME),
-	}
+	floppyDriver := drivers.FloppyMediumDriver{}
 
+	floppyDriver.SetCachedAdfsDirectory(cachedAdfsDir)
+	floppyDriver.SetCachedAdfsHeaderMagic(strings.ToUpper(consts.AMIPI400_UNIXNAME))
 	floppyDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
 	floppyDriver.SetDebugMode(consts.DRIVERS_DEBUG_MODE)
 
