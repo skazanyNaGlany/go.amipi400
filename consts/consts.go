@@ -3,7 +3,7 @@ package consts
 // global
 const AMIPI400_APP_UNIXNAME = "amipi400"
 
-// amiga_disk_devices
+// amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
 const AMIGA_DISK_DEVICES_VERSION = "0.1"
 const SYSTEM_INTERNAL_SD_CARD_NAME = "mmcblk0"
