@@ -15,21 +15,6 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
 
-const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
-const AMIGA_DISK_DEVICES_VERSION = "0.1"
-const SYSTEM_INTERNAL_SD_CARD_NAME = "mmcblk0"
-const POOL_DEVICE_NAME = "loop"
-const FILE_SYSTEM_MOUNT = "/tmp/amiga_disk_devices"
-const CACHED_ADFS = "./cached_adfs"
-const FLOPPY_READ_MUTE_SECS = 4
-const FLOPPY_WRITE_MUTE_SECS = 4
-const FLOPPY_WRITE_BLINK_POWER_SECS = 4
-const RUNNERS_VERBOSE_MODE = true
-const RUNNERS_DEBUG_MODE = true
-const DRIVERS_VERBOSE_MODE = true
-const DRIVERS_DEBUG_MODE = true
-const FORCE_INSERT_KEY = "L_SHIFT"
-
 var goUtils components.GoUtils
 var unixUtils components.UnixUtils
 var blockDevices components.BlockDevices
@@ -43,11 +28,11 @@ var keyboardControl components.KeyboardControl
 var cachedAdfsDir = ""
 
 func isInternalMedium(name string) bool {
-	return strings.HasPrefix(name, SYSTEM_INTERNAL_SD_CARD_NAME)
+	return strings.HasPrefix(name, consts.SYSTEM_INTERNAL_SD_CARD_NAME)
 }
 
 func isPoolMedium(name string) bool {
-	return strings.HasPrefix(name, POOL_DEVICE_NAME)
+	return strings.HasPrefix(name, consts.POOL_DEVICE_NAME)
 }
 
 func printBlockDevice(
@@ -72,7 +57,7 @@ func ProbeMediumForDriver(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) (interfaces.Medium, error) {
 
-	forceInsert := keyboardControl.IsKeyPressed(FORCE_INSERT_KEY)
+	forceInsert := keyboardControl.IsKeyPressed(consts.FORCE_INSERT_KEY)
 
 	// perform only one special action at a time
 	keyboardControl.ClearPressedKeys()
@@ -83,11 +68,11 @@ func ProbeMediumForDriver(
 		CachedAdfsHeaderMagic: strings.ToUpper(consts.AMIPI400_APP_UNIXNAME),
 	}
 
-	floppyDriver.SetVerboseMode(DRIVERS_VERBOSE_MODE)
-	floppyDriver.SetDebugMode(DRIVERS_DEBUG_MODE)
+	floppyDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
+	floppyDriver.SetDebugMode(consts.DRIVERS_DEBUG_MODE)
 
 	medium, err := floppyDriver.Probe(
-		FILE_SYSTEM_MOUNT,
+		consts.FILE_SYSTEM_MOUNT,
 		name,
 		size,
 		_type,
@@ -110,11 +95,11 @@ func ProbeMediumForDriver(
 	// try CDMediumDriver
 	cdDriver := drivers.CDMediumDriver{}
 
-	cdDriver.SetVerboseMode(DRIVERS_VERBOSE_MODE)
-	cdDriver.SetDebugMode(DRIVERS_DEBUG_MODE)
+	cdDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
+	cdDriver.SetDebugMode(consts.DRIVERS_DEBUG_MODE)
 
 	medium, err = cdDriver.Probe(
-		FILE_SYSTEM_MOUNT,
+		consts.FILE_SYSTEM_MOUNT,
 		name,
 		size,
 		_type,
@@ -137,11 +122,11 @@ func ProbeMediumForDriver(
 	// try HardDiskMediumDriver
 	hdDriver := drivers.HardDiskMediumDriver{}
 
-	hdDriver.SetVerboseMode(DRIVERS_VERBOSE_MODE)
-	hdDriver.SetDebugMode(DRIVERS_DEBUG_MODE)
+	hdDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
+	hdDriver.SetDebugMode(consts.DRIVERS_DEBUG_MODE)
 
 	medium, err = hdDriver.Probe(
-		FILE_SYSTEM_MOUNT,
+		consts.FILE_SYSTEM_MOUNT,
 		name,
 		size,
 		_type,
@@ -231,7 +216,7 @@ func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 	if isFloppy {
 		if !floppyMedium.IsFullyCached() {
 			// reading from non-cached floppy medium
-			volumeControl.MuteForSecs(FLOPPY_READ_MUTE_SECS)
+			volumeControl.MuteForSecs(consts.FLOPPY_READ_MUTE_SECS)
 		} else {
 			// reading from cached floppy medium
 			asyncFileOps.FileReadBytesDirect(
@@ -250,12 +235,12 @@ func onFloppyWrite(_medium interfaces.Medium) {
 	_, isFloppy := _medium.(*medium.FloppyMedium)
 
 	if isFloppy {
-		volumeControl.MuteForSecs(FLOPPY_WRITE_MUTE_SECS)
+		volumeControl.MuteForSecs(consts.FLOPPY_WRITE_MUTE_SECS)
 	}
 }
 
 func onMediumWrite(_medium interfaces.Medium) {
-	ledControl.BlinkPowerLEDSecs(FLOPPY_WRITE_BLINK_POWER_SECS)
+	ledControl.BlinkPowerLEDSecs(consts.FLOPPY_WRITE_BLINK_POWER_SECS)
 }
 
 func preReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
@@ -279,11 +264,11 @@ func postWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst
 }
 
 func initCreateDirs(exeDir string) {
-	if err := os.MkdirAll(FILE_SYSTEM_MOUNT, 0777); err != nil {
+	if err := os.MkdirAll(consts.FILE_SYSTEM_MOUNT, 0777); err != nil {
 		log.Fatalln(err)
 	}
 
-	cachedAdfsDir = path.Join(exeDir, CACHED_ADFS)
+	cachedAdfsDir = path.Join(exeDir, consts.CACHED_ADFS)
 
 	if err := os.MkdirAll(cachedAdfsDir, 0777); err != nil {
 		log.Fatalln(err)
@@ -363,30 +348,30 @@ func main() {
 
 	initCreateDirs(exeDir)
 
-	log.Printf("%v v%v\n", AMIGA_DISK_DEVICES_UNIXNAME, AMIGA_DISK_DEVICES_VERSION)
+	log.Printf("%v v%v\n", consts.AMIGA_DISK_DEVICES_UNIXNAME, consts.AMIGA_DISK_DEVICES_VERSION)
 	log.Printf("Executable directory %v\n", exeDir)
 	log.Printf("Log filename %v\n", logFilename)
-	log.Println("File system directory " + FILE_SYSTEM_MOUNT)
+	log.Println("File system directory " + consts.FILE_SYSTEM_MOUNT)
 	log.Println("Cached ADFs directory " + cachedAdfsDir)
 
-	fileSystem.SetMountDir(FILE_SYSTEM_MOUNT)
+	fileSystem.SetMountDir(consts.FILE_SYSTEM_MOUNT)
 
 	discoverDriveDevices()
 	printFloppyDevices()
 	printCDROMDevices()
 
-	blockDevices.SetVerboseMode(RUNNERS_VERBOSE_MODE)
-	blockDevices.SetDebugMode(RUNNERS_DEBUG_MODE)
-	fileSystem.SetVerboseMode(RUNNERS_VERBOSE_MODE)
-	fileSystem.SetDebugMode(RUNNERS_DEBUG_MODE)
-	volumeControl.SetVerboseMode(RUNNERS_VERBOSE_MODE)
-	volumeControl.SetDebugMode(RUNNERS_DEBUG_MODE)
-	ledControl.SetVerboseMode(RUNNERS_VERBOSE_MODE)
-	ledControl.SetDebugMode(RUNNERS_DEBUG_MODE)
-	asyncFileOps.SetVerboseMode(RUNNERS_VERBOSE_MODE)
-	asyncFileOps.SetDebugMode(RUNNERS_DEBUG_MODE)
-	keyboardControl.SetVerboseMode(RUNNERS_VERBOSE_MODE)
-	keyboardControl.SetDebugMode(RUNNERS_DEBUG_MODE)
+	blockDevices.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	blockDevices.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	fileSystem.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	fileSystem.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	volumeControl.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	volumeControl.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	ledControl.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	ledControl.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	asyncFileOps.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	asyncFileOps.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	keyboardControl.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	keyboardControl.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 
 	blockDevices.AddAttachedHandler(attachedBlockDevice)
 	blockDevices.AddDetachedHandler(detachedBlockDevice)
