@@ -265,6 +265,72 @@ func (mdb *FloppyMediumDriver) SetCachedAdfsHeaderMagic(cachedAdfsHeaderMagic st
 	mdb.cachedAdfsHeaderMagic = cachedAdfsHeaderMagic
 }
 
+func (fmd *FloppyMediumDriver) OpenMediumHandle(_medium interfaces.Medium, readAhead ...int) (*os.File, error) {
+	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+
+	if !castOk {
+		return nil, errors.New("cannot cast Medium to FloppyMedium")
+	}
+
+	handle, err := floppyMedium.GetHandle()
+
+	if err != nil {
+		return nil, err
+	}
+
+	if handle != nil {
+		return handle, nil
+	}
+
+	isReadable := floppyMedium.IsReadable()
+	isWritable := floppyMedium.IsWritable()
+
+	flag := os.O_SYNC
+
+	if isReadable && isWritable {
+		flag |= os.O_RDWR
+	} else {
+		flag |= os.O_RDONLY
+	}
+
+	pathname := floppyMedium.GetCachedAdfPathname()
+
+	if pathname == "" {
+		// ADF is not cached, reading from the original medium
+		pathname = floppyMedium.GetDevicePathname()
+	}
+
+	handle, err = os.OpenFile(
+		pathname,
+		flag,
+		0,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	_readAhead := consts.DEFAULT_READ_AHEAD
+
+	if len(readAhead) == 1 {
+		_readAhead = readAhead[0]
+	}
+
+	if floppyMedium.GetCachedAdfPathname() == "" {
+		// set read-a-head value for device or file handle
+		// for block-device and the file-system
+		if err = components.UnixUtilsInstance.SetDeviceReadAHead(handle, _readAhead); err != nil {
+			handle.Close()
+
+			return nil, err
+		}
+	}
+
+	floppyMedium.SetHandle(handle)
+
+	return handle, nil
+}
+
 // Read
 func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	mutex := _medium.GetMutex()
@@ -449,7 +515,42 @@ func (mdb *FloppyMediumDriver) partialRead(
 }
 
 func (fmd *FloppyMediumDriver) cachedRead(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst, toReadSize int64, fh uint64) (int, error) {
-	return -fuse.EIO, nil
+	handle, err := fmd.OpenMediumHandle(floppyMedium)
+
+	if err != nil {
+		return 0, err
+	}
+
+	floppyMedium.SetFullyCached(true)
+
+	all_data := make([]byte, 0)
+
+	floppyMedium.CallPreReadCallbacks(
+		floppyMedium,
+		path,
+		all_data,
+		ofst,
+		fh)
+
+	data, n, err := components.FileUtilsInstance.FileReadBytes(
+		"",
+		ofst,
+		uint64(toReadSize),
+		0,
+		0,
+		handle)
+
+	if err != nil {
+		floppyMedium.CallPostReadCallbacks(floppyMedium, path, data, ofst, fh, -fuse.EIO, 0)
+
+		return 0, err
+	}
+
+	floppyMedium.CallPostReadCallbacks(floppyMedium, path, data, ofst, fh, n, 0)
+
+	copy(buff, data)
+
+	return n, nil
 }
 
 // Write
