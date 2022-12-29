@@ -214,30 +214,34 @@ func detachedBlockDeviceCallback(
 func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 	floppyMedium, isFloppy := _medium.(*medium.FloppyMedium)
 
-	if isFloppy {
-		if !floppyMedium.IsFullyCached() {
-			// reading from non-cached floppy medium
-			volumeControl.MuteForSecs(consts.FLOPPY_READ_MUTE_SECS)
-		} else {
-			// reading from cached floppy medium
-			asyncFileOps.FileReadBytesDirect(
-				floppyMedium.GetDevicePathname(),
-				ofst,
-				0,
-				0,
-				nil,
-				4,
-				nil)
-		}
+	if !isFloppy {
+		return
+	}
+
+	if !floppyMedium.IsFullyCached() {
+		// reading from non-cached floppy medium
+		volumeControl.MuteForSecs(consts.FLOPPY_READ_MUTE_SECS)
+	} else {
+		// reading from cached floppy medium
+		asyncFileOps.FileReadBytesDirect(
+			floppyMedium.GetDevicePathname(),
+			ofst,
+			0,
+			0,
+			nil,
+			4,
+			nil)
 	}
 }
 
 func onFloppyWrite(_medium interfaces.Medium) {
 	_, isFloppy := _medium.(*medium.FloppyMedium)
 
-	if isFloppy {
-		volumeControl.MuteForSecs(consts.FLOPPY_WRITE_MUTE_SECS)
+	if !isFloppy {
+		return
 	}
+
+	volumeControl.MuteForSecs(consts.FLOPPY_WRITE_MUTE_SECS)
 }
 
 func onMediumWrite(_medium interfaces.Medium) {
