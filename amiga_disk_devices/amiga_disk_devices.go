@@ -236,13 +236,15 @@ func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 }
 
 func onFloppyWrite(_medium interfaces.Medium) {
-	_, isFloppy := _medium.(*medium.FloppyMedium)
+	floppyMedium, isFloppy := _medium.(*medium.FloppyMedium)
 
 	if !isFloppy {
 		return
 	}
 
-	volumeControl.MuteForSecs(consts.FLOPPY_WRITE_MUTE_SECS)
+	if !floppyMedium.IsFullyCached() {
+		volumeControl.MuteForSecs(consts.FLOPPY_WRITE_MUTE_SECS)
+	}
 }
 
 func onMediumWrite(_medium interfaces.Medium) {
