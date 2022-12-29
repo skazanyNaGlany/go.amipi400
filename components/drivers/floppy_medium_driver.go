@@ -257,6 +257,34 @@ func (fmd *FloppyMediumDriver) buildCachedAdfFilename(sha512Id, extension string
 	return sha512Id + "." + extension
 }
 
+func (mdb *FloppyMediumDriver) SetCachedAdfsDirectory(cachedAdfsDirectory string) {
+	mdb.cachedAdfsDirectory = cachedAdfsDirectory
+}
+
+func (mdb *FloppyMediumDriver) SetCachedAdfsHeaderMagic(cachedAdfsHeaderMagic string) {
+	mdb.cachedAdfsHeaderMagic = cachedAdfsHeaderMagic
+}
+
+// Read
+func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+	mutex := _medium.GetMutex()
+
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+
+	if !castOk {
+		return 0, errors.New("cannot cast Medium to FloppyMedium")
+	}
+
+	if floppyMedium.GetCachedAdfPathname() == "" {
+		return fmd.realRead(floppyMedium, path, buff, ofst, fh)
+	}
+
+	return fmd.cachedRead(floppyMedium, path, buff, ofst, fh)
+}
+
 func (fmd *FloppyMediumDriver) realRead(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	floppyMedium.SetAccessTime(
 		time.Now().Unix())
@@ -278,29 +306,6 @@ func (fmd *FloppyMediumDriver) realRead(floppyMedium *medium.FloppyMedium, path 
 	copy(buff, data)
 
 	return int(n_int64), nil
-}
-
-func (fmd *FloppyMediumDriver) cachedRead(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
-	return -fuse.EIO, nil
-}
-
-func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
-	mutex := _medium.GetMutex()
-
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
-
-	if !castOk {
-		return 0, errors.New("cannot cast Medium to FloppyMedium")
-	}
-
-	if floppyMedium.GetCachedAdfPathname() == "" {
-		return fmd.realRead(floppyMedium, path, buff, ofst, fh)
-	}
-
-	return fmd.cachedRead(floppyMedium, path, buff, ofst, fh)
 }
 
 func (mdb *FloppyMediumDriver) realRead2(
@@ -443,6 +448,35 @@ func (mdb *FloppyMediumDriver) partialRead(
 	return all_data, total_read_time_ms, count_real_read_sectors, nil
 }
 
+func (fmd *FloppyMediumDriver) cachedRead(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+	return -fuse.EIO, nil
+}
+
+// Write
+func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+	// Almost the same as MediumDriverBase.Write, but calling SetFullyCached also
+	mutex := _medium.GetMutex()
+
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	if !_medium.IsWritable() {
+		return 0, errors.New("device is not writable")
+	}
+
+	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+
+	if !castOk {
+		return 0, errors.New("cannot cast Medium to FloppyMedium")
+	}
+
+	if floppyMedium.GetCachedAdfPathname() == "" {
+		return fmd.realWrite(floppyMedium, path, buff, ofst, fh)
+	}
+
+	return fmd.cachedWrite(floppyMedium, path, buff, ofst, fh)
+}
+
 func (fmd *FloppyMediumDriver) realWrite(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	handle, err := fmd.getMediumHandle(floppyMedium, consts.FLOPPY_READ_AHEAD)
 
@@ -480,36 +514,4 @@ func (fmd *FloppyMediumDriver) realWrite(floppyMedium *medium.FloppyMedium, path
 
 func (fmd *FloppyMediumDriver) cachedWrite(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	return -fuse.EIO, nil
-}
-
-// Almost the same as MediumDriverBase.Write, but calling SetFullyCached also
-func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
-	mutex := _medium.GetMutex()
-
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	if !_medium.IsWritable() {
-		return 0, errors.New("device is not writable")
-	}
-
-	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
-
-	if !castOk {
-		return 0, errors.New("cannot cast Medium to FloppyMedium")
-	}
-
-	if floppyMedium.GetCachedAdfPathname() == "" {
-		return fmd.realWrite(floppyMedium, path, buff, ofst, fh)
-	}
-
-	return fmd.cachedWrite(floppyMedium, path, buff, ofst, fh)
-}
-
-func (mdb *FloppyMediumDriver) SetCachedAdfsDirectory(cachedAdfsDirectory string) {
-	mdb.cachedAdfsDirectory = cachedAdfsDirectory
-}
-
-func (mdb *FloppyMediumDriver) SetCachedAdfsHeaderMagic(cachedAdfsHeaderMagic string) {
-	mdb.cachedAdfsHeaderMagic = cachedAdfsHeaderMagic
 }
