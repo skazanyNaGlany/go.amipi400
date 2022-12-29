@@ -223,6 +223,7 @@ func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 		volumeControl.MuteForSecs(consts.FLOPPY_READ_MUTE_SECS)
 	} else {
 		// reading from cached floppy medium
+		// read from real device to move the motor
 		asyncFileOps.FileReadBytesDirect(
 			floppyMedium.GetDevicePathname(),
 			ofst,
