@@ -181,6 +181,14 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 
 	_medium.SetCachedAdfPathname(cachedAdfPathname)
 
+	// close the handle, it will be opened
+	// again for cached ADF
+	if err = handle.Close(); err != nil {
+		return err
+	}
+
+	_medium.SetHandle(nil)
+
 	if fmd.verboseMode {
 		log.Printf("ADF in medium %v have been cached\n", _medium.GetDevicePathname())
 		log.Printf("\tCached ADF: %v\n", cachedAdfPathname)
