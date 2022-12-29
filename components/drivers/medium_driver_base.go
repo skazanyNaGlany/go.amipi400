@@ -10,7 +10,6 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
-	"golang.org/x/sys/unix"
 )
 
 // Implements MediumDriver
@@ -189,15 +188,9 @@ func (mdb *MediumDriverBase) getMediumHandle(medium interfaces.Medium, readAhead
 		_readAhead = readAhead[0]
 	}
 
-	// set read-a-head value for block-device
-	if err = unix.IoctlSetInt(int(handle.Fd()), unix.BLKRASET, _readAhead); err != nil {
-		handle.Close()
-
-		return nil, err
-	}
-
-	// set read-a-head value for file-system
-	if err = unix.IoctlSetInt(int(handle.Fd()), unix.BLKFRASET, _readAhead); err != nil {
+	// set read-a-head value for device or file handle
+	// for block-device and the file-system
+	if err = components.UnixUtilsInstance.SetDeviceReadAHead(handle, _readAhead); err != nil {
 		handle.Close()
 
 		return nil, err
