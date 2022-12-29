@@ -29,6 +29,7 @@ type MediumBase struct {
 	postReadCallbacks  []interfaces.PostReadCallback
 	preWriteCallbacks  []interfaces.PreWriteCallback
 	postWriteCallbacks []interfaces.PostWriteCallback
+	closedCallbacks    []interfaces.ClosedCallback
 }
 
 func (mb *MediumBase) SetCreateTime(creationTime int64) {
@@ -129,7 +130,11 @@ func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) (in
 }
 
 func (mb *MediumBase) Close() error {
-	return mb.driver.CloseMedium(mb)
+	err := mb.driver.CloseMedium(mb)
+
+	mb.CallClosedCallbacks(mb, err)
+
+	return err
 }
 
 func (mb *MediumBase) GetHandle() (*os.File, error) {
@@ -168,6 +173,10 @@ func (mb *MediumBase) AddPostWriteCallback(postWriteCallback interfaces.PostWrit
 	mb.postWriteCallbacks = append(mb.postWriteCallbacks, postWriteCallback)
 }
 
+func (mb *MediumBase) AddClosedCallback(closedCallback interfaces.ClosedCallback) {
+	mb.closedCallbacks = append(mb.closedCallbacks, closedCallback)
+}
+
 func (mb *MediumBase) CallPreReadCallbacks(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
 	for _, callback := range mb.preReadCallbacks {
 		callback(_medium, path, buff, ofst, fh)
@@ -189,6 +198,12 @@ func (mb *MediumBase) CallPostReadCallbacks(_medium interfaces.Medium, path stri
 func (mb *MediumBase) CallPostWriteCallbacks(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
 	for _, callback := range mb.postWriteCallbacks {
 		callback(_medium, path, buff, ofst, fh, n, opTimeMs)
+	}
+}
+
+func (mb *MediumBase) CallClosedCallbacks(_medium interfaces.Medium, err error) {
+	for _, callback := range mb.closedCallbacks {
+		callback(_medium, err)
 	}
 }
 

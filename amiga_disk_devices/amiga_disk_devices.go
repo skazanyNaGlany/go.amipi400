@@ -184,6 +184,7 @@ func attachedBlockDeviceCallback(
 	medium.AddPostReadCallback(postReadCallback)
 	medium.AddPreWriteCallback(preWriteCallback)
 	medium.AddPostWriteCallback(postWriteCallback)
+	medium.AddClosedCallback(closedCallback)
 
 	fileSystem.AddMedium(medium)
 }
@@ -261,6 +262,9 @@ func preWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst 
 func postWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
 	onFloppyWrite(_medium)
 	onMediumWrite(_medium)
+}
+
+func closedCallback(_medium interfaces.Medium, err error) {
 }
 
 func initCreateDirs(exeDir string) {
