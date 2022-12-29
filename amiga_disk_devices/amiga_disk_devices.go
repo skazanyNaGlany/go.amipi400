@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/fs"
 	"log"
 	"os"
 	"path"
@@ -186,6 +187,8 @@ func attachedBlockDeviceCallback(
 	medium.AddPostWriteCallback(postWriteCallback)
 	medium.AddClosedCallback(closedCallback)
 
+	medium.GetDriver().SetOutsideAsyncFileWriterCallback(outsideAsyncFileWriterCallback)
+
 	fileSystem.AddMedium(medium)
 }
 
@@ -209,6 +212,10 @@ func detachedBlockDeviceCallback(
 	if _, err := fileSystem.RemoveMediumByDevicePathname(path); err != nil {
 		log.Println("Unable to close medium:", path, ":", err)
 	}
+}
+
+func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag int, perm fs.FileMode, useHandle *os.File) {
+
 }
 
 func onFloppyRead(_medium interfaces.Medium, ofst int64) {

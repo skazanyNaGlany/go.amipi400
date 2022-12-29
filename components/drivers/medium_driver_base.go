@@ -14,8 +14,9 @@ import (
 
 // Implements MediumDriver
 type MediumDriverBase struct {
-	verboseMode bool
-	debugMode   bool
+	verboseMode                    bool
+	debugMode                      bool
+	outsideAsyncFileWriterCallback interfaces.OutsideAsyncFileWriterCallback
 }
 
 func (mdb *MediumDriverBase) Getattr(medium interfaces.Medium, path string, stat *fuse.Stat_t, fh uint64) (int, error) {
@@ -239,4 +240,8 @@ func (mdb *MediumDriverBase) GetVerboseMode() bool {
 
 func (mdb *MediumDriverBase) GetDebugMode() bool {
 	return mdb.debugMode
+}
+
+func (mdb *MediumDriverBase) SetOutsideAsyncFileWriterCallback(callback interfaces.OutsideAsyncFileWriterCallback) {
+	mdb.outsideAsyncFileWriterCallback = callback
 }
