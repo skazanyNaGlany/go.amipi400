@@ -149,7 +149,7 @@ func ProbeMediumForDriver(
 	return nil, nil
 }
 
-func attachedBlockDevice(
+func attachedBlockDeviceCallback(
 	name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
@@ -188,7 +188,7 @@ func attachedBlockDevice(
 	fileSystem.AddMedium(medium)
 }
 
-func detachedBlockDevice(
+func detachedBlockDeviceCallback(
 	name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
@@ -373,8 +373,8 @@ func main() {
 	keyboardControl.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
 	keyboardControl.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 
-	blockDevices.AddAttachedHandler(attachedBlockDevice)
-	blockDevices.AddDetachedHandler(detachedBlockDevice)
+	blockDevices.AddAttachedCallback(attachedBlockDeviceCallback)
+	blockDevices.AddDetachedCallback(detachedBlockDeviceCallback)
 
 	fileSystem.Start(&fileSystem)
 	blockDevices.Start(&blockDevices)

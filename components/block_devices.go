@@ -16,8 +16,8 @@ var lsblkPattern *regexp.Regexp = regexp.MustCompile(`NAME="(?P<NAME>\w*)" SIZE=
 
 type BlockDevices struct {
 	RunnerBase
-	attachedHandlers []interfaces.AttachedBlockDeviceCallback
-	detachedHandlers []interfaces.DetachedBlockDeviceCallback
+	attachedCallbacks []interfaces.AttachedBlockDeviceCallback
+	detachedCallback  []interfaces.DetachedBlockDeviceCallback
 }
 
 func (bd *BlockDevices) loop() {
@@ -53,7 +53,7 @@ func (bd *BlockDevices) loop() {
 			break
 		}
 
-		err = bd.notifyHandlers(old_parsed_output, parsed_output)
+		err = bd.callCallbacks(old_parsed_output, parsed_output)
 
 		if err != nil {
 			if bd.debugMode {
@@ -69,17 +69,17 @@ func (bd *BlockDevices) loop() {
 	bd.running = false
 }
 
-func (bd *BlockDevices) notifyHandlers(old_block_devices, block_devices map[string]map[string]string) error {
-	err := bd.notifyDetachedHandlers(old_block_devices, block_devices)
+func (bd *BlockDevices) callCallbacks(old_block_devices, block_devices map[string]map[string]string) error {
+	err := bd.callDetachedCallbacks(old_block_devices, block_devices)
 
 	if err != nil {
 		return err
 	}
 
-	return bd.notifyAttachedHandlers(old_block_devices, block_devices)
+	return bd.callAttachedCallbacks(old_block_devices, block_devices)
 }
 
-func (bd *BlockDevices) notifyAttachedHandlers(old_block_devices, block_devices map[string]map[string]string) error {
+func (bd *BlockDevices) callAttachedCallbacks(old_block_devices, block_devices map[string]map[string]string) error {
 	for name := range block_devices {
 		new_block_device_data := block_devices[name]
 		old_block_device_data, exists := old_block_devices[name]
@@ -99,8 +99,8 @@ func (bd *BlockDevices) notifyAttachedHandlers(old_block_devices, block_devices 
 				return err
 			}
 
-			for _, handler := range bd.attachedHandlers {
-				handler(
+			for _, callback := range bd.attachedCallbacks {
+				callback(
 					converted["NAME"].(string),
 					converted["SIZE"].(uint64),
 					converted["TYPE"].(string),
@@ -117,7 +117,7 @@ func (bd *BlockDevices) notifyAttachedHandlers(old_block_devices, block_devices 
 	return nil
 }
 
-func (bd *BlockDevices) notifyDetachedHandlers(old_block_devices, block_devices map[string]map[string]string) error {
+func (bd *BlockDevices) callDetachedCallbacks(old_block_devices, block_devices map[string]map[string]string) error {
 	for name := range old_block_devices {
 		old_block_device_data := old_block_devices[name]
 		new_block_device_data, exists := block_devices[name]
@@ -137,8 +137,8 @@ func (bd *BlockDevices) notifyDetachedHandlers(old_block_devices, block_devices 
 				return err
 			}
 
-			for _, handler := range bd.detachedHandlers {
-				handler(
+			for _, callback := range bd.detachedCallback {
+				callback(
 					converted["NAME"].(string),
 					converted["SIZE"].(uint64),
 					converted["TYPE"].(string),
@@ -223,12 +223,12 @@ func (bd *BlockDevices) parseLsblkOutput(output string) (map[string]map[string]s
 	return parsed, nil
 }
 
-func (bd *BlockDevices) AddAttachedHandler(handler interfaces.AttachedBlockDeviceCallback) {
-	bd.attachedHandlers = append(bd.attachedHandlers, handler)
+func (bd *BlockDevices) AddAttachedCallback(callback interfaces.AttachedBlockDeviceCallback) {
+	bd.attachedCallbacks = append(bd.attachedCallbacks, callback)
 }
 
-func (bd *BlockDevices) AddDetachedHandler(handler interfaces.DetachedBlockDeviceCallback) {
-	bd.detachedHandlers = append(bd.detachedHandlers, handler)
+func (bd *BlockDevices) AddDetachedCallback(callback interfaces.DetachedBlockDeviceCallback) {
+	bd.detachedCallback = append(bd.detachedCallback, callback)
 }
 
 func (bd *BlockDevices) Run() {
