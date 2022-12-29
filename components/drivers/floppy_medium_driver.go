@@ -622,5 +622,24 @@ func (fmd *FloppyMediumDriver) realWrite(floppyMedium *medium.FloppyMedium, path
 }
 
 func (fmd *FloppyMediumDriver) cachedWrite(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
-	return -fuse.EIO, nil
+	handle, err := fmd.OpenMediumHandle(floppyMedium)
+
+	if err != nil {
+		return 0, err
+	}
+
+	floppyMedium.SetFullyCached(true)
+	floppyMedium.CallPreWriteCallbacks(floppyMedium, path, buff, ofst, fh)
+
+	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
+
+	if err != nil {
+		floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, -fuse.EIO, 0)
+
+		return 0, err
+	}
+
+	floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, n, 0)
+
+	return n, nil
 }
