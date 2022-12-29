@@ -88,7 +88,7 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 	var err error
 	var n int
 
-	handle, err := fmd.getMediumHandle(_medium, consts.FLOPPY_READ_AHEAD)
+	handle, err := fmd.OpenMediumHandle(_medium, consts.FLOPPY_READ_AHEAD)
 
 	if err != nil {
 		return err
@@ -377,7 +377,7 @@ func (mdb *FloppyMediumDriver) partialRead(
 	read_time_ms := int64(0)
 	total_len_data := int64(0)
 
-	handle, err := mdb.getMediumHandle(medium, consts.FLOPPY_READ_AHEAD)
+	handle, err := mdb.OpenMediumHandle(medium, consts.FLOPPY_READ_AHEAD)
 
 	if err != nil {
 		return nil, 0, 0, err
@@ -488,7 +488,7 @@ func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buf
 }
 
 func (fmd *FloppyMediumDriver) realWrite(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
-	handle, err := fmd.getMediumHandle(floppyMedium, consts.FLOPPY_READ_AHEAD)
+	handle, err := fmd.OpenMediumHandle(floppyMedium, consts.FLOPPY_READ_AHEAD)
 
 	if err != nil {
 		return 0, err

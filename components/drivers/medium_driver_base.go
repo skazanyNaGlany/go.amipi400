@@ -49,7 +49,7 @@ func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	handle, err := mdb.getMediumHandle(medium)
+	handle, err := mdb.OpenMediumHandle(medium)
 
 	if err != nil {
 		return 0, err
@@ -93,7 +93,7 @@ func (mdb *MediumDriverBase) Write(medium interfaces.Medium, path string, buff [
 		return 0, errors.New("medium is not writable")
 	}
 
-	handle, err := mdb.getMediumHandle(medium)
+	handle, err := mdb.OpenMediumHandle(medium)
 
 	if err != nil {
 		return 0, err
@@ -150,7 +150,7 @@ func (mdb *MediumDriverBase) generatePermIntMask(
 	return uint32(mask)
 }
 
-func (mdb *MediumDriverBase) getMediumHandle(medium interfaces.Medium, readAhead ...int) (*os.File, error) {
+func (mdb *MediumDriverBase) OpenMediumHandle(medium interfaces.Medium, readAhead ...int) (*os.File, error) {
 	handle, err := medium.GetHandle()
 
 	if err != nil {
