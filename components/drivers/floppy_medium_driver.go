@@ -278,14 +278,6 @@ func (fmd *FloppyMediumDriver) Read(_medium interfaces.Medium, path string, buff
 		return 0, errors.New("cannot cast Medium to FloppyMedium")
 	}
 
-	if floppyMedium.GetCachedAdfPathname() == "" {
-		return fmd.realRead(floppyMedium, path, buff, ofst, fh)
-	}
-
-	return fmd.cachedRead(floppyMedium, path, buff, ofst, fh)
-}
-
-func (fmd *FloppyMediumDriver) realRead(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	floppyMedium.SetAccessTime(
 		time.Now().Unix())
 
@@ -297,6 +289,14 @@ func (fmd *FloppyMediumDriver) realRead(floppyMedium *medium.FloppyMedium, path 
 		toReadSize = fileSize - ofst
 	}
 
+	if floppyMedium.GetCachedAdfPathname() == "" {
+		return fmd.realRead(floppyMedium, path, buff, ofst, toReadSize, fh)
+	}
+
+	return fmd.cachedRead(floppyMedium, path, buff, ofst, toReadSize, fh)
+}
+
+func (fmd *FloppyMediumDriver) realRead(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst, toReadSize int64, fh uint64) (int, error) {
 	data, n_int64, err := fmd.realRead2(floppyMedium, path, ofst, toReadSize, fh)
 
 	if err != nil {
@@ -448,7 +448,7 @@ func (mdb *FloppyMediumDriver) partialRead(
 	return all_data, total_read_time_ms, count_real_read_sectors, nil
 }
 
-func (fmd *FloppyMediumDriver) cachedRead(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+func (fmd *FloppyMediumDriver) cachedRead(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst, toReadSize int64, fh uint64) (int, error) {
 	return -fuse.EIO, nil
 }
 
@@ -470,6 +470,16 @@ func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buf
 		return 0, errors.New("cannot cast Medium to FloppyMedium")
 	}
 
+	floppyMedium.SetModificationTime(
+		time.Now().Unix())
+
+	fileSize := floppyMedium.GetSize()
+	lenBuff := len(buff)
+
+	if ofst+int64(lenBuff) > fileSize || ofst >= fileSize {
+		return 0, errors.New("Write outside the medium")
+	}
+
 	if floppyMedium.GetCachedAdfPathname() == "" {
 		return fmd.realWrite(floppyMedium, path, buff, ofst, fh)
 	}
@@ -482,16 +492,6 @@ func (fmd *FloppyMediumDriver) realWrite(floppyMedium *medium.FloppyMedium, path
 
 	if err != nil {
 		return 0, err
-	}
-
-	floppyMedium.SetModificationTime(
-		time.Now().Unix())
-
-	fileSize := floppyMedium.GetSize()
-	lenBuff := len(buff)
-
-	if ofst+int64(lenBuff) > fileSize || ofst >= fileSize {
-		return 0, errors.New("Write outside the medium")
 	}
 
 	floppyMedium.SetFullyCached(false)
