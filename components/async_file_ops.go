@@ -13,7 +13,8 @@ import (
 
 type AsyncFileOps struct {
 	RunnerBase
-	operations []map[string]any // TODO convert to channel
+	operations             []map[string]any          // TODO convert to channel
+	oneTimeFinalOperations map[string]map[string]any // TODO convert to channel
 }
 
 func (afo *AsyncFileOps) loop() {
@@ -21,6 +22,7 @@ func (afo *AsyncFileOps) loop() {
 		time.Sleep(time.Millisecond * 10)
 
 		afo.execute()
+		afo.executeOneTimeFinal()
 	}
 
 	afo.running = false
@@ -34,6 +36,44 @@ func (afo *AsyncFileOps) execute() {
 		afo.operations = slices.Delete(afo.operations, 0, 0+1)
 
 		afo.executeOperation(ioperation, handles)
+	}
+
+	for name := range handles {
+		ihandle := handles[name]
+
+		ihandle.Close()
+
+		delete(handles, name)
+	}
+}
+
+func (afo *AsyncFileOps) executeOneTimeFinal() {
+	if len(afo.operations) > 0 {
+		return
+	}
+
+	handles := make(map[string]*os.File)
+
+	for len(afo.oneTimeFinalOperations) > 0 {
+		if len(afo.operations) > 0 {
+			break
+		}
+
+		for name := range afo.oneTimeFinalOperations {
+			if len(afo.operations) > 0 {
+				break
+			}
+
+			ioperation, exists := afo.oneTimeFinalOperations[name]
+
+			if !exists {
+				continue
+			}
+
+			delete(afo.oneTimeFinalOperations, name)
+
+			afo.executeOperation(ioperation, handles)
+		}
 	}
 
 	for name := range handles {
@@ -186,7 +226,7 @@ func (afo *AsyncFileOps) FileReadBytesDirect(
 	max int,
 	callback interfaces.FileReadBytesDirectCallback) {
 	if max > 0 {
-		count := afo.getCountOpsForName(name)
+		count := afo.getCountOpsForName(name, afo.operations)
 
 		if count >= max {
 			return
@@ -216,7 +256,7 @@ func (afo *AsyncFileOps) FileWriteBytes(
 	max int,
 	callback interfaces.FileWriteBytesCallback) {
 	if max > 0 {
-		count := afo.getCountOpsForName(name)
+		count := afo.getCountOpsForName(name, afo.operations)
 
 		if count >= max {
 			return
@@ -242,10 +282,37 @@ func (afo *AsyncFileOps) FileWriteBytes(
 	afo.operations = append(afo.operations, op)
 }
 
-func (afo *AsyncFileOps) getCountOpsForName(name string) int {
+func (afo *AsyncFileOps) FileWriteBytesOneTimeFinal(
+	name string,
+	offset int64,
+	buff []byte,
+	flag int,
+	perm fs.FileMode,
+	useHandle *os.File,
+	callback interfaces.FileWriteBytesCallback) {
+	// make a copy of the buffer to
+	// avoid race condition issues
+	buffCopy := make([]byte, len(buff))
+	copy(buffCopy, buff)
+
+	op := make(map[string]any)
+
+	op["name"] = name
+	op["offset"] = offset
+	op["buff"] = buffCopy
+	op["flag"] = flag
+	op["perm"] = perm
+	op["useHandle"] = useHandle
+	op["type"] = "write"
+	op["callback"] = callback
+
+	afo.oneTimeFinalOperations[name] = op
+}
+
+func (afo *AsyncFileOps) getCountOpsForName(name string, sliceToCheck []map[string]any) int {
 	count := 0
 
-	for _, ioperation := range afo.operations {
+	for _, ioperation := range sliceToCheck {
 		if ioperation["name"].(string) == name {
 			count++
 		}
@@ -254,5 +321,6 @@ func (afo *AsyncFileOps) getCountOpsForName(name string) int {
 }
 
 func (afo *AsyncFileOps) Run() {
+	afo.oneTimeFinalOperations = make(map[string]map[string]any)
 	afo.loop()
 }
