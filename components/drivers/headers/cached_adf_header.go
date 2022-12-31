@@ -4,6 +4,7 @@ import (
 	"strings"
 )
 
+// TODO move to consts.go
 var cachedADFHeaderHeaderType = "CachedADFHeader"
 var cachedADFHeaderSHA512Length = 128
 
