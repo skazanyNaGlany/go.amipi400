@@ -126,10 +126,6 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 		fmd.cachedAdfsDirectory,
 		fmd.buildCachedAdfFilename(sha512Id, consts.FLOPPY_ADF_EXTENSION))
 
-	// stat, err := os.Stat(cachedAdfPathname)
-
-	// it seems that cached ADF does not exists
-	// or it is invalid, create it
 	n, err = components.FileUtilsInstance.FileWriteBytes(
 		cachedAdfPathname,
 		0,
@@ -146,37 +142,15 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 		return errors.New("cannot create cached ADF file")
 	}
 
-	// save the CachedADFHeader to the
-	// last sector of the medium
-	header := headers.CachedADFHeader{}
 	stat, _ := os.Stat(cachedAdfPathname)
 
-	// TODO move "CachedADFHeader" to the consts
-	header.SetMagic(fmd.cachedAdfsHeaderMagic)
-	header.SetHeaderType("CachedADFHeader")
-	header.SetSha512(sha512Id)
-	header.SetMTime(stat.ModTime().Unix())
-
-	data, err = components.GoUtilsInstance.StructToByteSlice(&header)
+	err = fmd.updateCachedADFHeader(
+		_medium.GetDevicePathname(),
+		sha512Id,
+		stat.ModTime().Unix())
 
 	if err != nil {
 		return err
-	}
-
-	n, err = components.FileUtilsInstance.FileWriteBytes(
-		"",
-		consts.FLOPPY_DEVICE_LAST_SECTOR,
-		data,
-		0,
-		0,
-		handle)
-
-	if err != nil {
-		return err
-	}
-
-	if n < len(data) {
-		return errors.New("cannot write CachedADFHeader to the medium")
 	}
 
 	_medium.SetCachedAdfPathname(cachedAdfPathname)
@@ -194,6 +168,33 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 		log.Printf("\tCached ADF: %v\n", cachedAdfPathname)
 		log.Printf("\tSHA512 ID:  %v\n", sha512Id)
 	}
+
+	return nil
+}
+
+func (fmd *FloppyMediumDriver) updateCachedADFHeader(pathname, sha512Id string, mTime int64) error {
+	header := headers.CachedADFHeader{}
+
+	// TODO move "CachedADFHeader" to the consts
+	header.SetMagic(fmd.cachedAdfsHeaderMagic)
+	header.SetHeaderType("CachedADFHeader")
+	header.SetSha512(sha512Id)
+	header.SetMTime(mTime)
+
+	data, err := components.GoUtilsInstance.StructToByteSlice(&header)
+
+	if err != nil {
+		return err
+	}
+
+	fmd.outsideAsyncFileWriterCallback(
+		pathname,
+		consts.FLOPPY_DEVICE_LAST_SECTOR,
+		data,
+		os.O_SYNC|os.O_RDWR,
+		0777,
+		nil,
+		true)
 
 	return nil
 }
@@ -634,6 +635,23 @@ func (fmd *FloppyMediumDriver) cachedWrite(floppyMedium *medium.FloppyMedium, pa
 	floppyMedium.CallPreWriteCallbacks(floppyMedium, path, buff, ofst, fh)
 
 	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
+
+	fmd.outsideAsyncFileWriterCallback(
+		floppyMedium.GetDevicePathname(),
+		ofst,
+		buff,
+		os.O_SYNC|os.O_RDWR,
+		0777,
+		nil,
+		false)
+
+	stat, _ := os.Stat(
+		floppyMedium.GetCachedAdfPathname())
+
+	fmd.updateCachedADFHeader(
+		floppyMedium.GetDevicePathname(),
+		floppyMedium.GetCachedAdfSha512(),
+		stat.ModTime().Unix())
 
 	if err != nil {
 		floppyMedium.CallPostWriteCallbacks(floppyMedium, path, buff, ofst, fh, -fuse.EIO, 0)

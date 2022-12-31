@@ -214,10 +214,6 @@ func detachedBlockDeviceCallback(
 	}
 }
 
-func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag int, perm fs.FileMode, useHandle *os.File) {
-
-}
-
 func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 	floppyMedium, isFloppy := _medium.(*medium.FloppyMedium)
 
@@ -279,6 +275,20 @@ func postWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst
 }
 
 func closedCallback(_medium interfaces.Medium, err error) {
+}
+
+func fileWriteBytesCallback(name string, offset int64, buff []byte, flag int, perm fs.FileMode, useHandle *os.File, n int, err error) {
+	ledControl.BlinkPowerLEDSecs(consts.FLOPPY_WRITE_BLINK_POWER_SECS)
+}
+
+func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag int, perm fs.FileMode, useHandle *os.File, oneTimeFinal bool) {
+	ledControl.BlinkPowerLEDSecs(consts.FLOPPY_WRITE_BLINK_POWER_SECS)
+
+	if oneTimeFinal {
+		asyncFileOps.FileWriteBytesOneTimeFinal(name, offset, buff, flag, perm, useHandle, fileWriteBytesCallback)
+	} else {
+		asyncFileOps.FileWriteBytes(name, offset, buff, flag, perm, useHandle, 0, fileWriteBytesCallback)
+	}
 }
 
 func initCreateDirs(exeDir string) {
