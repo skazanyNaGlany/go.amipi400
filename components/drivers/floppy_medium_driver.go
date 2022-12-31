@@ -247,7 +247,7 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 	}
 
 	if stat.Size() < consts.FLOPPY_ADF_SIZE {
-		return errors.New("cached ADF file has wrong size")
+		return nil
 	}
 
 	if stat.ModTime().Unix() < header.GetMTime() {
