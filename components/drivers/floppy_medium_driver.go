@@ -250,7 +250,11 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 		return errors.New("cached ADF file has wrong size")
 	}
 
-	// TODO check mTime against the header
+	if stat.ModTime().Unix() < header.GetMTime() {
+		// cached ADF is older than physical medium
+		// we will re-cache it later
+		return nil
+	}
 
 	// it seems that ADF is properly cached
 	_medium.SetCachedAdfPathname(cachedAdfPathname)
