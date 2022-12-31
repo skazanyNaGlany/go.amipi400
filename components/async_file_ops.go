@@ -13,7 +13,7 @@ import (
 
 type AsyncFileOps struct {
 	RunnerBase
-	operations []map[string]any
+	operations []map[string]any // TODO convert to channel
 }
 
 func (afo *AsyncFileOps) loop() {
@@ -223,11 +223,16 @@ func (afo *AsyncFileOps) FileWriteBytes(
 		}
 	}
 
+	// make a copy of the buffer to
+	// avoid race condition issues
+	buffCopy := make([]byte, len(buff))
+	copy(buffCopy, buff)
+
 	op := make(map[string]any)
 
 	op["name"] = name
 	op["offset"] = offset
-	op["buff"] = buff
+	op["buff"] = buffCopy
 	op["flag"] = flag
 	op["perm"] = perm
 	op["useHandle"] = useHandle
