@@ -28,10 +28,10 @@ func (kc *KeyboardControl) init() bool {
 	if err != nil {
 		if kc.debugMode {
 			log.Println(err)
-
-			kc.running = false
-			return false
 		}
+
+		kc.running = false
+		return false
 	}
 
 	return true
