@@ -125,6 +125,18 @@ func (kc *KeyboardControl) IsKeyPressed(key string) bool {
 	return funk.ContainsString(kc.pressedKeys, key)
 }
 
+func (kc *KeyboardControl) IsKeysPressed(keys []string) bool {
+	count := 0
+
+	for _, key := range kc.pressedKeys {
+		if funk.ContainsString(keys, key) {
+			count++
+		}
+	}
+
+	return count == len(keys)
+}
+
 func (kc *KeyboardControl) AddKeyEventCallback(callback interfaces.KeyEventCallback) {
 	kc.keyEventCallbacks = append(kc.keyEventCallbacks, callback)
 }
