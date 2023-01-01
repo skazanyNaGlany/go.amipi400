@@ -13,8 +13,9 @@ import (
 type KeyboardControl struct {
 	RunnerBase
 
-	keyboard    *keylogger.KeyLogger
-	pressedKeys []string
+	keyboard          *keylogger.KeyLogger
+	pressedKeys       []string
+	keyEventCallbacks []interfaces.KeyEventCallback
 }
 
 func (kc *KeyboardControl) init() bool {
@@ -60,13 +61,15 @@ func (kc *KeyboardControl) loop() {
 				keyStr := ievent.KeyString()
 
 				if ievent.KeyPress() {
-					if !funk.ContainsString(kc.pressedKeys, keyStr) {
-						kc.pressedKeys = append(kc.pressedKeys, keyStr)
+					if kc.SetPressedKey(keyStr) {
+						kc.callKeyEventCallbacks(keyStr, true)
 					}
 				}
 
 				if ievent.KeyRelease() {
-					kc.ClearPressedKey(keyStr)
+					if kc.ClearPressedKey(keyStr) {
+						kc.callKeyEventCallbacks(keyStr, false)
+					}
 				}
 			}
 		}
@@ -109,12 +112,36 @@ func (kc *KeyboardControl) ClearPressedKeys() {
 	kc.pressedKeys = make([]string, 0)
 }
 
-func (kc *KeyboardControl) ClearPressedKey(key string) {
+func (kc *KeyboardControl) SetPressedKey(key string) bool {
+	if !funk.ContainsString(kc.pressedKeys, key) {
+		kc.pressedKeys = append(kc.pressedKeys, key)
+
+		return true
+	}
+
+	return false
+}
+
+func (kc *KeyboardControl) ClearPressedKey(key string) bool {
 	if index := funk.IndexOfString(kc.pressedKeys, key); index != -1 {
 		kc.pressedKeys = slices.Delete(kc.pressedKeys, index, index+1)
+
+		return true
 	}
+
+	return false
 }
 
 func (kc *KeyboardControl) IsKeyPressed(key string) bool {
 	return funk.ContainsString(kc.pressedKeys, key)
+}
+
+func (kc *KeyboardControl) AddKeyEventCallback(callback interfaces.KeyEventCallback) {
+	kc.keyEventCallbacks = append(kc.keyEventCallbacks, callback)
+}
+
+func (kc *KeyboardControl) callKeyEventCallbacks(key string, pressed bool) {
+	for _, callback := range kc.keyEventCallbacks {
+		callback(key, pressed)
+	}
 }
