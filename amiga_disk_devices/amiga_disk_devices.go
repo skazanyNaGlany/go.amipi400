@@ -14,6 +14,7 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
+	"github.com/thoas/go-funk"
 )
 
 var goUtils components.GoUtils
@@ -25,9 +26,14 @@ var driveDevicesDiscovery components.DriveDevicesDiscovery
 var volumeControl components.VolumeControl
 var ledControl components.LEDControl
 var asyncFileOps components.AsyncFileOps
+var asyncFileOpsDf0 components.AsyncFileOps
+var asyncFileOpsDf1 components.AsyncFileOps
+var asyncFileOpsDf2 components.AsyncFileOps
+var asyncFileOpsDf3 components.AsyncFileOps
 var keyboardControl components.KeyboardControl
 var cachedAdfsDir = ""
 var AMIPI400_UNIXNAME_UPPER = strings.ToUpper(consts.AMIPI400_UNIXNAME)
+var floppyDevices []string
 
 func isInternalMedium(name string) bool {
 	return strings.HasPrefix(name, consts.SYSTEM_INTERNAL_SD_CARD_NAME)
@@ -214,6 +220,24 @@ func detachedBlockDeviceCallback(
 	}
 }
 
+func devicePathnameToAsyncFileOps(devicePathname string) *components.AsyncFileOps {
+	index := funk.IndexOfString(floppyDevices, devicePathname)
+
+	// log.Println(index)
+
+	if index == 0 {
+		return &asyncFileOpsDf0
+	} else if index == 1 {
+		return &asyncFileOpsDf1
+	} else if index == 2 {
+		return &asyncFileOpsDf2
+	} else if index == 3 {
+		return &asyncFileOpsDf3
+	}
+
+	return &asyncFileOps
+}
+
 func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 	floppyMedium, isFloppy := _medium.(*medium.FloppyMedium)
 
@@ -225,15 +249,18 @@ func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 		// reading from non-cached floppy medium
 		volumeControl.MuteForSecs(consts.FLOPPY_READ_MUTE_SECS)
 	} else {
+		devicePathname := floppyMedium.GetDevicePathname()
+		async := devicePathnameToAsyncFileOps(devicePathname)
+
 		// reading from cached floppy medium
 		// read from real device to move the motor
-		asyncFileOps.FileReadBytesDirect(
-			floppyMedium.GetDevicePathname(),
+		async.FileReadBytesDirect(
+			devicePathname,
 			ofst,
 			0,
 			0,
 			nil,
-			4,
+			1,
 			nil)
 	}
 }
@@ -284,10 +311,12 @@ func fileWriteBytesCallback(name string, offset int64, buff []byte, flag int, pe
 func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag int, perm fs.FileMode, useHandle *os.File, oneTimeFinal bool) {
 	ledControl.BlinkPowerLEDSecs(consts.FLOPPY_WRITE_BLINK_POWER_SECS)
 
+	async := devicePathnameToAsyncFileOps(name)
+
 	if oneTimeFinal {
-		asyncFileOps.FileWriteBytesOneTimeFinal(name, offset, buff, flag, perm, useHandle, fileWriteBytesCallback)
+		async.FileWriteBytesOneTimeFinal(name, offset, buff, flag, perm, useHandle, fileWriteBytesCallback)
 	} else {
-		asyncFileOps.FileWriteBytes(name, offset, buff, flag, perm, useHandle, 0, fileWriteBytesCallback)
+		async.FileWriteBytes(name, offset, buff, flag, perm, useHandle, 0, fileWriteBytesCallback)
 	}
 }
 
@@ -313,13 +342,13 @@ func discoverDriveDevices() {
 }
 
 func printFloppyDevices() {
-	floppies := driveDevicesDiscovery.GetFloppies()
+	floppyDevices = driveDevicesDiscovery.GetFloppies()
 
-	if len(floppies) > 0 {
+	if len(floppyDevices) > 0 {
 		log.Println("Physicall floppy drives:")
 	}
 
-	for _, devicePathname := range floppies {
+	for _, devicePathname := range floppyDevices {
 		log.Println("\t" + devicePathname)
 	}
 }
@@ -398,6 +427,14 @@ func main() {
 	ledControl.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 	asyncFileOps.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
 	asyncFileOps.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	asyncFileOpsDf0.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	asyncFileOpsDf0.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	asyncFileOpsDf1.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	asyncFileOpsDf1.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	asyncFileOpsDf2.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	asyncFileOpsDf2.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	asyncFileOpsDf3.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	asyncFileOpsDf3.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 	keyboardControl.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
 	keyboardControl.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 
@@ -409,6 +446,10 @@ func main() {
 	volumeControl.Start(&volumeControl)
 	ledControl.Start(&ledControl)
 	asyncFileOps.Start(&asyncFileOps)
+	asyncFileOpsDf0.Start(&asyncFileOpsDf0)
+	asyncFileOpsDf1.Start(&asyncFileOpsDf1)
+	asyncFileOpsDf2.Start(&asyncFileOpsDf2)
+	asyncFileOpsDf3.Start(&asyncFileOpsDf3)
 	keyboardControl.Start(&keyboardControl)
 
 	defer fileSystem.Stop(&fileSystem)
@@ -416,6 +457,10 @@ func main() {
 	defer volumeControl.Stop(&volumeControl)
 	defer ledControl.Stop(&ledControl)
 	defer asyncFileOps.Stop(&asyncFileOps)
+	defer asyncFileOpsDf0.Stop(&asyncFileOpsDf0)
+	defer asyncFileOpsDf1.Stop(&asyncFileOpsDf1)
+	defer asyncFileOpsDf2.Stop(&asyncFileOpsDf2)
+	defer asyncFileOpsDf3.Stop(&asyncFileOpsDf3)
 	defer keyboardControl.Stop(&keyboardControl)
 
 	runnersBlocker.AddRunner(&blockDevices)
@@ -423,6 +468,10 @@ func main() {
 	runnersBlocker.AddRunner(&volumeControl)
 	runnersBlocker.AddRunner(&ledControl)
 	runnersBlocker.AddRunner(&asyncFileOps)
+	runnersBlocker.AddRunner(&asyncFileOpsDf0)
+	runnersBlocker.AddRunner(&asyncFileOpsDf1)
+	runnersBlocker.AddRunner(&asyncFileOpsDf2)
+	runnersBlocker.AddRunner(&asyncFileOpsDf3)
 	runnersBlocker.AddRunner(&keyboardControl)
 	runnersBlocker.BlockUntilRunning()
 }
