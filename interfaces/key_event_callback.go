@@ -1,3 +1,3 @@
 package interfaces
 
-type KeyEventCallback func(key string, pressed bool)
+type KeyEventCallback func(sender any, key string, pressed bool)

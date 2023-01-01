@@ -16,25 +16,14 @@ type KeyboardControl struct {
 	keyboard          *keylogger.KeyLogger
 	pressedKeys       []string
 	keyEventCallbacks []interfaces.KeyEventCallback
+	keyboardDevice    string
 }
 
 func (kc *KeyboardControl) init() bool {
 	var err error
 
 	kc.pressedKeys = make([]string, 0)
-
-	keyboardDevice := keylogger.FindKeyboardDevice()
-
-	if keyboardDevice == "" {
-		if kc.debugMode {
-			log.Println("No keyboard found")
-
-			kc.running = false
-			return false
-		}
-	}
-
-	kc.keyboard, err = keylogger.New(keyboardDevice)
+	kc.keyboard, err = keylogger.New(kc.keyboardDevice)
 
 	if err != nil {
 		if kc.debugMode {
@@ -142,6 +131,14 @@ func (kc *KeyboardControl) AddKeyEventCallback(callback interfaces.KeyEventCallb
 
 func (kc *KeyboardControl) callKeyEventCallbacks(key string, pressed bool) {
 	for _, callback := range kc.keyEventCallbacks {
-		callback(key, pressed)
+		callback(kc, key, pressed)
 	}
+}
+
+func (kc *KeyboardControl) FindAllKeyboardDevices() []string {
+	return keylogger.FindAllKeyboardDevices()
+}
+
+func (kc *KeyboardControl) SetKeyboardDevice(keyboardDevice string) {
+	kc.keyboardDevice = keyboardDevice
 }
