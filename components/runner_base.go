@@ -1,8 +1,10 @@
 package components
 
-import "github.com/skazanyNaGlany/go.amipi400/interfaces"
+import (
+	"log"
 
-import "log"
+	"github.com/skazanyNaGlany/go.amipi400/interfaces"
+)
 
 type RunnerBase struct {
 	running     bool

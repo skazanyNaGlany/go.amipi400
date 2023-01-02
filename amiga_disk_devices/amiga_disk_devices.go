@@ -30,7 +30,7 @@ var asyncFileOpsDf0 components.AsyncFileOps
 var asyncFileOpsDf1 components.AsyncFileOps
 var asyncFileOpsDf2 components.AsyncFileOps
 var asyncFileOpsDf3 components.AsyncFileOps
-var keyboardControl components.KeyboardControl
+var keyboardControls []*components.KeyboardControl
 var cachedAdfsDir = ""
 var AMIPI400_UNIXNAME_UPPER = strings.ToUpper(consts.AMIPI400_UNIXNAME)
 var floppyDevices []string
@@ -65,10 +65,10 @@ func ProbeMediumForDriver(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) (interfaces.Medium, error) {
 
-	forceInsert := keyboardControl.IsKeyPressed(consts.FORCE_INSERT_KEY)
+	forceInsert := isKeysPressed(consts.FORCE_INSERT_KEYS)
 
 	// perform only one special action at a time
-	keyboardControl.ClearPressedKeys()
+	clearKeyboardControls()
 
 	// try FloppyMediumDriver
 	floppyDriver := drivers.FloppyMediumDriver{}
@@ -223,8 +223,6 @@ func detachedBlockDeviceCallback(
 func devicePathnameToAsyncFileOps(devicePathname string) *components.AsyncFileOps {
 	index := funk.IndexOfString(floppyDevices, devicePathname)
 
-	// log.Println(index)
-
 	if index == 0 {
 		return &asyncFileOpsDf0
 	} else if index == 1 {
@@ -318,6 +316,61 @@ func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag
 	} else {
 		async.FileWriteBytes(name, offset, buff, flag, perm, useHandle, 0, fileWriteBytesCallback)
 	}
+}
+
+func keyEventCallback(sender any, key string, pressed bool) {
+}
+
+func initKeyboardControls() {
+	kc := components.KeyboardControl{}
+	devices := kc.FindAllKeyboardDevices()
+
+	for _, idevice := range devices {
+		_kc := &components.KeyboardControl{}
+
+		_kc.SetKeyboardDevice(idevice)
+
+		_kc.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+		_kc.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+
+		_kc.AddKeyEventCallback(keyEventCallback)
+
+		keyboardControls = append(keyboardControls, _kc)
+	}
+}
+
+func startKeyboardControls() {
+	for _, kc := range keyboardControls {
+		kc.Start(kc)
+	}
+}
+
+func stopKeyboardControls() {
+	for _, kc := range keyboardControls {
+		kc.Stop(kc)
+	}
+}
+
+func addKeyboardControlsRunners() {
+	for _, kc := range keyboardControls {
+		runnersBlocker.AddRunner(kc)
+	}
+}
+
+func clearKeyboardControls() {
+	for _, kc := range keyboardControls {
+		kc.ClearPressedKeys()
+	}
+}
+
+func isKeysPressed(keys []string) bool {
+	for _, kc := range keyboardControls {
+		if kc.IsKeysPressed(keys) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func initCreateDirs(exeDir string) {
@@ -435,8 +488,8 @@ func main() {
 	asyncFileOpsDf2.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 	asyncFileOpsDf3.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
 	asyncFileOpsDf3.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
-	keyboardControl.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
-	keyboardControl.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+
+	initKeyboardControls()
 
 	blockDevices.AddAttachedCallback(attachedBlockDeviceCallback)
 	blockDevices.AddDetachedCallback(detachedBlockDeviceCallback)
@@ -450,7 +503,7 @@ func main() {
 	asyncFileOpsDf1.Start(&asyncFileOpsDf1)
 	asyncFileOpsDf2.Start(&asyncFileOpsDf2)
 	asyncFileOpsDf3.Start(&asyncFileOpsDf3)
-	keyboardControl.Start(&keyboardControl)
+	startKeyboardControls()
 
 	defer fileSystem.Stop(&fileSystem)
 	defer blockDevices.Stop(&blockDevices)
@@ -461,7 +514,7 @@ func main() {
 	defer asyncFileOpsDf1.Stop(&asyncFileOpsDf1)
 	defer asyncFileOpsDf2.Stop(&asyncFileOpsDf2)
 	defer asyncFileOpsDf3.Stop(&asyncFileOpsDf3)
-	defer keyboardControl.Stop(&keyboardControl)
+	defer stopKeyboardControls()
 
 	runnersBlocker.AddRunner(&blockDevices)
 	runnersBlocker.AddRunner(&fileSystem)
@@ -472,6 +525,6 @@ func main() {
 	runnersBlocker.AddRunner(&asyncFileOpsDf1)
 	runnersBlocker.AddRunner(&asyncFileOpsDf2)
 	runnersBlocker.AddRunner(&asyncFileOpsDf3)
-	runnersBlocker.AddRunner(&keyboardControl)
+	addKeyboardControlsRunners()
 	runnersBlocker.BlockUntilRunning()
 }
