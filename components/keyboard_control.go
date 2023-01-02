@@ -2,11 +2,13 @@ package components
 
 import (
 	"log"
+	"strings"
 	"time"
 
 	"github.com/MarinX/keylogger"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/thoas/go-funk"
+	"github.com/yookoala/realpath"
 	"golang.org/x/exp/slices"
 )
 
@@ -148,7 +150,19 @@ func (kc *KeyboardControl) callKeyEventCallbacks(key string, pressed bool) {
 }
 
 func (kc *KeyboardControl) FindAllKeyboardDevices() []string {
-	return keylogger.FindAllKeyboardDevices()
+	devices := keylogger.FindAllKeyboardDevices()
+
+	for _, pathname := range FileUtilsInstance.GetDirFiles("/dev/input/by-path") {
+		if !strings.HasSuffix(pathname, "-event-kbd") {
+			continue
+		}
+
+		pathname, _ = realpath.Realpath(pathname)
+
+		devices = append(devices, pathname)
+	}
+
+	return funk.UniqString(devices)
 }
 
 func (kc *KeyboardControl) SetKeyboardDevice(keyboardDevice string) {
