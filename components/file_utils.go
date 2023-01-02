@@ -3,12 +3,25 @@ package components
 import (
 	"io"
 	"io/fs"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 )
 
 type FileUtils struct{}
 
 var FileUtilsInstance FileUtils
+
+func (fu *FileUtils) GetDirFiles(dir string) []string {
+	result := make([]string, 0)
+	files, _ := ioutil.ReadDir(dir)
+
+	for _, filename := range files {
+		result = append(result, filepath.Join(dir, filename.Name()))
+	}
+
+	return result
+}
 
 func (fu *FileUtils) FileReadBytes(
 	name string,
