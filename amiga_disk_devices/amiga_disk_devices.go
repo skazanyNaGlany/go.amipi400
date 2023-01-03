@@ -75,6 +75,7 @@ func ProbeMediumForDriver(
 	floppyDriver.SetCachedAdfsDirectory(cachedAdfsDir)
 	floppyDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
 	floppyDriver.SetDebugMode(consts.DRIVERS_DEBUG_MODE)
+	floppyDriver.SetOutsideAsyncFileWriterCallback(outsideAsyncFileWriterCallback)
 
 	medium, err := floppyDriver.Probe(
 		consts.FILE_SYSTEM_MOUNT,
@@ -190,8 +191,6 @@ func attachedBlockDeviceCallback(
 	medium.AddPreWriteCallback(preWriteCallback)
 	medium.AddPostWriteCallback(postWriteCallback)
 	medium.AddClosedCallback(closedCallback)
-
-	medium.GetDriver().SetOutsideAsyncFileWriterCallback(outsideAsyncFileWriterCallback)
 
 	fileSystem.AddMedium(medium)
 }

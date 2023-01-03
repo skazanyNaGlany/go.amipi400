@@ -21,7 +21,8 @@ import (
 type FloppyMediumDriver struct {
 	MediumDriverBase
 
-	cachedAdfsDirectory string
+	cachedAdfsDirectory            string
+	outsideAsyncFileWriterCallback interfaces.OutsideAsyncFileWriterCallback
 }
 
 func (fmd *FloppyMediumDriver) Probe(
@@ -336,6 +337,10 @@ func (fmd *FloppyMediumDriver) OpenMediumHandle(_medium interfaces.Medium, readA
 	floppyMedium.SetHandle(handle)
 
 	return handle, nil
+}
+
+func (fmd *FloppyMediumDriver) SetOutsideAsyncFileWriterCallback(callback interfaces.OutsideAsyncFileWriterCallback) {
+	fmd.outsideAsyncFileWriterCallback = callback
 }
 
 // Read

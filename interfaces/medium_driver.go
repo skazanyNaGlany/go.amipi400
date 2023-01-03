@@ -21,5 +21,4 @@ type MediumDriver interface {
 	SetDebugMode(debugMode bool)
 	GetVerboseMode() bool
 	GetDebugMode() bool
-	SetOutsideAsyncFileWriterCallback(callback OutsideAsyncFileWriterCallback)
 }
