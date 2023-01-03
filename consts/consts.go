@@ -1,7 +1,10 @@
 package consts
 
+import "strings"
+
 // global
 const AMIPI400_UNIXNAME = "amipi400"
+const AMIPI400_VERSION = "0.1"
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
@@ -51,3 +54,9 @@ const DEFAULT_READ_AHEAD = 256
 // AsyncFileOps
 const ASYNC_FILE_OP_DIRECT_READ = "direct_read"
 const ASYNC_FILE_OP_WRITE = "write"
+
+// CachedADFHeader
+const CACHED_ADF_HEADER_HEADER_TYPE = "CachedADFHeader"
+const CACHED_ADF_HEADER_SHA512_LENGTH = 128
+
+var CACHED_ADF_HEADER_MAGIC = strings.ToUpper(AMIPI400_UNIXNAME + " v." + AMIPI400_VERSION)

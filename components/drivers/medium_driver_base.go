@@ -20,7 +20,6 @@ type MediumDriverBase struct {
 }
 
 func (mdb *MediumDriverBase) Getattr(medium interfaces.Medium, path string, stat *fuse.Stat_t, fh uint64) (int, error) {
-	// TODO move to MediumDriverBase
 	creationTime := medium.GetCreateTime()
 	accessTime := medium.GetAccessTime()
 	modificationTime := medium.GetModificationTime()

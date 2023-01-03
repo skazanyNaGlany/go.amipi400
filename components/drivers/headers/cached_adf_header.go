@@ -2,11 +2,9 @@ package headers
 
 import (
 	"strings"
-)
 
-// TODO move to consts.go
-var cachedADFHeaderHeaderType = "CachedADFHeader"
-var cachedADFHeaderSHA512Length = 128
+	"github.com/skazanyNaGlany/go.amipi400/consts"
+)
 
 type CachedADFHeader struct {
 	Magic      [32]byte
@@ -15,20 +13,19 @@ type CachedADFHeader struct {
 	MTime      int64
 }
 
+func (cah *CachedADFHeader) Init() *CachedADFHeader {
+	copy(cah.Magic[:], []byte(consts.CACHED_ADF_HEADER_MAGIC))
+	copy(cah.HeaderType[:], []byte(consts.CACHED_ADF_HEADER_HEADER_TYPE))
+
+	return cah
+}
+
 func (cah *CachedADFHeader) GetMagic() string {
 	return strings.TrimRight(string(cah.Magic[:]), "\x00")
 }
 
-func (cah *CachedADFHeader) SetMagic(magic string) {
-	copy(cah.Magic[:], []byte(magic))
-}
-
 func (cah *CachedADFHeader) GetHeaderType() string {
 	return strings.TrimRight(string(cah.HeaderType[:]), "\x00")
-}
-
-func (cah *CachedADFHeader) SetHeaderType(headerType string) {
-	copy(cah.HeaderType[:], []byte(headerType))
 }
 
 func (cah *CachedADFHeader) GetSha512() string {
@@ -47,8 +44,8 @@ func (cah *CachedADFHeader) GetMTime() int64 {
 	return cah.MTime
 }
 
-func (cah *CachedADFHeader) IsValid(magic string) bool {
-	return cah.GetMagic() == magic &&
-		cah.GetHeaderType() == cachedADFHeaderHeaderType &&
-		len(cah.GetSha512()) == cachedADFHeaderSHA512Length
+func (cah *CachedADFHeader) IsValid() bool {
+	return cah.GetMagic() == consts.CACHED_ADF_HEADER_MAGIC &&
+		cah.GetHeaderType() == consts.CACHED_ADF_HEADER_HEADER_TYPE &&
+		len(cah.GetSha512()) == consts.CACHED_ADF_HEADER_SHA512_LENGTH
 }

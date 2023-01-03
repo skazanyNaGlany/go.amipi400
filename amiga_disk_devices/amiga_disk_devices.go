@@ -32,7 +32,7 @@ var asyncFileOpsDf2 components.AsyncFileOps
 var asyncFileOpsDf3 components.AsyncFileOps
 var keyboardControls []*components.KeyboardControl
 var cachedAdfsDir = ""
-var AMIPI400_UNIXNAME_UPPER = strings.ToUpper(consts.AMIPI400_UNIXNAME)
+
 var floppyDevices []string
 
 func isInternalMedium(name string) bool {
@@ -74,7 +74,6 @@ func ProbeMediumForDriver(
 	floppyDriver := drivers.FloppyMediumDriver{}
 
 	floppyDriver.SetCachedAdfsDirectory(cachedAdfsDir)
-	floppyDriver.SetCachedAdfsHeaderMagic(AMIPI400_UNIXNAME_UPPER)
 	floppyDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
 	floppyDriver.SetDebugMode(consts.DRIVERS_DEBUG_MODE)
 

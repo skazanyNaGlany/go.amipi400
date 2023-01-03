@@ -21,8 +21,7 @@ import (
 type FloppyMediumDriver struct {
 	MediumDriverBase
 
-	cachedAdfsDirectory   string
-	cachedAdfsHeaderMagic string
+	cachedAdfsDirectory string
 }
 
 func (fmd *FloppyMediumDriver) Probe(
@@ -173,15 +172,12 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 }
 
 func (fmd *FloppyMediumDriver) updateCachedADFHeader(pathname, sha512Id string, mTime int64) error {
-	header := headers.CachedADFHeader{}
+	header := new(headers.CachedADFHeader).Init()
 
-	// TODO move "CachedADFHeader" to the consts
-	header.SetMagic(fmd.cachedAdfsHeaderMagic)
-	header.SetHeaderType("CachedADFHeader")
 	header.SetSha512(sha512Id)
 	header.SetMTime(mTime)
 
-	data, err := components.GoUtilsInstance.StructToByteSlice(&header)
+	data, err := components.GoUtilsInstance.StructToByteSlice(header)
 
 	if err != nil {
 		return err
@@ -223,7 +219,7 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 		return err
 	}
 
-	if !header.IsValid(fmd.cachedAdfsHeaderMagic) {
+	if !header.IsValid() {
 		// CachedADFHeader is invalid or does not exists
 		return nil
 	}
@@ -274,10 +270,6 @@ func (fmd *FloppyMediumDriver) buildCachedAdfFilename(sha512Id, extension string
 
 func (mdb *FloppyMediumDriver) SetCachedAdfsDirectory(cachedAdfsDirectory string) {
 	mdb.cachedAdfsDirectory = cachedAdfsDirectory
-}
-
-func (mdb *FloppyMediumDriver) SetCachedAdfsHeaderMagic(cachedAdfsHeaderMagic string) {
-	mdb.cachedAdfsHeaderMagic = cachedAdfsHeaderMagic
 }
 
 func (fmd *FloppyMediumDriver) OpenMediumHandle(_medium interfaces.Medium, readAhead ...int) (*os.File, error) {
@@ -411,7 +403,6 @@ func (mdb *FloppyMediumDriver) realRead2(
 	}
 
 	if floppyMedium.IsFullyCached() {
-		// TODO spin
 		return rr_all_data, int64(len(rr_all_data)), rr_err
 	}
 
@@ -435,7 +426,13 @@ func (mdb *FloppyMediumDriver) realRead2(
 		if rr2_total_read_time_ms < consts.FLOPPY_SECTOR_READ_TIME_MS {
 			floppyMedium.SetFullyCached(true)
 
-			mdb.FloppyCacheAdf(floppyMedium)
+			err := mdb.FloppyCacheAdf(floppyMedium)
+
+			if err != nil {
+				if mdb.debugMode {
+					log.Println(err)
+				}
+			}
 		}
 	}
 
