@@ -12,13 +12,12 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/drivers"
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/thoas/go-funk"
 )
 
-var goUtils components.GoUtils
-var unixUtils components.UnixUtils
 var blockDevices components.BlockDevices
 var fileSystem components.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
@@ -418,7 +417,7 @@ func printCDROMDevices() {
 }
 
 func DuplicateLog(exeDir string) string {
-	logFilePathname, err := goUtils.DuplicateLog(exeDir)
+	logFilePathname, err := utils.GoUtilsInstance.DuplicateLog(exeDir)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -428,7 +427,7 @@ func DuplicateLog(exeDir string) string {
 }
 
 func CwdToExeOrScript() string {
-	exeDir, err := goUtils.CwdToExeOrScript()
+	exeDir, err := utils.GoUtilsInstance.CwdToExeOrScript()
 
 	if err != nil {
 		log.Fatalln(err)
@@ -444,7 +443,7 @@ func checkPlatform() {
 }
 
 func checkForRoot() {
-	if !unixUtils.IsRoot() {
+	if !utils.UnixUtilsInstance.IsRoot() {
 		log.Fatalln("Must be run as root.")
 	}
 }

@@ -10,9 +10,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/drivers/headers"
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
@@ -93,7 +93,7 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 		return err
 	}
 
-	data, len_data, err := components.FileUtilsInstance.FileReadBytes(
+	data, len_data, err := utils.FileUtilsInstance.FileReadBytes(
 		"",
 		0,
 		consts.FLOPPY_ADF_SIZE,
@@ -116,7 +116,7 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 	sha512Id = _medium.GetCachedAdfSha512()
 
 	if sha512Id == "" {
-		sha512Id = components.CryptoUtilsInstance.BytesToSha512Hex(data)
+		sha512Id = utils.CryptoUtilsInstance.BytesToSha512Hex(data)
 
 		_medium.SetCachedAdfSha512(sha512Id)
 	}
@@ -125,7 +125,7 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 		fmd.cachedAdfsDirectory,
 		fmd.buildCachedAdfFilename(sha512Id, consts.FLOPPY_ADF_EXTENSION))
 
-	n, err = components.FileUtilsInstance.FileWriteBytes(
+	n, err = utils.FileUtilsInstance.FileWriteBytes(
 		cachedAdfPathname,
 		0,
 		data,
@@ -177,7 +177,7 @@ func (fmd *FloppyMediumDriver) updateCachedADFHeader(pathname, sha512Id string, 
 	header.SetSha512(sha512Id)
 	header.SetMTime(mTime)
 
-	data, err := components.GoUtilsInstance.StructToByteSlice(header)
+	data, err := utils.GoUtilsInstance.StructToByteSlice(header)
 
 	if err != nil {
 		return err
@@ -199,7 +199,7 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 	header := headers.CachedADFHeader{}
 	headerSize := unsafe.Sizeof(header)
 
-	deviceRawHeader, n, err := components.FileUtilsInstance.FileReadBytes(
+	deviceRawHeader, n, err := utils.FileUtilsInstance.FileReadBytes(
 		_medium.GetDevicePathname(),
 		consts.FLOPPY_DEVICE_LAST_SECTOR,
 		consts.FLOPPY_DEVICE_SECTOR_SIZE,
@@ -215,7 +215,7 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 		return fmt.Errorf("cannot read device's data, FileReadBytes returns %v", n)
 	}
 
-	if err = components.GoUtilsInstance.ByteSliceToStruct(deviceRawHeader, &header); err != nil {
+	if err = utils.GoUtilsInstance.ByteSliceToStruct(deviceRawHeader, &header); err != nil {
 		return err
 	}
 
@@ -326,7 +326,7 @@ func (fmd *FloppyMediumDriver) OpenMediumHandle(_medium interfaces.Medium, readA
 	if floppyMedium.GetCachedAdfPathname() == "" {
 		// set read-a-head value for device or file handle
 		// for block-device and the file-system
-		if err = components.UnixUtilsInstance.SetDeviceReadAHead(handle, _readAhead); err != nil {
+		if err = utils.UnixUtilsInstance.SetDeviceReadAHead(handle, _readAhead); err != nil {
 			handle.Close()
 
 			return nil, err
@@ -471,7 +471,7 @@ func (mdb *FloppyMediumDriver) partialRead(
 			dynamic_offset,
 			fh)
 
-		data, len_data, err := components.FileUtilsInstance.FileReadBytes(
+		data, len_data, err := utils.FileUtilsInstance.FileReadBytes(
 			"",
 			dynamic_offset,
 			consts.FLOPPY_DEVICE_SECTOR_SIZE,
@@ -544,7 +544,7 @@ func (fmd *FloppyMediumDriver) cachedRead(floppyMedium *medium.FloppyMedium, pat
 		ofst,
 		fh)
 
-	data, n, err := components.FileUtilsInstance.FileReadBytes(
+	data, n, err := utils.FileUtilsInstance.FileReadBytes(
 		"",
 		ofst,
 		uint64(toReadSize),
@@ -611,7 +611,7 @@ func (fmd *FloppyMediumDriver) realWrite(floppyMedium *medium.FloppyMedium, path
 	floppyMedium.CallPreWriteCallbacks(floppyMedium, path, buff, ofst, fh)
 
 	startTime := time.Now().UnixMilli()
-	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
+	n, err := utils.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
 	totalTime := time.Now().UnixMilli() - startTime
 
 	if err != nil {
@@ -635,7 +635,7 @@ func (fmd *FloppyMediumDriver) cachedWrite(floppyMedium *medium.FloppyMedium, pa
 	floppyMedium.SetFullyCached(true)
 	floppyMedium.CallPreWriteCallbacks(floppyMedium, path, buff, ofst, fh)
 
-	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
+	n, err := utils.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
 
 	fmd.outsideAsyncFileWriterCallback(
 		floppyMedium.GetDevicePathname(),

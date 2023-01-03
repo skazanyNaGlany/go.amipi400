@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
@@ -71,7 +71,7 @@ func (hdmd *HardDiskMediumDriver) Probe(
 }
 
 func (hdmd *HardDiskMediumDriver) hasDOSheader(path string) (bool, error) {
-	data, n, err := components.FileUtilsInstance.FileReadBytes(path, 0, consts.HD_DEVICE_SECTOR_SIZE, 0, 0, nil)
+	data, n, err := utils.FileUtilsInstance.FileReadBytes(path, 0, consts.HD_DEVICE_SECTOR_SIZE, 0, 0, nil)
 
 	if err != nil {
 		return false, err

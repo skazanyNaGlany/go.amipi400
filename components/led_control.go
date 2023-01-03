@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 )
 
@@ -44,7 +45,7 @@ func (lc *LEDControl) blinkPowerLed() {
 func (lc *LEDControl) setPowerLedBrightness(brightness int) {
 	brightnessStr := strconv.FormatInt(int64(brightness), 10)
 
-	FileUtilsInstance.FileWriteBytes(
+	utils.FileUtilsInstance.FileWriteBytes(
 		consts.LED0_BRIGHTNESS_PATHNAME,
 		0,
 		[]byte(brightnessStr),

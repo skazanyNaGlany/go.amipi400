@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
 
@@ -211,7 +212,7 @@ func (bd *BlockDevices) parseLsblkOutput(output string) (map[string]map[string]s
 			continue
 		}
 
-		matches := RegExInstance.FindNamedMatches(lsblkPattern, line)
+		matches := utils.RegExInstance.FindNamedMatches(lsblkPattern, line)
 
 		if len(matches) != 9 {
 			return nil, errors.New("cannot parse line: " + line)

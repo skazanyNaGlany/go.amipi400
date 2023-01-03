@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/MarinX/keylogger"
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/thoas/go-funk"
 	"github.com/yookoala/realpath"
@@ -152,7 +153,7 @@ func (kc *KeyboardControl) callKeyEventCallbacks(key string, pressed bool) {
 func (kc *KeyboardControl) FindAllKeyboardDevices() []string {
 	devices := keylogger.FindAllKeyboardDevices()
 
-	for _, pathname := range FileUtilsInstance.GetDirFiles("/dev/input/by-path") {
+	for _, pathname := range utils.FileUtilsInstance.GetDirFiles("/dev/input/by-path") {
 		if !strings.HasSuffix(pathname, "-event-kbd") {
 			continue
 		}

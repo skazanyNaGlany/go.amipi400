@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/skazanyNaGlany/go.amipi400/components"
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
@@ -66,7 +66,7 @@ func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []
 		toReadSize = int(fileSize) - int(ofst)
 	}
 
-	data, n, err := components.FileUtilsInstance.FileReadBytes(
+	data, n, err := utils.FileUtilsInstance.FileReadBytes(
 		"",
 		ofst,
 		uint64(toReadSize),
@@ -109,7 +109,7 @@ func (mdb *MediumDriverBase) Write(medium interfaces.Medium, path string, buff [
 		return 0, errors.New("write outside the medium data")
 	}
 
-	n, err := components.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
+	n, err := utils.FileUtilsInstance.FileWriteBytes("", ofst, buff, 0, 0, handle)
 
 	if err != nil {
 		return 0, err
@@ -131,7 +131,7 @@ func (mdb *MediumDriverBase) generatePermIntMask(
 ) uint32 {
 	binString := ""
 
-	goUtils := components.GoUtilsInstance
+	goUtils := utils.GoUtilsInstance
 
 	binString += goUtils.BoolToStrInt(userCanRead)
 	binString += goUtils.BoolToStrInt(userCanWrite)
@@ -190,7 +190,7 @@ func (mdb *MediumDriverBase) OpenMediumHandle(medium interfaces.Medium, readAhea
 
 	// set read-a-head value for device or file handle
 	// for block-device and the file-system
-	if err = components.UnixUtilsInstance.SetDeviceReadAHead(handle, _readAhead); err != nil {
+	if err = utils.UnixUtilsInstance.SetDeviceReadAHead(handle, _readAhead); err != nil {
 		handle.Close()
 
 		return nil, err

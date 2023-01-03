@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ncw/directio"
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"golang.org/x/exp/slices"
@@ -202,7 +203,7 @@ func (afo *AsyncFileOps) executeWriteOperation(ioperation map[string]any, handle
 		}
 	}
 
-	n, err = FileUtilsInstance.FileWriteBytes(name, offset, buff, flag, perm, useHandle)
+	n, err = utils.FileUtilsInstance.FileWriteBytes(name, offset, buff, flag, perm, useHandle)
 
 	if callback != nil {
 		callback(name, offset, buff, flag, perm, useHandle, n, err)

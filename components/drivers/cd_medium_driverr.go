@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
@@ -33,7 +33,7 @@ func (cdmd *CDMediumDriver) Probe(
 	// last chance, try to read at least 2048 bytes (CD sector size) from the medium
 	// non-inserted medium or audio CDs will report just error
 	// here, or count of the readed bytes will be less than 2048
-	data, n, err := components.FileUtilsInstance.FileReadBytes(path, 0, consts.CD_DEVICE_SECTOR_SIZE, 0, 0, nil)
+	data, n, err := utils.FileUtilsInstance.FileReadBytes(path, 0, consts.CD_DEVICE_SECTOR_SIZE, 0, 0, nil)
 
 	if len(data) < consts.CD_DEVICE_SECTOR_SIZE || n < consts.CD_DEVICE_SECTOR_SIZE || err != nil {
 		return nil, nil
