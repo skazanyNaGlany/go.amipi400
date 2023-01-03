@@ -21,15 +21,15 @@ func (cah *CachedADFHeader) Init() *CachedADFHeader {
 }
 
 func (cah *CachedADFHeader) GetMagic() string {
-	return strings.TrimRight(string(cah.Magic[:]), "\x00")
+	return strings.Trim(string(cah.Magic[:]), "\x00")
 }
 
 func (cah *CachedADFHeader) GetHeaderType() string {
-	return strings.TrimRight(string(cah.HeaderType[:]), "\x00")
+	return strings.Trim(string(cah.HeaderType[:]), "\x00")
 }
 
 func (cah *CachedADFHeader) GetSha512() string {
-	return strings.TrimRight(string(cah.Sha512[:]), "\x00")
+	return strings.Trim(string(cah.Sha512[:]), "\x00")
 }
 
 func (cah *CachedADFHeader) SetSha512(sha512 string) {
