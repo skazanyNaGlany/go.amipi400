@@ -47,3 +47,7 @@ const HD_DEVICE_SECTOR_SIZE = 512
 
 // MediumDriverBase
 const DEFAULT_READ_AHEAD = 256
+
+// AsyncFileOps
+const ASYNC_FILE_OP_DIRECT_READ = "direct_read"
+const ASYNC_FILE_OP_WRITE = "write"

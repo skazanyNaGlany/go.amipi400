@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ncw/directio"
+	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"golang.org/x/exp/slices"
 )
@@ -209,10 +210,9 @@ func (afo *AsyncFileOps) executeWriteOperation(ioperation map[string]any, handle
 }
 
 func (afo *AsyncFileOps) executeOperation(ioperation map[string]any, handles map[string]*os.File) {
-	// TODO move types to consts.go
-	if ioperation["type"] == "direct_read" {
+	if ioperation["type"] == consts.ASYNC_FILE_OP_DIRECT_READ {
 		afo.executeDirectReadOperation(ioperation, handles)
-	} else if ioperation["type"] == "write" {
+	} else if ioperation["type"] == consts.ASYNC_FILE_OP_WRITE {
 		afo.executeWriteOperation(ioperation, handles)
 	}
 }
@@ -240,7 +240,7 @@ func (afo *AsyncFileOps) FileReadBytesDirect(
 	op["flag"] = flag
 	op["perm"] = perm
 	op["useHandle"] = useHandle
-	op["type"] = "direct_read"
+	op["type"] = consts.ASYNC_FILE_OP_DIRECT_READ
 	op["callback"] = callback
 
 	afo.operations = append(afo.operations, op)
@@ -276,7 +276,7 @@ func (afo *AsyncFileOps) FileWriteBytes(
 	op["flag"] = flag
 	op["perm"] = perm
 	op["useHandle"] = useHandle
-	op["type"] = "write"
+	op["type"] = consts.ASYNC_FILE_OP_WRITE
 	op["callback"] = callback
 
 	afo.operations = append(afo.operations, op)
@@ -303,7 +303,7 @@ func (afo *AsyncFileOps) FileWriteBytesOneTimeFinal(
 	op["flag"] = flag
 	op["perm"] = perm
 	op["useHandle"] = useHandle
-	op["type"] = "write"
+	op["type"] = consts.ASYNC_FILE_OP_WRITE
 	op["callback"] = callback
 
 	afo.oneTimeFinalOperations[name] = op
