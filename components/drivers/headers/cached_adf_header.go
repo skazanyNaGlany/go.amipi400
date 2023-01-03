@@ -3,6 +3,7 @@ package headers
 import (
 	"strings"
 
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 )
 
@@ -45,7 +46,15 @@ func (cah *CachedADFHeader) GetMTime() int64 {
 }
 
 func (cah *CachedADFHeader) IsValid() bool {
-	return cah.GetMagic() == consts.CACHED_ADF_HEADER_MAGIC &&
-		cah.GetHeaderType() == consts.CACHED_ADF_HEADER_HEADER_TYPE &&
-		len(cah.GetSha512()) == consts.CACHED_ADF_HEADER_SHA512_LENGTH
+	magic := cah.GetMagic()
+	headerType := cah.GetHeaderType()
+	sha512 := cah.GetSha512()
+
+	if magic != consts.CACHED_ADF_HEADER_MAGIC ||
+		headerType != consts.CACHED_ADF_HEADER_HEADER_TYPE ||
+		len(sha512) != consts.CACHED_ADF_HEADER_SHA512_LENGTH {
+		return false
+	}
+
+	return utils.StringUtilsInstance.IsASCII(sha512)
 }
