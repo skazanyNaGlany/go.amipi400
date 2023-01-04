@@ -6,11 +6,36 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 type FileUtils struct{}
 
 var FileUtilsInstance FileUtils
+
+func (fu *FileUtils) GetDirOldestFile(dir string) (os.FileInfo, error) {
+	var oldestFile os.FileInfo
+	var err error
+
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return oldestFile, err
+	}
+
+	oldestTime := time.Now()
+	for _, file := range files {
+		if file.Mode().IsRegular() && file.ModTime().Before(oldestTime) {
+			oldestFile = file
+			oldestTime = file.ModTime()
+		}
+	}
+
+	if oldestFile == nil {
+		err = os.ErrNotExist
+	}
+
+	return oldestFile, err
+}
 
 func (fu *FileUtils) GetDirSize(path string) (int64, error) {
 	var size int64
