@@ -23,6 +23,7 @@ type FloppyMediumDriver struct {
 
 	cachedAdfsDirectory            string
 	outsideAsyncFileWriterCallback interfaces.OutsideAsyncFileWriterCallback
+	preCacheADFCallback            interfaces.PreCacheADFCallback
 }
 
 func (fmd *FloppyMediumDriver) Probe(
@@ -125,6 +126,8 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 	cachedAdfPathname := path.Join(
 		fmd.cachedAdfsDirectory,
 		fmd.buildCachedAdfFilename(sha512Id, consts.FLOPPY_ADF_EXTENSION))
+
+	fmd.preCacheADFCallback(_medium, cachedAdfPathname)
 
 	n, err = utils.FileUtilsInstance.FileWriteBytes(
 		cachedAdfPathname,
@@ -341,6 +344,10 @@ func (fmd *FloppyMediumDriver) OpenMediumHandle(_medium interfaces.Medium, readA
 
 func (fmd *FloppyMediumDriver) SetOutsideAsyncFileWriterCallback(callback interfaces.OutsideAsyncFileWriterCallback) {
 	fmd.outsideAsyncFileWriterCallback = callback
+}
+
+func (fmd *FloppyMediumDriver) SetPreCacheADFCallback(callback interfaces.PreCacheADFCallback) {
+	fmd.preCacheADFCallback = callback
 }
 
 // Read
