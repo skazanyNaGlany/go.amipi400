@@ -76,6 +76,7 @@ func ProbeMediumForDriver(
 	floppyDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
 	floppyDriver.SetDebugMode(consts.DRIVERS_DEBUG_MODE)
 	floppyDriver.SetOutsideAsyncFileWriterCallback(outsideAsyncFileWriterCallback)
+	floppyDriver.SetPreCacheADFCallback(preCacheADFCallback)
 
 	medium, err := floppyDriver.Probe(
 		consts.FILE_SYSTEM_MOUNT,
@@ -316,6 +317,40 @@ func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
+}
+
+func preCacheADFCallback(_medium interfaces.Medium, targetADFpathname string) {
+	size, err := utils.FileUtilsInstance.GetDirSize(cachedAdfsDir)
+
+	if err != nil {
+		log.Println(err)
+
+		return
+	}
+
+	if size < consts.CACHED_ADFS_QUOTA {
+		return
+	}
+
+	// exceeded the quota
+	log.Printf("Exceeded the quota for %v (max %v bytes)\n", cachedAdfsDir, consts.CACHED_ADFS_QUOTA)
+	log.Println("Trying to find oldest file to delete it")
+
+	oldest, err := utils.FileUtilsInstance.GetDirOldestFile(cachedAdfsDir)
+
+	if err != nil {
+		log.Println(err)
+
+		return
+	}
+
+	pathname := path.Join(cachedAdfsDir, oldest.Name())
+
+	log.Printf("Deleting oldest file %v\n", pathname)
+
+	if err = os.Remove(pathname); err != nil {
+		log.Println(err)
+	}
 }
 
 func initKeyboardControls() {

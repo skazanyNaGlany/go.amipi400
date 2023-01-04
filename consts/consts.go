@@ -13,6 +13,7 @@ const SYSTEM_INTERNAL_SD_CARD_NAME = "mmcblk0"
 const POOL_DEVICE_NAME = "loop"
 const FILE_SYSTEM_MOUNT = "/tmp/amiga_disk_devices"
 const CACHED_ADFS = "./cached_adfs"
+const CACHED_ADFS_QUOTA = FLOPPY_ADF_SIZE * 1024 // 1024 adf files
 const FLOPPY_READ_MUTE_SECS = 6
 const FLOPPY_WRITE_MUTE_SECS = 6
 const FLOPPY_WRITE_BLINK_POWER_SECS = 6
