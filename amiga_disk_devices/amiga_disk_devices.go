@@ -243,7 +243,9 @@ func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 
 	if !floppyMedium.IsFullyCached() {
 		// reading from non-cached floppy medium
-		volumeControl.MuteForSecs(consts.FLOPPY_READ_MUTE_SECS)
+		if consts.FLOPPY_MUTE_SOUND_NON_CACHED_READ {
+			volumeControl.MuteForSecs(consts.FLOPPY_READ_MUTE_SECS)
+		}
 	} else {
 		devicePathname := floppyMedium.GetDevicePathname()
 		async := devicePathnameToAsyncFileOps(devicePathname)
@@ -269,7 +271,9 @@ func onFloppyWrite(_medium interfaces.Medium) {
 	}
 
 	if !floppyMedium.IsFullyCached() {
-		volumeControl.MuteForSecs(consts.FLOPPY_WRITE_MUTE_SECS)
+		if consts.FLOPPY_MUTE_SOUND_NON_CACHED_WRITE {
+			volumeControl.MuteForSecs(consts.FLOPPY_WRITE_MUTE_SECS)
+		}
 	}
 }
 
