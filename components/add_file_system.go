@@ -174,9 +174,13 @@ func (addfs *ADDFileSystem) Write(path string, buff []byte, ofst int64, fh uint6
 		if err != nil {
 			if addfs.debugMode {
 				log.Printf("%v: %v\n", path, err)
-
-				return -fuse.EIO
 			}
+
+			if n < 0 {
+				return n
+			}
+
+			return -fuse.EIO
 		}
 
 		if n < 0 {

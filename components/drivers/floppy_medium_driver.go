@@ -598,7 +598,7 @@ func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buf
 	defer mutex.Unlock()
 
 	if !_medium.IsWritable() {
-		return 0, errors.New("device is not writable")
+		return -fuse.EPERM, errors.New("device is not writable")
 	}
 
 	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
