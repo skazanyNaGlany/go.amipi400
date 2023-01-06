@@ -127,7 +127,9 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 		fmd.cachedAdfsDirectory,
 		fmd.buildCachedAdfFilename(sha512Id, consts.FLOPPY_ADF_EXTENSION))
 
-	fmd.preCacheADFCallback(_medium, cachedAdfPathname)
+	if err = fmd.preCacheADFCallback(_medium, cachedAdfPathname); err != nil {
+		return err
+	}
 
 	n, err = utils.FileUtilsInstance.FileWriteBytes(
 		cachedAdfPathname,
@@ -438,11 +440,21 @@ func (mdb *FloppyMediumDriver) realRead2(
 		if rr2_total_read_time_ms < consts.FLOPPY_SECTOR_READ_TIME_MS {
 			floppyMedium.SetFullyCached(true)
 
-			err := mdb.FloppyCacheAdf(floppyMedium)
+			if !floppyMedium.IsCachingDisabled() && floppyMedium.IsWritable() {
+				err := mdb.FloppyCacheAdf(floppyMedium)
 
-			if err != nil {
-				if mdb.debugMode {
-					log.Println(err)
+				if err != nil {
+					// cannot cache the ADF, disable
+					// caching for that one
+					floppyMedium.SetCachingDisabled(true)
+
+					if mdb.debugMode {
+						log.Println(err)
+					}
+				}
+			} else {
+				if mdb.verboseMode {
+					log.Printf("Caching is disabled for medium in %v\n", floppyMedium.GetDevicePathname())
 				}
 			}
 		}

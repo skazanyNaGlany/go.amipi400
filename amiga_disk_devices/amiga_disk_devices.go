@@ -323,17 +323,16 @@ func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag
 func keyEventCallback(sender any, key string, pressed bool) {
 }
 
-func preCacheADFCallback(_medium interfaces.Medium, targetADFpathname string) {
+func preCacheADFCallback(_medium interfaces.Medium, targetADFpathname string) error {
 	size, err := utils.FileUtilsInstance.GetDirSize(cachedAdfsDir)
 
 	if err != nil {
-		log.Println(err)
-
-		return
+		return err
 	}
 
 	if size < consts.CACHED_ADFS_QUOTA {
-		return
+		// quota not exceeded
+		return nil
 	}
 
 	// exceeded the quota
@@ -343,9 +342,11 @@ func preCacheADFCallback(_medium interfaces.Medium, targetADFpathname string) {
 	oldest, err := utils.FileUtilsInstance.GetDirOldestFile(cachedAdfsDir)
 
 	if err != nil {
-		log.Println(err)
+		return err
+	}
 
-		return
+	if oldest == nil {
+		return nil
 	}
 
 	pathname := path.Join(cachedAdfsDir, oldest.Name())
@@ -353,8 +354,10 @@ func preCacheADFCallback(_medium interfaces.Medium, targetADFpathname string) {
 	log.Printf("Deleting oldest file %v\n", pathname)
 
 	if err = os.Remove(pathname); err != nil {
-		log.Println(err)
+		return err
 	}
+
+	return nil
 }
 
 func initKeyboardControls() {

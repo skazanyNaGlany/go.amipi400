@@ -8,6 +8,7 @@ type FloppyMedium struct {
 	cachingNow        bool
 	cachedAdfPathname string
 	cachedAdfSha512   string
+	cachingDisabled   bool
 }
 
 func (fm *FloppyMedium) SetCachedAdfPathname(cachedAdfPathname string) {
@@ -48,6 +49,14 @@ func (fm *FloppyMedium) IsCachingNow() bool {
 
 func (fm *FloppyMedium) SetCachingNow(cachingNow bool) {
 	fm.cachingNow = cachingNow
+}
+
+func (fm *FloppyMedium) SetCachingDisabled(cachingDisabled bool) {
+	fm.cachingDisabled = cachingDisabled
+}
+
+func (fm *FloppyMedium) IsCachingDisabled() bool {
+	return fm.cachingDisabled
 }
 
 func (fm *FloppyMedium) Read(path string, buff []byte, ofst int64, fh uint64) (int, error) {

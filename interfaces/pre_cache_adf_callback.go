@@ -1,3 +1,3 @@
 package interfaces
 
-type PreCacheADFCallback func(_medium Medium, targetADFpathname string)
+type PreCacheADFCallback func(_medium Medium, targetADFpathname string) error
