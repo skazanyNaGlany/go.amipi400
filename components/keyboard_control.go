@@ -13,6 +13,12 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// key codes that does not exists in
+// the github.com/MarinX/keylogger
+var extendedKeyCodeMap = map[uint16]string{
+	125: "KEY_LEFTMETA",
+}
+
 type KeyboardControl struct {
 	RunnerBase
 
@@ -52,6 +58,10 @@ func (kc *KeyboardControl) loop() {
 			if ievent.Type == keylogger.EvKey {
 				keyStr := ievent.KeyString()
 
+				if keyStr == "" {
+					keyStr = kc.guessUnknownKeyName(ievent.Code)
+				}
+
 				if ievent.KeyPress() {
 					if kc.SetPressedKey(keyStr) {
 						kc.callKeyEventCallbacks(keyStr, true)
@@ -68,6 +78,16 @@ func (kc *KeyboardControl) loop() {
 	}
 
 	kc.running = false
+}
+
+func (kc *KeyboardControl) guessUnknownKeyName(code uint16) string {
+	keyStr, exists := extendedKeyCodeMap[code]
+
+	if exists {
+		return keyStr
+	}
+
+	return ""
 }
 
 func (kc *KeyboardControl) Run() {
