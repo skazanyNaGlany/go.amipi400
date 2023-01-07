@@ -24,7 +24,7 @@ const RUNNERS_DEBUG_MODE = true
 const DRIVERS_VERBOSE_MODE = true
 const DRIVERS_DEBUG_MODE = true
 
-var FORCE_INSERT_KEYS []string = []string{"L_SHIFT"}
+var FORCE_INSERT_KEYS []string = []string{"KEY_LEFTMETA", "L_SHIFT"}
 
 // LEDControl
 const LED0_BRIGHTNESS_PATHNAME = "/sys/class/leds/led0/brightness"
