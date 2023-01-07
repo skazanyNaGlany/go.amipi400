@@ -66,8 +66,10 @@ func ProbeMediumForDriver(
 
 	forceInsert := isKeysPressed(consts.FORCE_INSERT_KEYS)
 
-	// perform only one special action at a time
-	clearKeyboardControls()
+	if forceInsert {
+		// perform only one special action at a time
+		clearKeyboardControls()
+	}
 
 	// try FloppyMediumDriver
 	floppyDriver := drivers.FloppyMediumDriver{}
