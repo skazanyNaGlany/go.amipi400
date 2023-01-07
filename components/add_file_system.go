@@ -74,6 +74,7 @@ func (addfs *ADDFileSystem) FindMediumByPublicFSPathname(publicFSPathname string
 }
 
 // File-system related methods:
+// Open
 // Truncate
 // Getattr
 // Readdir
@@ -82,7 +83,7 @@ func (addfs *ADDFileSystem) FindMediumByPublicFSPathname(publicFSPathname string
 
 func (addfs *ADDFileSystem) Open(path string, flags int) (errc int, fh uint64) {
 	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
-		return 0, 0
+		return medium.Open(path, flags)
 	}
 
 	return -fuse.ENOENT, ^uint64(0)

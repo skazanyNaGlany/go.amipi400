@@ -18,6 +18,22 @@ type MediumDriverBase struct {
 	debugMode   bool
 }
 
+func (mdb *MediumDriverBase) Open(medium interfaces.Medium, path string, flags int) (errc int, fh uint64) {
+	is_writing := 0
+
+	is_writing += flags & os.O_WRONLY
+	is_writing += flags & os.O_RDWR
+	is_writing += flags & os.O_APPEND
+	is_writing += flags & os.O_CREATE
+	is_writing += flags & os.O_TRUNC
+
+	if is_writing > 0 && !medium.IsWritable() {
+		return -fuse.EPERM, 0
+	}
+
+	return 0, 0
+}
+
 func (mdb *MediumDriverBase) Getattr(medium interfaces.Medium, path string, stat *fuse.Stat_t, fh uint64) (int, error) {
 	creationTime := medium.GetCreateTime()
 	accessTime := medium.GetAccessTime()

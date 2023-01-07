@@ -101,6 +101,10 @@ func (mb *MediumBase) GetDriver() interfaces.MediumDriver {
 	return mb.driver
 }
 
+func (mb *MediumBase) Open(path string, flags int) (errc int, fh uint64) {
+	return mb.driver.Open(mb, path, flags)
+}
+
 func (mb *MediumBase) Getattr(path string, stat *fuse.Stat_t, fh uint64) (int, error) {
 	return mb.driver.Getattr(mb, path, stat, fh)
 }

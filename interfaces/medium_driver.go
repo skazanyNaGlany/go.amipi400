@@ -12,6 +12,7 @@ type MediumDriver interface {
 		size uint64,
 		_type, mountpoint, label, path, fsType, ptType string,
 		readOnly, force bool) (Medium, error)
+	Open(medium Medium, path string, flags int) (errc int, fh uint64)
 	Getattr(medium Medium, path string, stat *fuse.Stat_t, fh uint64) (int, error)
 	OpenMediumHandle(medium Medium, readAhead ...int) (*os.File, error)
 	Read(medium Medium, path string, buff []byte, ofst int64, fh uint64) (int, error)
