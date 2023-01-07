@@ -249,13 +249,18 @@ func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 	} else {
 		devicePathname := floppyMedium.GetDevicePathname()
 		async := devicePathnameToAsyncFileOps(devicePathname)
+		flag := os.O_RDWR
+
+		if !floppyMedium.IsWritable() {
+			flag = os.O_RDONLY
+		}
 
 		// reading from cached floppy medium
 		// read from real device to move the motor
 		async.FileReadBytesDirect(
 			devicePathname,
 			ofst,
-			0,
+			flag,
 			0,
 			nil,
 			1,
