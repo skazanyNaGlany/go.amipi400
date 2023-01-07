@@ -173,27 +173,37 @@ func attachedBlockDeviceCallback(
 
 	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
-	medium, err := ProbeMediumForDriver(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	_medium, err := ProbeMediumForDriver(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	if medium == nil {
+	if _medium == nil {
 		log.Println("Unable to find driver for medium", path)
 		return
 	}
 
-	log.Printf("Medium %v will be handled by %T driver (as %v)\n", path, medium.GetDriver(), medium.GetPublicPathname())
+	log.Printf("Medium %v will be handled by %T driver (as %v)\n", path, _medium.GetDriver(), _medium.GetPublicPathname())
 
-	medium.AddPreReadCallback(preReadCallback)
-	medium.AddPostReadCallback(postReadCallback)
-	medium.AddPreWriteCallback(preWriteCallback)
-	medium.AddPostWriteCallback(postWriteCallback)
-	medium.AddClosedCallback(closedCallback)
+	_medium.AddPreReadCallback(preReadCallback)
+	_medium.AddPostReadCallback(postReadCallback)
+	_medium.AddPreWriteCallback(preWriteCallback)
+	_medium.AddPostWriteCallback(postWriteCallback)
+	_medium.AddClosedCallback(closedCallback)
 
-	fileSystem.AddMedium(medium)
+	floppyMedium, isFloppy := _medium.(*medium.FloppyMedium)
+
+	if isFloppy {
+		if floppyMedium.GetCachedAdfPathname() == "" {
+			if consts.FLOPPY_MUTE_SOUND_NON_CACHED_READ {
+				volumeControl.MuteForSecs(consts.FLOPPY_READ_MUTE_SECS)
+			}
+		}
+	}
+
+	fileSystem.AddMedium(_medium)
 }
 
 func detachedBlockDeviceCallback(
