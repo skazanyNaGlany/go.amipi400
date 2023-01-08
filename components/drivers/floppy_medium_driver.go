@@ -30,7 +30,7 @@ func (fmd *FloppyMediumDriver) Probe(
 	basePath, name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
-	readOnly, force bool) (interfaces.Medium, error) {
+	readOnly, force, formatted bool) (interfaces.Medium, error) {
 	// ignore medium which has MBR, or other known header
 	// or known file-system or partition type, or just a label
 	// detected by the system
@@ -80,6 +80,24 @@ func (fmd *FloppyMediumDriver) Probe(
 	// (eg. ADF has its ID already, but cached ADF
 	// does not exists)
 	fmd.DecodeCachedADFHeader(&_medium)
+
+	if formatted || force {
+		if _medium.GetCachedAdfPathname() != "" {
+			// ADF is cached but the medium was
+			// formatted, remove cached ADF file
+			os.Remove(_medium.GetCachedAdfPathname())
+
+			_medium.SetCachedAdfPathname("")
+
+			if formatted {
+				log.Println("Removed cached ADF since the medium in", _medium.GetDevicePathname(), "was formatted")
+			}
+
+			if force {
+				log.Println("Removed cached ADF since the medium in", _medium.GetDevicePathname(), "was forced to insert")
+			}
+		}
+	}
 
 	return &_medium, nil
 }

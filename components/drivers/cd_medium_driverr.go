@@ -18,7 +18,7 @@ func (cdmd *CDMediumDriver) Probe(
 	basePath, name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
-	readOnly, force bool) (interfaces.Medium, error) {
+	readOnly, force, formatted bool) (interfaces.Medium, error) {
 	if !cdmd.isKnownMedium(name, mountpoint, label, path, fsType, ptType) {
 		// we are supporting only data CDs, and data CDs will have
 		// valid mountpoint (already mounted by the system), label

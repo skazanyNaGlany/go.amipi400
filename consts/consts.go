@@ -25,6 +25,8 @@ const DRIVERS_VERBOSE_MODE = true
 const DRIVERS_DEBUG_MODE = true
 
 var FORCE_INSERT_KEYS []string = []string{"KEY_LEFTMETA", "L_SHIFT"}
+var FORMAT_DEVICE_KEYS []string = []string{"KEY_LEFTMETA", "Del"}
+var EMPTY_DEVICE_HEADER [2048]byte = [2048]byte{'D', 'O', 'S'}
 
 // LEDControl
 const LED0_BRIGHTNESS_PATHNAME = "/sys/class/leds/led0/brightness"

@@ -18,7 +18,7 @@ func (hdmd *HardDiskMediumDriver) Probe(
 	basePath, name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
-	readOnly, force bool) (interfaces.Medium, error) {
+	readOnly, force, formatted bool) (interfaces.Medium, error) {
 	if !force {
 		if hdmd.isKnownMedium(name, mountpoint, label, path, fsType, ptType) {
 			return nil, nil

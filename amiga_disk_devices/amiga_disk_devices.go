@@ -62,13 +62,13 @@ func ProbeMediumForDriver(
 	name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
-	readOnly bool) (interfaces.Medium, error) {
+	readOnly, formatted bool) (interfaces.Medium, error) {
 
 	forceInsert := isKeysPressed(consts.FORCE_INSERT_KEYS)
 
 	if forceInsert {
 		// perform only one special action at a time
-		clearKeyboardControls()
+		clearPressedKeys()
 	}
 
 	// try FloppyMediumDriver
@@ -91,7 +91,8 @@ func ProbeMediumForDriver(
 		fsType,
 		ptType,
 		readOnly,
-		forceInsert)
+		forceInsert,
+		formatted)
 
 	if err != nil {
 		return nil, err
@@ -118,7 +119,8 @@ func ProbeMediumForDriver(
 		fsType,
 		ptType,
 		readOnly,
-		forceInsert)
+		forceInsert,
+		formatted)
 
 	if err != nil {
 		return nil, err
@@ -145,7 +147,8 @@ func ProbeMediumForDriver(
 		fsType,
 		ptType,
 		readOnly,
-		forceInsert)
+		forceInsert,
+		formatted)
 
 	if err != nil {
 		return nil, err
@@ -156,6 +159,49 @@ func ProbeMediumForDriver(
 	}
 
 	return nil, nil
+}
+
+func formatDeviceIfNeeded(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) bool {
+
+	if _type != "disk" {
+		return false
+	}
+
+	if readOnly {
+		return false
+	}
+
+	if !isKeysPressed(consts.FORMAT_DEVICE_KEYS) {
+		return false
+	}
+
+	clearPressedKeys()
+
+	log.Println("Formatting device", path)
+
+	n, err := utils.FileUtilsInstance.FileWriteBytes(
+		path,
+		0,
+		consts.EMPTY_DEVICE_HEADER[:],
+		os.O_RDWR|os.O_SYNC,
+		0,
+		nil)
+
+	if err != nil {
+		log.Println(err)
+		return false
+	}
+
+	if n < len(consts.EMPTY_DEVICE_HEADER) {
+		log.Println("Cannot format medium in", path)
+		return false
+	}
+
+	return true
 }
 
 func attachedBlockDeviceCallback(
@@ -175,7 +221,20 @@ func attachedBlockDeviceCallback(
 
 	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
-	_medium, err := ProbeMediumForDriver(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	formatted := false
+
+	if formatDeviceIfNeeded(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly) {
+		// affect these variables so the driver will
+		// think the medium is "unknown"
+		mountpoint = ""
+		label = ""
+		fsType = ""
+		ptType = ""
+
+		formatted = true
+	}
+
+	_medium, err := ProbeMediumForDriver(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly, formatted)
 
 	if err != nil {
 		log.Println(err)
@@ -413,7 +472,7 @@ func addKeyboardControlsRunners() {
 	}
 }
 
-func clearKeyboardControls() {
+func clearPressedKeys() {
 	for _, kc := range keyboardControls {
 		kc.ClearPressedKeys()
 	}
