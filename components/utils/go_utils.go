@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/shirou/gopsutil/v3/process"
@@ -15,6 +16,12 @@ import (
 type GoUtils struct{}
 
 var GoUtilsInstance GoUtils
+
+func (gu *GoUtils) CheckPlatform() {
+	if runtime.GOOS != "linux" {
+		log.Fatalln("This app can be used only on Linux.")
+	}
+}
 
 func (gu *GoUtils) GetExeDirectory() string {
 	return filepath.Dir(os.Args[0])

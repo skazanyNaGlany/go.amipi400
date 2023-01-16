@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -570,21 +569,10 @@ func CwdToExeOrScript() string {
 	return exeDir
 }
 
-func checkPlatform() {
-	if runtime.GOOS != "linux" {
-		log.Fatalln("This app can be used only on Linux.")
-	}
-}
-
-func checkForRoot() {
-	if !utils.UnixUtilsInstance.IsRoot() {
-		log.Fatalln("Must be run as root.")
-	}
-}
-
 func main() {
-	checkPlatform()
-	checkForRoot()
+	utils.GoUtilsInstance.CheckPlatform()
+	utils.UnixUtilsInstance.CheckForRoot()
+
 	exeDir := CwdToExeOrScript()
 	logFilename := DuplicateLog(exeDir)
 

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"os"
 	"syscall"
 
@@ -13,6 +14,12 @@ var UnixUtilsInstance UnixUtils
 
 func (k *UnixUtils) IsRoot() bool {
 	return syscall.Getuid() == 0 && syscall.Geteuid() == 0
+}
+
+func (k *UnixUtils) CheckForRoot() {
+	if !k.IsRoot() {
+		log.Fatalln("Must be run as root.")
+	}
 }
 
 func (k *UnixUtils) SetDeviceReadAHead(handle *os.File, readAHead int) error {
