@@ -43,6 +43,16 @@ func (gu *GoUtils) CwdToExeOrScript() (string, error) {
 	return exeDir, nil
 }
 
+func (gu *GoUtils) MustCwdToExeOrScript() string {
+	exeDir, err := gu.CwdToExeOrScript()
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return exeDir
+}
+
 // // Change current working directory to directory
 // // where the executable file is located
 // func (gu *GoUtils) CwdToExe() string {
@@ -71,6 +81,16 @@ func (gu *GoUtils) DuplicateLog(parentDir string) (string, error) {
 	log.SetOutput(mw)
 
 	return logFilename, nil
+}
+
+func (gu *GoUtils) MustDuplicateLog(exeDir string) string {
+	logFilePathname, err := gu.DuplicateLog(exeDir)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	return logFilePathname
 }
 
 func (gu *GoUtils) GetProcess(pid int32) (*process.Process, error) {

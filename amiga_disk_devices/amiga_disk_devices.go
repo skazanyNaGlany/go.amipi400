@@ -549,32 +549,12 @@ func printCDROMDevices() {
 	}
 }
 
-func DuplicateLog(exeDir string) string {
-	logFilePathname, err := utils.GoUtilsInstance.DuplicateLog(exeDir)
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	return logFilePathname
-}
-
-func CwdToExeOrScript() string {
-	exeDir, err := utils.GoUtilsInstance.CwdToExeOrScript()
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	return exeDir
-}
-
 func main() {
 	utils.GoUtilsInstance.CheckPlatform()
 	utils.UnixUtilsInstance.CheckForRoot()
 
-	exeDir := CwdToExeOrScript()
-	logFilename := DuplicateLog(exeDir)
+	exeDir := utils.GoUtilsInstance.MustCwdToExeOrScript()
+	logFilename := utils.GoUtilsInstance.MustDuplicateLog(exeDir)
 
 	initCreateDirs(exeDir)
 
