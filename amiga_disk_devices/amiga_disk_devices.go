@@ -357,14 +357,31 @@ func onMediumWrite(_medium interfaces.Medium) {
 	ledControl.BlinkPowerLEDSecs(consts.FLOPPY_WRITE_BLINK_POWER_SECS)
 }
 
+func onHardDiskRead(_medium interfaces.Medium) {
+	// hard disk does not have its own struct (derived from MediumBase)
+	// so we need to check it against the extension
+	isHdf := strings.HasSuffix(
+		_medium.GetPublicName(),
+		consts.HD_HDF_FULL_EXTENSION)
+
+	if !isHdf {
+		return
+	}
+
+	// reading from hard-disk, blink the power led
+	ledControl.BlinkPowerLEDSecs(consts.HARD_DISK_READ_BLINK_POWER_SECS)
+}
+
 func preReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
 	// do not put too much logic here, since it will slow down MediumBase.Read
 	// or FloppyMediumDriver.Read, same for callbacks related for Write
 	onFloppyRead(_medium, ofst)
+	onHardDiskRead(_medium)
 }
 
 func postReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
 	onFloppyRead(_medium, ofst)
+	onHardDiskRead(_medium)
 }
 
 func preWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
