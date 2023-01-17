@@ -18,7 +18,7 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-var blockDevices components.BlockDevices
+var blockDevices amiga_disk_devices.BlockDevices
 var fileSystem amiga_disk_devices.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
 var driveDevicesDiscovery components.DriveDevicesDiscovery

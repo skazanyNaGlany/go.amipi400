@@ -1,4 +1,4 @@
-package components
+package amiga_disk_devices
 
 import (
 	"errors"
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 )
@@ -16,7 +17,7 @@ import (
 var lsblkPattern *regexp.Regexp = regexp.MustCompile(`NAME="(?P<NAME>\w*)" SIZE="(?P<SIZE>\d*)" TYPE="(?P<TYPE>\w*)" MOUNTPOINT="(?P<MOUNTPOINT>.*)" LABEL="(?P<LABEL>.*)" PATH="(?P<PATH>.*)" FSTYPE="(?P<FSTYPE>.*)" PTTYPE="(?P<PTTYPE>.*)" RO="(?P<RO>.*)"`)
 
 type BlockDevices struct {
-	RunnerBase
+	components.RunnerBase
 	attachedCallbacks []interfaces.AttachedBlockDeviceCallback
 	detachedCallback  []interfaces.DetachedBlockDeviceCallback
 }
@@ -24,7 +25,7 @@ type BlockDevices struct {
 func (bd *BlockDevices) loop() {
 	old_parsed_output := make(map[string]map[string]string)
 
-	for bd.running {
+	for bd.IsRunning() {
 		time.Sleep(time.Millisecond * 10)
 
 		// lsblk -P -o name,size,type,mountpoint,label,path,fstype,pttype,ro -n -b
@@ -37,7 +38,7 @@ func (bd *BlockDevices) loop() {
 			"-b").CombinedOutput()
 
 		if err != nil {
-			if bd.debugMode {
+			if bd.IsDebugMode() {
 				log.Println("lsblk:", err)
 			}
 
@@ -47,7 +48,7 @@ func (bd *BlockDevices) loop() {
 		parsed_output, err := bd.parseLsblkOutput(string(output))
 
 		if err != nil {
-			if bd.debugMode {
+			if bd.IsDebugMode() {
 				log.Println("lsblk:", err)
 			}
 
@@ -57,7 +58,7 @@ func (bd *BlockDevices) loop() {
 		err = bd.callCallbacks(old_parsed_output, parsed_output)
 
 		if err != nil {
-			if bd.debugMode {
+			if bd.IsDebugMode() {
 				log.Println("lsblk:", err)
 			}
 
@@ -67,7 +68,7 @@ func (bd *BlockDevices) loop() {
 		old_parsed_output = parsed_output
 	}
 
-	bd.running = false
+	bd.SetRunning(false)
 }
 
 func (bd *BlockDevices) callCallbacks(old_block_devices, block_devices map[string]map[string]string) error {
