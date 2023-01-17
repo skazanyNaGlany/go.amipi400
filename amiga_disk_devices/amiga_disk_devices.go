@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	components_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components"
 	"github.com/skazanyNaGlany/go.amipi400/components"
-	components_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/components/amiga_disk_devices"
 	"github.com/skazanyNaGlany/go.amipi400/components/drivers"
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
