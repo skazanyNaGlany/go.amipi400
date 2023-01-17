@@ -10,8 +10,8 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/skazanyNaGlany/go.amipi400/components/drivers/headers"
-	"github.com/skazanyNaGlany/go.amipi400/components/medium"
+	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/drivers/headers"
+	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"

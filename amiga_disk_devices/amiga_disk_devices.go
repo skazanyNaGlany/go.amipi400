@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	components_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components"
+	drivers_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/drivers"
+	medium_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/components"
-	"github.com/skazanyNaGlany/go.amipi400/components/drivers"
-	"github.com/skazanyNaGlany/go.amipi400/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
@@ -72,7 +72,7 @@ func ProbeMediumForDriver(
 	}
 
 	// try FloppyMediumDriver
-	floppyDriver := drivers.FloppyMediumDriver{}
+	floppyDriver := drivers_amiga_disk_devices.FloppyMediumDriver{}
 
 	floppyDriver.SetCachedAdfsDirectory(cachedAdfsDir)
 	floppyDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
@@ -103,7 +103,7 @@ func ProbeMediumForDriver(
 	}
 
 	// try CDMediumDriver
-	cdDriver := drivers.CDMediumDriver{}
+	cdDriver := drivers_amiga_disk_devices.CDMediumDriver{}
 
 	cdDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
 	cdDriver.SetDebugMode(consts.DRIVERS_DEBUG_MODE)
@@ -131,7 +131,7 @@ func ProbeMediumForDriver(
 	}
 
 	// try HardDiskMediumDriver
-	hdDriver := drivers.HardDiskMediumDriver{}
+	hdDriver := drivers_amiga_disk_devices.HardDiskMediumDriver{}
 
 	hdDriver.SetVerboseMode(consts.DRIVERS_VERBOSE_MODE)
 	hdDriver.SetDebugMode(consts.DRIVERS_DEBUG_MODE)
@@ -254,7 +254,7 @@ func attachedBlockDeviceCallback(
 	_medium.AddPostWriteCallback(postWriteCallback)
 	_medium.AddClosedCallback(closedCallback)
 
-	floppyMedium, isFloppy := _medium.(*medium.FloppyMedium)
+	floppyMedium, isFloppy := _medium.(*medium_amiga_disk_devices.FloppyMedium)
 
 	if isFloppy {
 		if floppyMedium.GetCachedAdfPathname() == "" {
@@ -306,7 +306,7 @@ func devicePathnameToAsyncFileOps(devicePathname string) *components.AsyncFileOp
 }
 
 func onFloppyRead(_medium interfaces.Medium, ofst int64) {
-	floppyMedium, isFloppy := _medium.(*medium.FloppyMedium)
+	floppyMedium, isFloppy := _medium.(*medium_amiga_disk_devices.FloppyMedium)
 
 	if !isFloppy {
 		return
@@ -340,7 +340,7 @@ func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 }
 
 func onFloppyWrite(_medium interfaces.Medium) {
-	floppyMedium, isFloppy := _medium.(*medium.FloppyMedium)
+	floppyMedium, isFloppy := _medium.(*medium_amiga_disk_devices.FloppyMedium)
 
 	if !isFloppy {
 		return
