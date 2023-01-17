@@ -1,16 +1,17 @@
-package components
+package amigadiskdevices
 
 import (
 	"log"
 	"path/filepath"
 
+	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
 	"golang.org/x/exp/slices"
 )
 
 type ADDFileSystem struct {
-	RunnerBase
+	components.RunnerBase
 	fuse.FileSystemBase
 
 	mountDir string
@@ -19,7 +20,7 @@ type ADDFileSystem struct {
 
 func (addfs *ADDFileSystem) start() {
 	if addfs.mountDir == "" {
-		addfs.running = false
+		addfs.SetRunning(false)
 
 		return
 	}
@@ -29,7 +30,7 @@ func (addfs *ADDFileSystem) start() {
 	host := fuse.NewFileSystemHost(addfs)
 
 	if !host.Mount(addfs.mountDir, options) {
-		addfs.running = false
+		addfs.SetRunning(false)
 
 		return
 	}
@@ -104,7 +105,7 @@ func (addfs *ADDFileSystem) Getattr(path string, stat *fuse.Stat_t, fh uint64) (
 		result, err := medium.Getattr(path, stat, fh)
 
 		if err != nil {
-			if addfs.debugMode {
+			if addfs.IsDebugMode() {
 				log.Printf("%v: %v\n", path, err)
 
 				return -fuse.EIO
@@ -149,7 +150,7 @@ func (addfs *ADDFileSystem) Read(path string, buff []byte, ofst int64, fh uint64
 		n, err := medium.Read(path, buff, ofst, fh)
 
 		if err != nil {
-			if addfs.debugMode {
+			if addfs.IsDebugMode() {
 				log.Printf("%v: %v\n", path, err)
 
 				return -fuse.EIO
@@ -173,7 +174,7 @@ func (addfs *ADDFileSystem) Write(path string, buff []byte, ofst int64, fh uint6
 		n, err := medium.Write(path, buff, ofst, fh)
 
 		if err != nil {
-			if addfs.debugMode {
+			if addfs.IsDebugMode() {
 				log.Printf("%v: %v\n", path, err)
 			}
 

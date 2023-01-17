@@ -19,7 +19,7 @@ import (
 )
 
 var blockDevices components.BlockDevices
-var fileSystem components.ADDFileSystem
+var fileSystem amigadiskdevices.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var volumeControl amigadiskdevices.VolumeControl
