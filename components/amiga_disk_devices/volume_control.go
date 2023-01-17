@@ -29,7 +29,7 @@ func (vc *VolumeControl) loop() {
 
 func (vc *VolumeControl) mute() {
 	if err := volume.Mute(); err != nil {
-		if vc.GetDebugMode() {
+		if vc.IsDebugMode() {
 			log.Println(err)
 		}
 
@@ -49,7 +49,7 @@ func (vc *VolumeControl) mute() {
 	}
 
 	if err := volume.Unmute(); err != nil {
-		if vc.GetDebugMode() {
+		if vc.IsDebugMode() {
 			log.Println(err)
 		}
 	}

@@ -7,6 +7,6 @@ type Runner interface {
 	IsRunning() bool
 	SetVerboseMode(verboseMode bool)
 	SetDebugMode(debugMode bool)
-	GetVerboseMode() bool
-	GetDebugMode() bool
+	IsVerboseMode() bool
+	IsDebugMode() bool
 }

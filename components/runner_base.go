@@ -48,11 +48,11 @@ func (rb *RunnerBase) SetDebugMode(debugMode bool) {
 	rb.debugMode = debugMode
 }
 
-func (rb *RunnerBase) GetVerboseMode() bool {
+func (rb *RunnerBase) IsVerboseMode() bool {
 	return rb.verboseMode
 }
 
-func (rb *RunnerBase) GetDebugMode() bool {
+func (rb *RunnerBase) IsDebugMode() bool {
 	return rb.debugMode
 }
 
