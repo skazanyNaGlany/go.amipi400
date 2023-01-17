@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
-	"github.com/skazanyNaGlany/go.amipi400/components/amiga_disk_devices"
+	components_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/components/amiga_disk_devices"
 	"github.com/skazanyNaGlany/go.amipi400/components/drivers"
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
@@ -18,11 +18,11 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-var blockDevices amiga_disk_devices.BlockDevices
-var fileSystem amiga_disk_devices.ADDFileSystem
+var blockDevices components_amiga_disk_devices.BlockDevices
+var fileSystem components_amiga_disk_devices.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
-var driveDevicesDiscovery amiga_disk_devices.DriveDevicesDiscovery
-var volumeControl amiga_disk_devices.VolumeControl
+var driveDevicesDiscovery components_amiga_disk_devices.DriveDevicesDiscovery
+var volumeControl components_amiga_disk_devices.VolumeControl
 var ledControl components.LEDControl
 var asyncFileOps components.AsyncFileOps
 var asyncFileOpsDf0 components.AsyncFileOps
