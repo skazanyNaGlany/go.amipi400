@@ -12,9 +12,9 @@ import (
 
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/drivers/headers"
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/medium"
+	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/interfaces"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
-	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
 )
 

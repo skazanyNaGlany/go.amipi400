@@ -4,8 +4,8 @@ import (
 	"log"
 	"path/filepath"
 
+	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/interfaces"
 	"github.com/skazanyNaGlany/go.amipi400/components"
-	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
 	"golang.org/x/exp/slices"
 )

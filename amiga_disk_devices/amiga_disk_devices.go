@@ -11,10 +11,10 @@ import (
 	components_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components"
 	drivers_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/drivers"
 	medium_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/medium"
+	interfaces_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/interfaces"
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
-	"github.com/skazanyNaGlany/go.amipi400/interfaces"
 	"github.com/thoas/go-funk"
 )
 
@@ -62,7 +62,7 @@ func ProbeMediumForDriver(
 	name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
-	readOnly, formatted bool) (interfaces.Medium, error) {
+	readOnly, formatted bool) (interfaces_amiga_disk_devices.Medium, error) {
 
 	forceInsert := isKeysPressed(consts.FORCE_INSERT_KEYS)
 
@@ -305,7 +305,7 @@ func devicePathnameToAsyncFileOps(devicePathname string) *components.AsyncFileOp
 	return &asyncFileOps
 }
 
-func onFloppyRead(_medium interfaces.Medium, ofst int64) {
+func onFloppyRead(_medium interfaces_amiga_disk_devices.Medium, ofst int64) {
 	floppyMedium, isFloppy := _medium.(*medium_amiga_disk_devices.FloppyMedium)
 
 	if !isFloppy {
@@ -339,7 +339,7 @@ func onFloppyRead(_medium interfaces.Medium, ofst int64) {
 	}
 }
 
-func onFloppyWrite(_medium interfaces.Medium) {
+func onFloppyWrite(_medium interfaces_amiga_disk_devices.Medium) {
 	floppyMedium, isFloppy := _medium.(*medium_amiga_disk_devices.FloppyMedium)
 
 	if !isFloppy {
@@ -353,11 +353,11 @@ func onFloppyWrite(_medium interfaces.Medium) {
 	}
 }
 
-func onMediumWrite(_medium interfaces.Medium) {
+func onMediumWrite(_medium interfaces_amiga_disk_devices.Medium) {
 	ledControl.BlinkPowerLEDSecs(consts.FLOPPY_WRITE_BLINK_POWER_SECS)
 }
 
-func onHardDiskRead(_medium interfaces.Medium) {
+func onHardDiskRead(_medium interfaces_amiga_disk_devices.Medium) {
 	// hard disk does not have its own struct (derived from MediumBase)
 	// so we need to check it against the extension
 	isHdf := strings.HasSuffix(
@@ -372,29 +372,29 @@ func onHardDiskRead(_medium interfaces.Medium) {
 	ledControl.BlinkPowerLEDSecs(consts.HARD_DISK_READ_BLINK_POWER_SECS)
 }
 
-func preReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+func preReadCallback(_medium interfaces_amiga_disk_devices.Medium, path string, buff []byte, ofst int64, fh uint64) {
 	// do not put too much logic here, since it will slow down MediumBase.Read
 	// or FloppyMediumDriver.Read, same for callbacks related for Write
 	onFloppyRead(_medium, ofst)
 	onHardDiskRead(_medium)
 }
 
-func postReadCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+func postReadCallback(_medium interfaces_amiga_disk_devices.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
 	onFloppyRead(_medium, ofst)
 	onHardDiskRead(_medium)
 }
 
-func preWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+func preWriteCallback(_medium interfaces_amiga_disk_devices.Medium, path string, buff []byte, ofst int64, fh uint64) {
 	onFloppyWrite(_medium)
 	onMediumWrite(_medium)
 }
 
-func postWriteCallback(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+func postWriteCallback(_medium interfaces_amiga_disk_devices.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
 	onFloppyWrite(_medium)
 	onMediumWrite(_medium)
 }
 
-func closedCallback(_medium interfaces.Medium, err error) {
+func closedCallback(_medium interfaces_amiga_disk_devices.Medium, err error) {
 }
 
 func fileWriteBytesCallback(name string, offset int64, buff []byte, flag int, perm fs.FileMode, useHandle *os.File, n int, err error) {
@@ -416,7 +416,7 @@ func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag
 func keyEventCallback(sender any, key string, pressed bool) {
 }
 
-func preCacheADFCallback(_medium interfaces.Medium, targetADFpathname string) error {
+func preCacheADFCallback(_medium interfaces_amiga_disk_devices.Medium, targetADFpathname string) error {
 	size, err := utils.FileUtilsInstance.GetDirSize(cachedAdfsDir)
 
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/skazanyNaGlany/go.amipi400/interfaces"
+	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/interfaces"
 	"github.com/winfsp/cgofuse/fuse"
 )
 
