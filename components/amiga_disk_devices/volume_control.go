@@ -1,19 +1,20 @@
-package components
+package amigadiskdevices
 
 import (
 	"log"
 	"time"
 
 	"github.com/itchyny/volume-go"
+	"github.com/skazanyNaGlany/go.amipi400/components"
 )
 
 type VolumeControl struct {
-	RunnerBase
+	components.RunnerBase
 	muteForSecs int
 }
 
 func (vc *VolumeControl) loop() {
-	for vc.running {
+	for vc.IsRunning() {
 		if vc.muteForSecs <= 0 {
 			time.Sleep(time.Millisecond * 10)
 		}
@@ -23,12 +24,12 @@ func (vc *VolumeControl) loop() {
 		}
 	}
 
-	vc.running = false
+	vc.SetRunning(false)
 }
 
 func (vc *VolumeControl) mute() {
 	if err := volume.Mute(); err != nil {
-		if vc.debugMode {
+		if vc.GetDebugMode() {
 			log.Println(err)
 		}
 
@@ -48,7 +49,7 @@ func (vc *VolumeControl) mute() {
 	}
 
 	if err := volume.Unmute(); err != nil {
-		if vc.debugMode {
+		if vc.GetDebugMode() {
 			log.Println(err)
 		}
 	}

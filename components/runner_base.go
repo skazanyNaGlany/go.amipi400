@@ -55,3 +55,7 @@ func (rb *RunnerBase) GetVerboseMode() bool {
 func (rb *RunnerBase) GetDebugMode() bool {
 	return rb.debugMode
 }
+
+func (rb *RunnerBase) SetRunning(running bool) {
+	rb.running = running
+}

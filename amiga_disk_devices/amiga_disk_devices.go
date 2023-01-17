@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
+	amigadiskdevices "github.com/skazanyNaGlany/go.amipi400/components/amiga_disk_devices"
 	"github.com/skazanyNaGlany/go.amipi400/components/drivers"
 	"github.com/skazanyNaGlany/go.amipi400/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
@@ -21,7 +22,7 @@ var blockDevices components.BlockDevices
 var fileSystem components.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
 var driveDevicesDiscovery components.DriveDevicesDiscovery
-var volumeControl components.VolumeControl
+var volumeControl amigadiskdevices.VolumeControl
 var ledControl components.LEDControl
 var asyncFileOps components.AsyncFileOps
 var asyncFileOpsDf0 components.AsyncFileOps
