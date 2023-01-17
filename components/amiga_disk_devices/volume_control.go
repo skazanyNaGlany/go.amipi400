@@ -1,4 +1,4 @@
-package amigadiskdevices
+package amiga_disk_devices
 
 import (
 	"log"
