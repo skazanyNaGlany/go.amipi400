@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 
+	components_amipi400 "github.com/skazanyNaGlany/go.amipi400/amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
@@ -10,6 +11,13 @@ import (
 
 var runnersBlocker components.RunnersBlocker
 var keyboardControls []*components.KeyboardControl
+var amigaDiskDevicesDiscovery components_amipi400.AmigaDiskDevicesDiscovery
+
+func attachedAmigaDiskDeviceCallback(pathname string) {
+}
+
+func detachedAmigaDiskDeviceCallback(pathname string) {
+}
 
 func keyEventCallback(sender any, key string, pressed bool) {
 }
@@ -77,12 +85,21 @@ func main() {
 	log.Printf("Executable directory %v\n", exeDir)
 	log.Printf("Log filename %v\n", logFilename)
 
+	amigaDiskDevicesDiscovery.SetAttachedAmigaDiskDeviceCallback(attachedAmigaDiskDeviceCallback)
+	amigaDiskDevicesDiscovery.SetDetachedAmigaDiskDeviceCallback(detachedAmigaDiskDeviceCallback)
+	amigaDiskDevicesDiscovery.SetMountpoint(consts.FILE_SYSTEM_MOUNT)
+
+	amigaDiskDevicesDiscovery.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	amigaDiskDevicesDiscovery.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 	initKeyboardControls()
 
+	amigaDiskDevicesDiscovery.Start(&amigaDiskDevicesDiscovery)
 	startKeyboardControls()
 
+	defer amigaDiskDevicesDiscovery.Stop(&amigaDiskDevicesDiscovery)
 	defer stopKeyboardControls()
 
+	runnersBlocker.AddRunner(&amigaDiskDevicesDiscovery)
 	addKeyboardControlsRunners()
 
 	runnersBlocker.BlockUntilRunning()
