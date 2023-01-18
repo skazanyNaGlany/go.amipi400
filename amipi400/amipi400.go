@@ -10,7 +10,7 @@ import (
 )
 
 var runnersBlocker components.RunnersBlocker
-var keyboardControls []*components.KeyboardControl
+var allKeyboardsControl components.AllKeyboardsControl
 var amigaDiskDevicesDiscovery components_amipi400.AmigaDiskDevicesDiscovery
 
 func attachedAmigaDiskDeviceCallback(pathname string) {
@@ -20,58 +20,6 @@ func detachedAmigaDiskDeviceCallback(pathname string) {
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
-}
-
-func initKeyboardControls() {
-	kc := components.KeyboardControl{}
-	devices := kc.FindAllKeyboardDevices()
-
-	for _, idevice := range devices {
-		_kc := &components.KeyboardControl{}
-
-		_kc.SetKeyboardDevice(idevice)
-
-		_kc.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
-		_kc.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
-
-		_kc.AddKeyEventCallback(keyEventCallback)
-
-		keyboardControls = append(keyboardControls, _kc)
-	}
-}
-
-func startKeyboardControls() {
-	for _, kc := range keyboardControls {
-		kc.Start(kc)
-	}
-}
-
-func stopKeyboardControls() {
-	for _, kc := range keyboardControls {
-		kc.Stop(kc)
-	}
-}
-
-func addKeyboardControlsRunners() {
-	for _, kc := range keyboardControls {
-		runnersBlocker.AddRunner(kc)
-	}
-}
-
-func clearPressedKeys() {
-	for _, kc := range keyboardControls {
-		kc.ClearPressedKeys()
-	}
-}
-
-func isKeysPressed(keys []string) bool {
-	for _, kc := range keyboardControls {
-		if kc.IsKeysPressed(keys) {
-			return true
-		}
-	}
-
-	return false
 }
 
 func main() {
@@ -88,19 +36,21 @@ func main() {
 	amigaDiskDevicesDiscovery.SetAttachedAmigaDiskDeviceCallback(attachedAmigaDiskDeviceCallback)
 	amigaDiskDevicesDiscovery.SetDetachedAmigaDiskDeviceCallback(detachedAmigaDiskDeviceCallback)
 	amigaDiskDevicesDiscovery.SetMountpoint(consts.FILE_SYSTEM_MOUNT)
+	allKeyboardsControl.SetKeyEventCallback(keyEventCallback)
 
 	amigaDiskDevicesDiscovery.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
 	amigaDiskDevicesDiscovery.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
-	initKeyboardControls()
+	allKeyboardsControl.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	allKeyboardsControl.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 
 	amigaDiskDevicesDiscovery.Start(&amigaDiskDevicesDiscovery)
-	startKeyboardControls()
+	allKeyboardsControl.Start(&allKeyboardsControl)
 
 	defer amigaDiskDevicesDiscovery.Stop(&amigaDiskDevicesDiscovery)
-	defer stopKeyboardControls()
+	defer allKeyboardsControl.Stop(&allKeyboardsControl)
 
 	runnersBlocker.AddRunner(&amigaDiskDevicesDiscovery)
-	addKeyboardControlsRunners()
+	runnersBlocker.AddRunner(&allKeyboardsControl)
 
 	runnersBlocker.BlockUntilRunning()
 }
