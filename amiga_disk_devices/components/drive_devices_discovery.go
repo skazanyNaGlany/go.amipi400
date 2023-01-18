@@ -1,4 +1,4 @@
-package amiga_disk_devices
+package components
 
 import (
 	"errors"

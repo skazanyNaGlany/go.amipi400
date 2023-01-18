@@ -1,17 +1,17 @@
-package amiga_disk_devices
+package components
 
 import (
 	"log"
 	"path/filepath"
 
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/interfaces"
-	"github.com/skazanyNaGlany/go.amipi400/components"
+	components_base "github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/winfsp/cgofuse/fuse"
 	"golang.org/x/exp/slices"
 )
 
 type ADDFileSystem struct {
-	components.RunnerBase
+	components_base.RunnerBase
 	fuse.FileSystemBase
 
 	mountDir string

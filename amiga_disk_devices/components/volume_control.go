@@ -1,15 +1,15 @@
-package amiga_disk_devices
+package components
 
 import (
 	"log"
 	"time"
 
 	"github.com/itchyny/volume-go"
-	"github.com/skazanyNaGlany/go.amipi400/components"
+	components_base "github.com/skazanyNaGlany/go.amipi400/components"
 )
 
 type VolumeControl struct {
-	components.RunnerBase
+	components_base.RunnerBase
 	muteForSecs int
 }
 
