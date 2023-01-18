@@ -2,9 +2,12 @@ package consts
 
 import "strings"
 
-// global
+// consts.go
 const AMIPI400_UNIXNAME = "amipi400"
 const AMIPI400_VERSION = "0.1"
+
+// amipi400.go
+const AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
@@ -68,4 +71,5 @@ const CACHED_ADF_HEADER_SHA512_LENGTH = 128
 // amiga_disk_devices.go [2]
 const HD_HDF_FULL_EXTENSION = "." + HD_HDF_EXTENSION
 
+// CachedADFHeader [2]
 var CACHED_ADF_HEADER_MAGIC = strings.ToUpper(AMIPI400_UNIXNAME + " v." + AMIPI400_VERSION)
