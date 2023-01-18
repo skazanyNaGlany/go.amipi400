@@ -8,6 +8,7 @@ const AMIPI400_VERSION = "0.1"
 
 // amipi400.go
 const AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
+const AMIBERRY_EXE_PATHNAME = "../amiberry/amiberry"
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"

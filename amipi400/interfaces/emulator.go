@@ -1,10 +1,13 @@
 package interfaces
 
 type Emulator interface {
-	Run() error
-	Stop() error
 	Pause() error
 	Resume() error
 	SoftReset() error
 	HardReset() error
+	SetExecutablePathname(pathname string)
+	GetExecutablePathname() string
+	SetConfigPathname(pathname string)
+	GetConfigPathname() string
+	GetEmulatorCommandLine() []string
 }
