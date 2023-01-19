@@ -5,12 +5,17 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/skazanyNaGlany/go.amipi400/consts"
 )
 
 type AmiberryEmulator struct {
 	EmulatorBase
 
-	emulatorCommand *exec.Cmd
+	emulatorCommand    *exec.Cmd
+	executablePathname string
+	configPathname     string
+	adfs               [consts.MAX_ADFS]string
 }
 
 func (ae *AmiberryEmulator) Run() {
@@ -77,4 +82,32 @@ func (ae *AmiberryEmulator) loop() {
 	}
 
 	ae.SetRunning(false)
+}
+
+func (ae *AmiberryEmulator) SetExecutablePathname(pathname string) {
+	ae.executablePathname = pathname
+}
+
+func (ae *AmiberryEmulator) GetExecutablePathname() string {
+	return ae.executablePathname
+}
+
+func (ae *AmiberryEmulator) SetConfigPathname(pathname string) {
+	ae.configPathname = pathname
+}
+
+func (ae *AmiberryEmulator) GetConfigPathname() string {
+	return ae.configPathname
+}
+
+func (ae *AmiberryEmulator) AttachAdf(index int, pathname string) error {
+	ae.adfs[index] = pathname
+
+	return nil
+}
+
+func (ae *AmiberryEmulator) DetachAdf(index int) error {
+	ae.adfs[index] = ""
+
+	return nil
 }
