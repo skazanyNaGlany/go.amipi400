@@ -73,18 +73,18 @@ func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []
 	medium.SetAccessTime(
 		time.Now().Unix())
 
-	lenBuff := len(buff)
+	lenBuff := int64(len(buff))
 	toReadSize := lenBuff
 	fileSize := medium.GetSize()
 
-	if ofst+int64(toReadSize) > int64(fileSize) {
-		toReadSize = int(fileSize) - int(ofst)
+	if ofst+toReadSize > fileSize {
+		toReadSize = fileSize - ofst
 	}
 
 	data, n, err := utils.FileUtilsInstance.FileReadBytes(
 		"",
 		ofst,
-		uint64(toReadSize),
+		toReadSize,
 		0,
 		0,
 		handle)

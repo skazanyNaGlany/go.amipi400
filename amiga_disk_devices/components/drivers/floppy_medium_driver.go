@@ -589,7 +589,7 @@ func (fmd *FloppyMediumDriver) cachedRead(floppyMedium *medium.FloppyMedium, pat
 	data, n, err := utils.FileUtilsInstance.FileReadBytes(
 		"",
 		ofst,
-		uint64(toReadSize),
+		toReadSize,
 		0,
 		0,
 		handle)
