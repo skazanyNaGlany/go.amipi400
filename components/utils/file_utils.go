@@ -69,7 +69,7 @@ func (fu *FileUtils) GetDirFiles(dir string) []string {
 func (fu *FileUtils) FileReadBytes(
 	name string,
 	offset int64,
-	size uint64,
+	size int64,
 	flag int,
 	perm fs.FileMode,
 	useHandle *os.File) ([]byte, int, error) {
@@ -95,6 +95,16 @@ func (fu *FileUtils) FileReadBytes(
 
 	if _, err = handle.Seek(offset, io.SeekStart); err != nil {
 		return nil, 0, err
+	}
+
+	if size == -1 {
+		stat, err := handle.Stat()
+
+		if err != nil {
+			return nil, 0, err
+		}
+
+		size = stat.Size()
 	}
 
 	data := make([]byte, size)
