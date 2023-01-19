@@ -41,34 +41,66 @@ func adfPathnameToDFIndex(pathname string) int {
 	return index
 }
 
-func attachedAmigaDiskDeviceCallback(pathname string) {
-	isAdf := strings.HasSuffix(pathname, consts.FLOPPY_ADF_FULL_EXTENSION)
-
-	if !isAdf {
-		return
-	}
-
+func attachAmigaDiskDeviceAdf(pathname string) {
 	index := adfPathnameToDFIndex(pathname)
 	strIndex := fmt.Sprint(index)
+
+	if emulator.GetAdf(index) != "" {
+		log.Println("ADF already attached at DF" + strIndex + ", eject it first")
+
+		return
+	}
 
 	log.Println("Attaching", pathname, "to DF"+strIndex)
 
 	emulator.AttachAdf(index, pathname)
 }
 
-func detachedAmigaDiskDeviceCallback(pathname string) {
-	isAdf := strings.HasSuffix(pathname, consts.FLOPPY_ADF_FULL_EXTENSION)
+func detachAmigaDiskDeviceAdf(pathname string) {
+	index := adfPathnameToDFIndex(pathname)
+	strIndex := fmt.Sprint(index)
 
-	if !isAdf {
+	currentAdfPathname := emulator.GetAdf(index)
+
+	if currentAdfPathname == "" {
+		log.Println("ADF not attached to DF" + strIndex + ", cannot eject")
+
 		return
 	}
 
-	index := adfPathnameToDFIndex(pathname)
-	strIndex := fmt.Sprint(index)
+	if currentAdfPathname != pathname {
+		log.Println(pathname + " not attached to DF" + strIndex + ", cannot eject")
+
+		return
+	}
 
 	log.Println("Detaching", pathname, "from DF"+strIndex)
 
 	emulator.DetachAdf(index)
+}
+
+func attachedAmigaDiskDeviceCallback(pathname string) {
+	isAdf := strings.HasSuffix(pathname, consts.FLOPPY_ADF_FULL_EXTENSION)
+
+	if isAdf {
+		attachAmigaDiskDeviceAdf(pathname)
+
+		return
+	}
+
+	log.Fatalln(pathname, "not supported")
+}
+
+func detachedAmigaDiskDeviceCallback(pathname string) {
+	isAdf := strings.HasSuffix(pathname, consts.FLOPPY_ADF_FULL_EXTENSION)
+
+	if isAdf {
+		detachAmigaDiskDeviceAdf(pathname)
+
+		return
+	}
+
+	log.Fatalln(pathname, "not supported")
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
