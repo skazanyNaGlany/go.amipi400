@@ -87,7 +87,7 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 
 	configPathname := filepath.Join(
 		os.TempDir(),
-		"amipi400.uae")
+		consts.AMIBERRY_TEMPORARY_CONFIG_FILENAME)
 
 	n, err = utils.FileUtilsInstance.FileWriteBytes(
 		configPathname,
