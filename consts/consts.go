@@ -12,6 +12,7 @@ const AMIPI400_VERSION = "0.1"
 // amipi400.go
 const _AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
 const _AMIBERRY_EXE_PATHNAME = "../amiberry/amiberry"
+const AMIBERRY_EMULATOR_TMP_INI_FILENAME = "amiberry.tmp.ini"
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
@@ -81,6 +82,9 @@ var CACHED_ADF_HEADER_MAGIC = strings.ToUpper(AMIPI400_UNIXNAME + " v." + AMIPI4
 // amipi400.go [2]
 var AMIBERRY_EXE_PATHNAME, _ = filepath.Abs(_AMIBERRY_EXE_PATHNAME)
 var AMIPI400_AMIBERRY_CONFIG_PATHNAME, _ = filepath.Abs(_AMIPI400_AMIBERRY_CONFIG_PATHNAME)
+var AMIBERRY_EMULATOR_TMP_INI_PATHNAME = filepath.Join(
+	filepath.Dir(AMIBERRY_EXE_PATHNAME),
+	AMIBERRY_EMULATOR_TMP_INI_FILENAME)
 
 // amipi400.go, EmulatorBase
 const MAX_ADFS = 4
