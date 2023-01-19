@@ -10,9 +10,7 @@ import (
 type AmiberryEmulator struct {
 	EmulatorBase
 
-	executablePathname string
-	configPathname     string
-	emulatorCommand    *exec.Cmd
+	emulatorCommand *exec.Cmd
 }
 
 func (ae *AmiberryEmulator) Run() {
@@ -61,14 +59,6 @@ func (ae *AmiberryEmulator) loop() {
 
 		ae.emulatorCommand = exec.Command(commandLine[0], commandLine[1:]...)
 
-		if err := ae.emulatorCommand.Start(); err != nil {
-			if ae.IsDebugMode() {
-				log.Println(err)
-			}
-
-			break
-		}
-
 		output, err := ae.emulatorCommand.CombinedOutput()
 
 		if err != nil {
@@ -80,25 +70,11 @@ func (ae *AmiberryEmulator) loop() {
 		}
 
 		if ae.IsVerboseMode() {
-			log.Println("Emulator output", output)
+			strOutput := strings.TrimSpace(string(output))
+
+			log.Println("Emulator output\n", strOutput)
 		}
 	}
 
 	ae.SetRunning(false)
-}
-
-func (ae *AmiberryEmulator) SetExecutablePathname(pathname string) {
-	ae.executablePathname = pathname
-}
-
-func (ae *AmiberryEmulator) GetExecutablePathname() string {
-	return ae.executablePathname
-}
-
-func (ae *AmiberryEmulator) SetConfigPathname(pathname string) {
-	ae.configPathname = pathname
-}
-
-func (ae *AmiberryEmulator) GetConfigPathname() string {
-	return ae.configPathname
 }

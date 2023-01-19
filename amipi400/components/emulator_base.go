@@ -2,10 +2,19 @@ package components
 
 import (
 	components_base "github.com/skazanyNaGlany/go.amipi400/components"
+	"github.com/skazanyNaGlany/go.amipi400/consts"
 )
 
 type EmulatorBase struct {
 	components_base.RunnerBase
+
+	executablePathname string
+	configPathname     string
+	adfs               [consts.MAX_ADFS]string
+}
+
+func (eb *EmulatorBase) Run() {
+	panic("unimplemented")
 }
 
 func (eb *EmulatorBase) Pause() error {
@@ -25,17 +34,29 @@ func (eb *EmulatorBase) HardReset() error {
 }
 
 func (eb *EmulatorBase) SetExecutablePathname(pathname string) {
-	panic("unimplemented")
+	eb.executablePathname = pathname
 }
 
 func (eb *EmulatorBase) GetExecutablePathname() string {
-	panic("unimplemented")
+	return eb.executablePathname
 }
 
 func (eb *EmulatorBase) SetConfigPathname(pathname string) {
-	panic("unimplemented")
+	eb.configPathname = pathname
 }
 
 func (eb *EmulatorBase) GetConfigPathname() string {
-	panic("unimplemented")
+	return eb.configPathname
+}
+
+func (eb *EmulatorBase) AttachAdf(index int, pathname string) error {
+	eb.adfs[index] = pathname
+
+	return nil
+}
+
+func (eb *EmulatorBase) DetachAdf(index int) error {
+	eb.adfs[index] = ""
+
+	return nil
 }

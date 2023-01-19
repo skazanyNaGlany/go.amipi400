@@ -1,26 +1,111 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"path/filepath"
+	"strings"
 
+	components_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components"
 	components_amipi400 "github.com/skazanyNaGlany/go.amipi400/amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
+	"github.com/thoas/go-funk"
 )
 
 var runnersBlocker components.RunnersBlocker
 var allKeyboardsControl components.AllKeyboardsControl
 var amigaDiskDevicesDiscovery components_amipi400.AmigaDiskDevicesDiscovery
 var emulator components_amipi400.AmiberryEmulator
+var driveDevicesDiscovery components_amiga_disk_devices.DriveDevicesDiscovery
+
+func adfPathnameToDFIndex(pathname string) int {
+	floppyDevices := driveDevicesDiscovery.GetFloppies()
+
+	// get basename and convert it
+	// to the device pathname
+	baseName := filepath.Base(pathname)
+	baseName = strings.ReplaceAll(baseName, "__", "/")
+	baseName = strings.Replace(baseName, consts.FLOPPY_ADF_FULL_EXTENSION, "", 1)
+
+	index := funk.IndexOfString(floppyDevices, baseName)
+
+	if index < 0 {
+		return 0
+	}
+
+	if index >= consts.MAX_ADFS {
+		return 0
+	}
+
+	return index
+}
 
 func attachedAmigaDiskDeviceCallback(pathname string) {
+	isAdf := strings.HasSuffix(pathname, consts.FLOPPY_ADF_FULL_EXTENSION)
+
+	if !isAdf {
+		return
+	}
+
+	index := adfPathnameToDFIndex(pathname)
+	strIndex := fmt.Sprint(index)
+
+	log.Println("Attaching", pathname, "to DF"+strIndex)
+
+	emulator.AttachAdf(index, pathname)
 }
 
 func detachedAmigaDiskDeviceCallback(pathname string) {
+	isAdf := strings.HasSuffix(pathname, consts.FLOPPY_ADF_FULL_EXTENSION)
+
+	if !isAdf {
+		return
+	}
+
+	index := adfPathnameToDFIndex(pathname)
+	strIndex := fmt.Sprint(index)
+
+	log.Println("Detaching", pathname, "from DF"+strIndex)
+
+	emulator.DetachAdf(index)
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
+}
+
+func discoverDriveDevices() {
+	log.Println("Getting information about physicall drives")
+
+	if err := driveDevicesDiscovery.Refresh(); err != nil {
+		log.Println("Perhaps you need to run this program as root")
+		log.Fatalln(err)
+	}
+}
+
+func printFloppyDevices() {
+	floppyDevices := driveDevicesDiscovery.GetFloppies()
+
+	if len(floppyDevices) > 0 {
+		log.Println("Physicall floppy drives:")
+	}
+
+	for i, devicePathname := range floppyDevices {
+		log.Println("\t", i, devicePathname)
+	}
+}
+
+func printCDROMDevices() {
+	cdroms := driveDevicesDiscovery.GetCDROMs()
+
+	if len(cdroms) > 0 {
+		log.Println("Physicall CDROM drives:")
+	}
+
+	for _, devicePathname := range cdroms {
+		log.Println("\t" + devicePathname)
+	}
 }
 
 func main() {
@@ -40,6 +125,10 @@ func main() {
 	allKeyboardsControl.SetKeyEventCallback(keyEventCallback)
 	emulator.SetExecutablePathname(consts.AMIBERRY_EXE_PATHNAME)
 	emulator.SetConfigPathname(consts.AMIPI400_AMIBERRY_CONFIG_PATHNAME)
+
+	discoverDriveDevices()
+	printFloppyDevices()
+	printCDROMDevices()
 
 	amigaDiskDevicesDiscovery.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
 	amigaDiskDevicesDiscovery.SetDebugMode(consts.RUNNERS_DEBUG_MODE)

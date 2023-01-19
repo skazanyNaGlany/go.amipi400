@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// TODO move to "base"
 type DriveDevicesDiscovery struct {
 	floppies []string
 	cdroms   []string
