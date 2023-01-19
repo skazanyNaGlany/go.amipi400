@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	components_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components"
 	components_amipi400 "github.com/skazanyNaGlany/go.amipi400/amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
@@ -18,7 +17,7 @@ var runnersBlocker components.RunnersBlocker
 var allKeyboardsControl components.AllKeyboardsControl
 var amigaDiskDevicesDiscovery components_amipi400.AmigaDiskDevicesDiscovery
 var emulator components_amipi400.AmiberryEmulator
-var driveDevicesDiscovery components_amiga_disk_devices.DriveDevicesDiscovery
+var driveDevicesDiscovery components.DriveDevicesDiscovery
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()

@@ -21,7 +21,7 @@ import (
 var blockDevices components_amiga_disk_devices.BlockDevices
 var fileSystem components_amiga_disk_devices.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
-var driveDevicesDiscovery components_amiga_disk_devices.DriveDevicesDiscovery
+var driveDevicesDiscovery components.DriveDevicesDiscovery
 var volumeControl components_amiga_disk_devices.VolumeControl
 var ledControl components.LEDControl
 var asyncFileOps components.AsyncFileOps
