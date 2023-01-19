@@ -1,11 +1,16 @@
 package components
 
 import (
+	"errors"
+	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 )
 
@@ -40,21 +45,84 @@ func (ae *AmiberryEmulator) Run() {
 	ae.loop()
 }
 
-func (ae *AmiberryEmulator) GetEmulatorCommandLine() []string {
+func (ae *AmiberryEmulator) getEmulatorCommandLine(configPathname string) []string {
 	commandLine := make([]string, 0)
 
 	commandLine = append(commandLine, ae.executablePathname)
 	commandLine = append(commandLine, "--config")
-	commandLine = append(commandLine, ae.configPathname)
+	commandLine = append(commandLine, configPathname)
 
 	return commandLine
+}
+
+func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
+	templateContent, n, err := utils.FileUtilsInstance.FileReadBytes(
+		ae.configPathname,
+		0,
+		-1,
+		0,
+		0,
+		nil)
+
+	if err != nil {
+		return "", err
+	}
+
+	if n <= 0 {
+		return "", errors.New("Cannot process config file template " + ae.configPathname)
+	}
+
+	templateContentStr := string(templateContent)
+
+	// adfs, needs to be the same as
+	// nr_floppies= option in the config
+	// otherwise some of the config data
+	// will be not filled, and it will
+	// stay at {{floppyN}}
+	for i, pathname := range ae.adfs {
+		key := fmt.Sprintf("{{floppy%v}}", i)
+
+		templateContentStr = strings.ReplaceAll(templateContentStr, key, pathname)
+	}
+
+	configPathname := filepath.Join(
+		os.TempDir(),
+		"amipi400.uae")
+
+	n, err = utils.FileUtilsInstance.FileWriteBytes(
+		configPathname,
+		0,
+		[]byte(templateContentStr),
+		os.O_CREATE|os.O_WRONLY,
+		0777,
+		nil)
+
+	if err != nil {
+		return "", err
+	}
+
+	if n <= 0 {
+		return "", errors.New("Cannot write processed config file " + configPathname)
+	}
+
+	return configPathname, nil
 }
 
 func (ae *AmiberryEmulator) loop() {
 	for ae.IsRunning() {
 		time.Sleep(time.Second * 3)
 
-		commandLine := ae.GetEmulatorCommandLine()
+		configPathname, err := ae.getEmulatorProcessedConfig()
+
+		if err != nil {
+			if ae.IsDebugMode() {
+				log.Println(err)
+			}
+
+			break
+		}
+
+		commandLine := ae.getEmulatorCommandLine(configPathname)
 
 		if ae.IsVerboseMode() {
 			log.Println(
@@ -110,4 +178,8 @@ func (ae *AmiberryEmulator) DetachAdf(index int) error {
 	ae.adfs[index] = ""
 
 	return nil
+}
+
+func (ae *AmiberryEmulator) GetAdf(index int) string {
+	return ae.adfs[index]
 }

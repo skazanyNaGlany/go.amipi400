@@ -9,7 +9,7 @@ type Emulator interface {
 	GetExecutablePathname() string
 	SetConfigPathname(pathname string)
 	GetConfigPathname() string
-	GetEmulatorCommandLine() []string
 	AttachAdf(index int, pathname string) error
 	DetachAdf(index int) error
+	GetAdf(index int) string
 }
