@@ -1,14 +1,17 @@
 package consts
 
-import "strings"
+import (
+	"path/filepath"
+	"strings"
+)
 
 // consts.go
 const AMIPI400_UNIXNAME = "amipi400"
 const AMIPI400_VERSION = "0.1"
 
 // amipi400.go
-const AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
-const AMIBERRY_EXE_PATHNAME = "../amiberry/amiberry"
+const _AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
+const _AMIBERRY_EXE_PATHNAME = "../amiberry/amiberry"
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
@@ -74,3 +77,7 @@ const HD_HDF_FULL_EXTENSION = "." + HD_HDF_EXTENSION
 
 // CachedADFHeader [2]
 var CACHED_ADF_HEADER_MAGIC = strings.ToUpper(AMIPI400_UNIXNAME + " v." + AMIPI400_VERSION)
+
+// amipi400.go [2]
+var AMIBERRY_EXE_PATHNAME, _ = filepath.Abs(_AMIBERRY_EXE_PATHNAME)
+var AMIPI400_AMIBERRY_CONFIG_PATHNAME, _ = filepath.Abs(_AMIPI400_AMIBERRY_CONFIG_PATHNAME)
