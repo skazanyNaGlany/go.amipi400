@@ -21,6 +21,11 @@ type AmiberryEmulator struct {
 	executablePathname string
 	configPathname     string
 	adfs               [consts.MAX_ADFS]string
+	commander          *AmiberryCommander
+}
+
+func (ae *AmiberryEmulator) SetAmiberryCommander(commander *AmiberryCommander) {
+	ae.commander = commander
 }
 
 func (ae *AmiberryEmulator) Run() {
@@ -131,6 +136,7 @@ func (ae *AmiberryEmulator) loop() {
 		}
 
 		ae.emulatorCommand = exec.Command(commandLine[0], commandLine[1:]...)
+		ae.commander.SetProcess(ae.emulatorCommand.Process)
 
 		output, err := ae.emulatorCommand.CombinedOutput()
 

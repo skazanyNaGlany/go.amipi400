@@ -18,6 +18,7 @@ var allKeyboardsControl components.AllKeyboardsControl
 var amigaDiskDevicesDiscovery components_amipi400.AmigaDiskDevicesDiscovery
 var emulator components_amipi400.AmiberryEmulator
 var driveDevicesDiscovery components.DriveDevicesDiscovery
+var commander components_amipi400.AmiberryCommander
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()
@@ -156,6 +157,8 @@ func main() {
 	allKeyboardsControl.SetKeyEventCallback(keyEventCallback)
 	emulator.SetExecutablePathname(consts.AMIBERRY_EXE_PATHNAME)
 	emulator.SetConfigPathname(consts.AMIPI400_AMIBERRY_CONFIG_PATHNAME)
+	emulator.SetAmiberryCommander(&commander)
+	commander.SetTmpIniPathname(consts.AMIBERRY_EMULATOR_TMP_INI_PATHNAME)
 
 	discoverDriveDevices()
 	printFloppyDevices()
@@ -167,18 +170,23 @@ func main() {
 	allKeyboardsControl.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 	emulator.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
 	emulator.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	commander.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	commander.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 
 	amigaDiskDevicesDiscovery.Start(&amigaDiskDevicesDiscovery)
 	allKeyboardsControl.Start(&allKeyboardsControl)
 	emulator.Start(&emulator)
+	commander.Start(&commander)
 
 	defer amigaDiskDevicesDiscovery.Stop(&amigaDiskDevicesDiscovery)
 	defer allKeyboardsControl.Stop(&allKeyboardsControl)
 	defer emulator.Stop(&emulator)
+	defer commander.Stop(&commander)
 
 	runnersBlocker.AddRunner(&amigaDiskDevicesDiscovery)
 	runnersBlocker.AddRunner(&allKeyboardsControl)
 	runnersBlocker.AddRunner(&emulator)
+	runnersBlocker.AddRunner(&commander)
 
 	runnersBlocker.BlockUntilRunning()
 }
