@@ -139,7 +139,9 @@ func (ae *AmiberryEmulator) loop() {
 		ae.emulatorCommand = exec.Command(commandLine[0], commandLine[1:]...)
 		ae.emulatorCommand.Dir = filepath.Dir(ae.executablePathname)
 
-		buffer := components.New(make([]byte, 0, 10485760), 10485760)
+		buffer := components.New(
+			make([]byte, 0, consts.OUTPUT_BUFFER_MAX_SIZE),
+			consts.OUTPUT_BUFFER_MAX_SIZE)
 
 		ae.emulatorCommand.Stdout = buffer
 		ae.emulatorCommand.Stderr = buffer
