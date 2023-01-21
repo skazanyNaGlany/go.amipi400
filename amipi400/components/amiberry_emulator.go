@@ -1,6 +1,7 @@
 package components
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -136,19 +137,27 @@ func (ae *AmiberryEmulator) loop() {
 		}
 
 		ae.emulatorCommand = exec.Command(commandLine[0], commandLine[1:]...)
+
+		var b bytes.Buffer
+		ae.emulatorCommand.Stdout = &b
+		ae.emulatorCommand.Stderr = &b
+
+		ae.emulatorCommand.Start()
 		ae.commander.SetProcess(ae.emulatorCommand.Process)
+		ae.emulatorCommand.Wait()
 
-		output, err := ae.emulatorCommand.CombinedOutput()
+		// output, err := ae.emulatorCommand.CombinedOutput()
 
-		if err != nil {
-			if ae.IsDebugMode() {
-				log.Println(err)
-			}
+		// if err != nil {
+		// 	if ae.IsDebugMode() {
+		// 		log.Println(err)
+		// 	}
 
-			break
-		}
+		// 	break
+		// }
 
 		if ae.IsVerboseMode() {
+			output := b.String()
 			strOutput := strings.TrimSpace(string(output))
 
 			log.Println("Emulator output\n", strOutput)
@@ -175,12 +184,35 @@ func (ae *AmiberryEmulator) GetConfigPathname() string {
 }
 
 func (ae *AmiberryEmulator) AttachAdf(index int, pathname string) error {
+	if ae.adfs[index] != "" {
+		ae.commander.PutSetFloppyCommand(index, "")
+		ae.commander.PutConfigChangedCommand()
+		ae.commander.PutLocalCommitCommand()
+		ae.commander.PutLocalSleepCommand(1)
+	}
+
 	ae.adfs[index] = pathname
+
+	ae.commander.PutSetFloppyCommand(index, pathname)
+	ae.commander.PutConfigChangedCommand()
+	ae.commander.PutLocalCommitCommand()
+	ae.commander.PutLocalSleepCommand(1)
+
+	ae.commander.Execute()
 
 	return nil
 }
 
 func (ae *AmiberryEmulator) DetachAdf(index int) error {
+	if ae.adfs[index] == "" {
+		return nil
+	}
+
+	ae.commander.PutSetFloppyCommand(index, "")
+	ae.commander.PutConfigChangedCommand()
+	ae.commander.PutLocalCommitCommand()
+	ae.commander.PutLocalSleepCommand(1)
+
 	ae.adfs[index] = ""
 
 	return nil

@@ -155,10 +155,10 @@ func main() {
 	amigaDiskDevicesDiscovery.SetDetachedAmigaDiskDeviceCallback(detachedAmigaDiskDeviceCallback)
 	amigaDiskDevicesDiscovery.SetMountpoint(consts.FILE_SYSTEM_MOUNT)
 	allKeyboardsControl.SetKeyEventCallback(keyEventCallback)
+	commander.SetTmpIniPathname(consts.AMIBERRY_EMULATOR_TMP_INI_PATHNAME)
 	emulator.SetExecutablePathname(consts.AMIBERRY_EXE_PATHNAME)
 	emulator.SetConfigPathname(consts.AMIPI400_AMIBERRY_CONFIG_PATHNAME)
 	emulator.SetAmiberryCommander(&commander)
-	commander.SetTmpIniPathname(consts.AMIBERRY_EMULATOR_TMP_INI_PATHNAME)
 
 	discoverDriveDevices()
 	printFloppyDevices()
