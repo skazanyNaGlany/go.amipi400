@@ -42,6 +42,26 @@ func adfPathnameToDFIndex(pathname string) int {
 	return index
 }
 
+func getHdfFreeSlot() int {
+	for index := 0; index < consts.MAX_HDFS; index++ {
+		if emulator.GetHdf(index) == "" {
+			return index
+		}
+	}
+
+	return -1
+}
+
+func getHdfSlot(pathname string) int {
+	for index := 0; index < consts.MAX_HDFS; index++ {
+		if emulator.GetHdf(index) == pathname {
+			return index
+		}
+	}
+
+	return -1
+}
+
 func attachAmigaDiskDeviceAdf(pathname string) {
 	index := adfPathnameToDFIndex(pathname)
 	strIndex := fmt.Sprint(index)
@@ -80,11 +100,53 @@ func detachAmigaDiskDeviceAdf(pathname string) {
 	emulator.DetachAdf(index)
 }
 
+func attachAmigaDiskDeviceHdf(pathname string) {
+	slotIndex := getHdfFreeSlot()
+
+	if slotIndex == -1 {
+		log.Println("Cannot find free HDF slot, eject other HDF")
+
+		return
+	}
+
+	strIndex := fmt.Sprint(slotIndex)
+
+	log.Println("Attaching", pathname, "to DH"+strIndex)
+
+	emulator.AttachHdf(slotIndex, pathname)
+	emulator.HardReset()
+}
+
+func detachAmigaDiskDeviceHdf(pathname string) {
+	slotIndex := getHdfSlot(pathname)
+
+	if slotIndex == -1 {
+		log.Println("HDF", pathname, "not attached")
+
+		return
+	}
+
+	strIndex := fmt.Sprint(slotIndex)
+
+	log.Println("Detaching", pathname, "from DH"+strIndex)
+
+	emulator.DetachHdf(slotIndex)
+	emulator.HardReset()
+}
+
 func attachedAmigaDiskDeviceCallback(pathname string) {
 	isAdf := strings.HasSuffix(pathname, consts.FLOPPY_ADF_FULL_EXTENSION)
 
 	if isAdf {
 		attachAmigaDiskDeviceAdf(pathname)
+
+		return
+	}
+
+	isHdf := strings.HasSuffix(pathname, consts.HD_HDF_FULL_EXTENSION)
+
+	if isHdf {
+		attachAmigaDiskDeviceHdf(pathname)
 
 		return
 	}
@@ -97,6 +159,14 @@ func detachedAmigaDiskDeviceCallback(pathname string) {
 
 	if isAdf {
 		detachAmigaDiskDeviceAdf(pathname)
+
+		return
+	}
+
+	isHdf := strings.HasSuffix(pathname, consts.HD_HDF_FULL_EXTENSION)
+
+	if isHdf {
+		detachAmigaDiskDeviceHdf(pathname)
 
 		return
 	}

@@ -22,6 +22,7 @@ type AmiberryEmulator struct {
 	executablePathname string
 	configPathname     string
 	adfs               [consts.MAX_ADFS]string
+	hdfs               [consts.MAX_HDFS]string
 	commander          *AmiberryCommander
 }
 
@@ -90,6 +91,44 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 
 		templateContentStr = strings.ReplaceAll(templateContentStr, key, pathname)
 	}
+
+	// hdfs
+	hard_drives := ""
+
+	for i, pathname := range ae.hdfs {
+		if pathname == "" {
+			continue
+		}
+
+		hdfType, err := ae.getHdfType(pathname)
+
+		if err != nil {
+			if ae.IsDebugMode() {
+				log.Println(pathname, err)
+			}
+
+			continue
+		}
+
+		bootPriority := 0
+		sectors := 0
+		surfaces := 0
+		reserved := 0
+		blocksize := 512
+
+		if hdfType == consts.HDF_TYPE_HDF {
+			sectors = 32
+			surfaces = 1
+			reserved = 2
+			blocksize = 512
+		}
+
+		hard_drives += fmt.Sprintf("hardfile2=rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0\n", i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+		hard_drives += fmt.Sprintf("uaehf%v=hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0\n", i, i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+	}
+
+	hard_drives = strings.TrimSpace(hard_drives)
+	templateContentStr = strings.ReplaceAll(templateContentStr, "{{hard_drives}}", hard_drives)
 
 	configPathname := filepath.Join(
 		os.TempDir(),
@@ -220,9 +259,81 @@ func (ae *AmiberryEmulator) GetAdf(index int) string {
 	return ae.adfs[index]
 }
 
+func (ae *AmiberryEmulator) getHdfType(pathname string) (int, error) {
+	stat, err := os.Stat(pathname)
+
+	if err != nil {
+		return 0, err
+	}
+
+	header, n, err := utils.FileUtilsInstance.FileReadBytes(
+		pathname,
+		0,
+		consts.HDD_SECTOR_SIZE,
+		0,
+		0,
+		nil)
+
+	if err != nil {
+		return 0, err
+	}
+
+	if n < consts.HDD_SECTOR_SIZE {
+		return 0, fmt.Errorf("cannot read file header %v", pathname)
+	}
+
+	if header[0] == 'R' && header[1] == 'D' && header[2] == 'S' && header[3] == 'K' {
+		return consts.HDF_TYPE_HDFRDB, nil
+	} else if header[0] == 'D' && header[1] == 'O' && header[2] == 'S' {
+		if stat.Size() < 4*1024*1024 {
+			return consts.HDF_TYPE_DISKIMAGE, nil
+		}
+
+		return consts.HDF_TYPE_HDF, nil
+	}
+
+	return 0, fmt.Errorf("cannot determine HDF type %v", pathname)
+}
+
+func (ae *AmiberryEmulator) AttachHdf(index int, pathname string) error {
+	_, err := ae.getHdfType(pathname)
+
+	if err != nil {
+		return err
+	}
+
+	ae.hdfs[index] = pathname
+
+	return nil
+}
+
+func (ae *AmiberryEmulator) DetachHdf(index int) error {
+	ae.hdfs[index] = ""
+
+	return nil
+}
+
+func (ae *AmiberryEmulator) GetHdf(index int) string {
+	return ae.hdfs[index]
+}
+
 func (ae *AmiberryEmulator) SoftReset() error {
 	ae.commander.PutUAEResetCommand()
 	ae.commander.Execute()
+
+	return nil
+}
+
+func (ae *AmiberryEmulator) HardReset() error {
+	if ae.emulatorCommand == nil {
+		return nil
+	}
+
+	if err := ae.emulatorCommand.Process.Kill(); err != nil {
+		if ae.IsDebugMode() {
+			log.Println(err)
+		}
+	}
 
 	return nil
 }

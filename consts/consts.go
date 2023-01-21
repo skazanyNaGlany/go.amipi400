@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+// global
+const HDD_SECTOR_SIZE = 512
+
 // consts.go
 const AMIPI400_UNIXNAME = "amipi400"
 const AMIPI400_VERSION = "0.1"
@@ -88,10 +91,14 @@ var AMIBERRY_EMULATOR_TMP_INI_PATHNAME = filepath.Join(
 	filepath.Dir(AMIBERRY_EXE_PATHNAME),
 	AMIBERRY_EMULATOR_TMP_INI_FILENAME)
 
-// amipi400.go, EmulatorBase
+// amipi400.go, AmiberryEmulator
 const MAX_ADFS = 4
 const FLOPPY_ADF_FULL_EXTENSION = "." + FLOPPY_ADF_EXTENSION
+const MAX_HDFS = 5
 
 // AmiberryEmulator
 const AMIBERRY_TEMPORARY_CONFIG_FILENAME = "amipi400.uae"
 const OUTPUT_BUFFER_MAX_SIZE = 10485760
+const HDF_TYPE_HDFRDB = 8
+const HDF_TYPE_DISKIMAGE = 2
+const HDF_TYPE_HDF = 5
