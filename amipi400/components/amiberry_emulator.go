@@ -215,3 +215,10 @@ func (ae *AmiberryEmulator) DetachAdf(index int) error {
 func (ae *AmiberryEmulator) GetAdf(index int) string {
 	return ae.adfs[index]
 }
+
+func (ae *AmiberryEmulator) SoftReset() error {
+	ae.commander.PutUAEResetCommand()
+	ae.commander.Execute()
+
+	return nil
+}

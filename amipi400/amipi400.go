@@ -105,6 +105,11 @@ func detachedAmigaDiskDeviceCallback(pathname string) {
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
+	if allKeyboardsControl.IsKeysPressed(consts.SOFT_RESET_KEYS) {
+		allKeyboardsControl.ClearPressedKeys()
+
+		emulator.SoftReset()
+	}
 }
 
 func discoverDriveDevices() {

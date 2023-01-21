@@ -14,6 +14,8 @@ const _AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
 const _AMIBERRY_EXE_PATHNAME = "../amiberry/amiberry"
 const AMIBERRY_EMULATOR_TMP_INI_FILENAME = "amiberry.tmp.ini"
 
+var SOFT_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
+
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
 const AMIGA_DISK_DEVICES_VERSION = "0.1"
