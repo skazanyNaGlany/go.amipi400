@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"syscall"
 	"time"
 )
 
@@ -128,6 +129,9 @@ func (fu *FileUtils) FileWriteBytes(
 	var handle *os.File
 	var err error
 	var n int
+
+	// needed to set file permissions properly
+	defer syscall.Umask(syscall.Umask(0))
 
 	if useHandle == nil {
 		if flag == 0 {
