@@ -137,27 +137,19 @@ func (ae *AmiberryEmulator) loop() {
 		}
 
 		ae.emulatorCommand = exec.Command(commandLine[0], commandLine[1:]...)
+		ae.emulatorCommand.Dir = filepath.Dir(ae.executablePathname)
 
-		var b bytes.Buffer
-		ae.emulatorCommand.Stdout = &b
-		ae.emulatorCommand.Stderr = &b
+		// TODO limit outputBuffer
+		outputBuffer := bytes.Buffer{}
+		ae.emulatorCommand.Stdout = &outputBuffer
+		ae.emulatorCommand.Stderr = &outputBuffer
 
 		ae.emulatorCommand.Start()
 		ae.commander.SetProcess(ae.emulatorCommand.Process)
 		ae.emulatorCommand.Wait()
 
-		// output, err := ae.emulatorCommand.CombinedOutput()
-
-		// if err != nil {
-		// 	if ae.IsDebugMode() {
-		// 		log.Println(err)
-		// 	}
-
-		// 	break
-		// }
-
 		if ae.IsVerboseMode() {
-			output := b.String()
+			output := outputBuffer.String()
 			strOutput := strings.TrimSpace(string(output))
 
 			log.Println("Emulator output\n", strOutput)
@@ -212,6 +204,8 @@ func (ae *AmiberryEmulator) DetachAdf(index int) error {
 	ae.commander.PutConfigChangedCommand()
 	ae.commander.PutLocalCommitCommand()
 	ae.commander.PutLocalSleepCommand(1)
+
+	ae.commander.Execute()
 
 	ae.adfs[index] = ""
 

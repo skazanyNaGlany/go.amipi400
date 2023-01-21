@@ -37,37 +37,6 @@ func (ac *AmiberryCommander) SetProcess(process *os.Process) {
 	ac.process = process
 }
 
-/*
-def execute_commands():
-    # TODO limit execution once every second
-    global commands
-
-    str_commands = ''
-    index = 0
-
-    while commands:
-        icommand = commands.pop(0).strip()
-
-        if icommand.startswith('local-'):
-            if process_local_command(icommand, str_commands):
-                str_commands = ''
-                index = 0
-
-            continue
-
-        str_commands += 'cmd{index}={cmd}\n'.format(
-            index=index,
-            cmd=icommand
-        )
-        index += 1
-
-    if str_commands:
-        write_tmp_ini(str_commands)
-
-        if send_SIGUSR1_signal():
-            block_till_tmp_ini_exists()
-*/
-
 func (ac *AmiberryCommander) writeTmpIni(commands string) error {
 	if ac.IsVerboseMode() {
 		log.Println("Writing", ac.tmpIniPathname)
@@ -77,12 +46,15 @@ func (ac *AmiberryCommander) writeTmpIni(commands string) error {
 
 	byteCommands := []byte(commands)
 
+	// just in case
+	os.Remove(ac.tmpIniPathname)
+
 	n, err := utils.FileUtilsInstance.FileWriteBytes(
 		ac.tmpIniPathname,
 		0,
 		byteCommands,
-		os.O_CREATE|os.O_RDWR,
-		0777,
+		os.O_CREATE|os.O_RDWR|os.O_TRUNC,
+		0644,
 		nil)
 
 	if err != nil {
@@ -119,39 +91,6 @@ func (ac *AmiberryCommander) blockTillTmpIniExists() {
 		}
 	}
 }
-
-/*
-def process_local_command(command: str, str_commands: str):
-    if command == 'local-commit':
-        if not str_commands:
-            return False
-
-        print_log('Committing')
-
-        write_tmp_ini(str_commands)
-
-        if send_SIGUSR1_signal():
-            block_till_tmp_ini_exists()
-
-            return True
-
-        return False
-    elif command.startswith('local-sleep '):
-        parts = command.split(' ')
-
-        if len(parts) != 2:
-            return False
-
-        seconds = int(parts[1])
-
-        print_log('Sleeping for {seconds} seconds'.format(
-            seconds=seconds
-        ))
-
-        time.sleep(seconds)
-
-    return False
-*/
 
 func (ac *AmiberryCommander) executeLocalCommand(command string, currentCommands string) bool {
 	if command == "local-commit" {
@@ -284,6 +223,10 @@ func (ac *AmiberryCommander) PutCommand(command string, reset bool, force bool) 
 	ac.commands = append(ac.commands, command)
 }
 
+func (ac *AmiberryCommander) PutUAEResetCommand() {
+	ac.PutCommand("uae_reset 1,1", false, false)
+}
+
 func (ac *AmiberryCommander) PutConfigChangedCommand() {
 	ac.PutCommand("config_changed 1", false, false)
 }
@@ -309,91 +252,3 @@ func (ac *AmiberryCommander) PutLocalSleepCommand(sleepSecs int) {
 
 	ac.PutCommand("local-sleep "+sleepSecsStr, false, false)
 }
-
-/*
-// def put_command(command: str, reset: bool = False, force = False):
-//     global commands
-
-//     if reset:
-//         commands = []
-
-//     if is_emulator_paused and not force:
-//         return
-
-//     if command:
-//         if commands:
-//             if commands[len(commands) - 1] == command:
-//                 # do not add same command
-//                 return
-
-//         commands.append(command)
-
-
-// def put_local_commit_command(sleep_seconds: int = 0):
-//     put_command('local-commit')
-
-//     if sleep_seconds:
-//         put_command('local-sleep 1')
-
-
-// def send_SIGUSR1_signal():
-//     if not AUTOSEND_SIGNAL:
-//         return False
-
-//     print_log('Sending SIGUSR1 signal to Amiberry emulator')
-
-//     try:
-//         sh.killall('-USR1', 'amiberry')
-
-//         return True
-//     except sh.ErrorReturnCode_1:
-//         print_log('No process found')
-
-//         return False
-
-
-def process_local_command(command: str, str_commands: str):
-    if command == 'local-commit':
-        if not str_commands:
-            return False
-
-        print_log('Committing')
-
-        write_tmp_ini(str_commands)
-
-        if send_SIGUSR1_signal():
-            block_till_tmp_ini_exists()
-
-            return True
-
-        return False
-    elif command.startswith('local-sleep '):
-        parts = command.split(' ')
-
-        if len(parts) != 2:
-            return False
-
-        seconds = int(parts[1])
-
-        print_log('Sleeping for {seconds} seconds'.format(
-            seconds=seconds
-        ))
-
-        time.sleep(seconds)
-
-    return False
-
-
-// def write_tmp_ini(str_commands: str):
-//     with open(emulator_tmp_ini_pathname, 'w+', newline=None) as f:
-//         f.write('[commands]' + os.linesep)
-//         f.write(str_commands)
-
-
-// def block_till_tmp_ini_exists():
-//     while os.path.exists(emulator_tmp_ini_pathname) and \
-//         check_emulator_running():
-//         time.sleep(0)
-
-
-*/
