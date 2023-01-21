@@ -165,7 +165,8 @@ func (ac *AmiberryCommander) sendCommands(commands string) error {
 
 	if ac.IsVerboseMode() {
 		log.Println("Sending commands to the emulator")
-		log.Println(commands)
+
+		utils.GoUtilsInstance.LogPrintLines(commands)
 	}
 
 	if err := ac.writeTmpIni(commands); err != nil {

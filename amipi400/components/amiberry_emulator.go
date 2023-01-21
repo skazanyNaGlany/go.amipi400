@@ -152,7 +152,9 @@ func (ae *AmiberryEmulator) loop() {
 			output := outputBuffer.String()
 			strOutput := strings.TrimSpace(string(output))
 
-			log.Println("Emulator output\n", strOutput)
+			log.Println("Emulator output")
+
+			utils.GoUtilsInstance.LogPrintLines(strOutput)
 		}
 	}
 

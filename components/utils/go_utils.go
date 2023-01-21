@@ -194,3 +194,11 @@ func (gu *GoUtils) StructToByteSlice(source any) ([]byte, error) {
 
 	return buffer.Bytes(), err
 }
+
+func (gu *GoUtils) LogPrintLines(lines string) {
+	for _, iline := range strings.Split(lines, "\n") {
+		iline = strings.TrimSpace(iline)
+
+		log.Println(iline)
+	}
+}
