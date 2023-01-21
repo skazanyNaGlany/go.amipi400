@@ -1,7 +1,6 @@
 package components
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 )
@@ -139,17 +139,17 @@ func (ae *AmiberryEmulator) loop() {
 		ae.emulatorCommand = exec.Command(commandLine[0], commandLine[1:]...)
 		ae.emulatorCommand.Dir = filepath.Dir(ae.executablePathname)
 
-		// TODO limit outputBuffer
-		outputBuffer := bytes.Buffer{}
-		ae.emulatorCommand.Stdout = &outputBuffer
-		ae.emulatorCommand.Stderr = &outputBuffer
+		buffer := components.New(make([]byte, 0, 10485760), 10485760)
+
+		ae.emulatorCommand.Stdout = buffer
+		ae.emulatorCommand.Stderr = buffer
 
 		ae.emulatorCommand.Start()
 		ae.commander.SetProcess(ae.emulatorCommand.Process)
 		ae.emulatorCommand.Wait()
 
 		if ae.IsVerboseMode() {
-			output := outputBuffer.String()
+			output := buffer.Buffer.String()
 			strOutput := strings.TrimSpace(string(output))
 
 			log.Println("Emulator output")
