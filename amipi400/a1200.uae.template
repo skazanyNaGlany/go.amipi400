@@ -1,3 +1,9 @@
+; AMIPI400 configuration template for the Amiga 1200.
+;
+; To use it:
+; - copy to /boot/ as /boot/amipi400.uae.template
+; - provide Kickstart 3.1 ROM as /boot/Kickstart3.1.rom
+
 config_description=UAE default configuration
 config_hardware=true
 config_host=true
