@@ -253,3 +253,10 @@ func (ac *AmiberryCommander) PutLocalSleepCommand(sleepSecs int) {
 
 	ac.PutCommand("local-sleep "+sleepSecsStr, false, false)
 }
+
+func (ac *AmiberryCommander) PutSetCdCommand(index int, pathname string) {
+	option := fmt.Sprintf("cdimage%v", index)
+	value := pathname + ",image"
+
+	ac.PutSetConfigOptionCommand(option, value)
+}

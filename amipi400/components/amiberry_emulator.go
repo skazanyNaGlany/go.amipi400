@@ -23,6 +23,7 @@ type AmiberryEmulator struct {
 	configPathname     string
 	adfs               [consts.MAX_ADFS]string
 	hdfs               [consts.MAX_HDFS]string
+	cds                [consts.MAX_CDS]string
 	commander          *AmiberryCommander
 }
 
@@ -87,6 +88,10 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 	// will be not filled, and it will
 	// stay at {{floppyN}}
 	for i, pathname := range ae.adfs {
+		if pathname == "" {
+			continue
+		}
+
 		key := fmt.Sprintf("{{floppy%v}}", i)
 
 		templateContentStr = strings.ReplaceAll(templateContentStr, key, pathname)
@@ -129,6 +134,15 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 
 	hard_drives = strings.TrimSpace(hard_drives)
 	templateContentStr = strings.ReplaceAll(templateContentStr, "{{hard_drives}}", hard_drives)
+
+	// cds
+	for i, pathname := range ae.cds {
+		pathname = pathname + ",image"
+
+		key := fmt.Sprintf("{{cdimage%v}}", i)
+
+		templateContentStr = strings.ReplaceAll(templateContentStr, key, pathname)
+	}
 
 	configPathname := filepath.Join(
 		os.TempDir(),
@@ -259,6 +273,10 @@ func (ae *AmiberryEmulator) GetAdf(index int) string {
 	return ae.adfs[index]
 }
 
+func (ae *AmiberryEmulator) GetIso(index int) string {
+	return ae.cds[index]
+}
+
 func (ae *AmiberryEmulator) getHdfType(pathname string) (int, error) {
 	stat, err := os.Stat(pathname)
 
@@ -334,6 +352,43 @@ func (ae *AmiberryEmulator) HardReset() error {
 			log.Println(err)
 		}
 	}
+
+	return nil
+}
+
+func (ae *AmiberryEmulator) AttachCd(index int, pathname string) error {
+	if ae.cds[index] != "" {
+		ae.commander.PutSetCdCommand(index, "")
+		ae.commander.PutConfigChangedCommand()
+		ae.commander.PutLocalCommitCommand()
+		ae.commander.PutLocalSleepCommand(1)
+	}
+
+	ae.cds[index] = pathname
+
+	ae.commander.PutSetCdCommand(index, pathname)
+	ae.commander.PutConfigChangedCommand()
+	ae.commander.PutLocalCommitCommand()
+	ae.commander.PutLocalSleepCommand(1)
+
+	ae.commander.Execute()
+
+	return nil
+}
+
+func (ae *AmiberryEmulator) DetachCd(index int) error {
+	if ae.cds[index] == "" {
+		return nil
+	}
+
+	ae.commander.PutSetCdCommand(index, "")
+	ae.commander.PutConfigChangedCommand()
+	ae.commander.PutLocalCommitCommand()
+	ae.commander.PutLocalSleepCommand(1)
+
+	ae.commander.Execute()
+
+	ae.cds[index] = ""
 
 	return nil
 }

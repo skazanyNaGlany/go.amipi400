@@ -42,6 +42,28 @@ func adfPathnameToDFIndex(pathname string) int {
 	return index
 }
 
+func isoPathnameToCDIndex(pathname string) int {
+	cdromDevices := driveDevicesDiscovery.GetCDROMs()
+
+	// get basename and convert it
+	// to the device pathname
+	baseName := filepath.Base(pathname)
+	baseName = strings.ReplaceAll(baseName, "__", "/")
+	baseName = strings.Replace(baseName, consts.CD_ISO_FULL_EXTENSION, "", 1)
+
+	index := funk.IndexOfString(cdromDevices, baseName)
+
+	if index < 0 {
+		return 0
+	}
+
+	if index >= consts.MAX_CDS {
+		return 0
+	}
+
+	return index
+}
+
 func getHdfFreeSlot() int {
 	for index := 0; index < consts.MAX_HDFS; index++ {
 		if emulator.GetHdf(index) == "" {
@@ -77,6 +99,21 @@ func attachAmigaDiskDeviceAdf(pathname string) {
 	emulator.AttachAdf(index, pathname)
 }
 
+func attachAmigaDiskDeviceIso(pathname string) {
+	index := isoPathnameToCDIndex(pathname)
+	strIndex := fmt.Sprint(index)
+
+	if emulator.GetIso(index) != "" {
+		log.Println("ISO already attached at CD" + strIndex + ", eject it first")
+
+		return
+	}
+
+	log.Println("Attaching", pathname, "to CD"+strIndex)
+
+	emulator.AttachCd(index, pathname)
+}
+
 func detachAmigaDiskDeviceAdf(pathname string) {
 	index := adfPathnameToDFIndex(pathname)
 	strIndex := fmt.Sprint(index)
@@ -98,6 +135,29 @@ func detachAmigaDiskDeviceAdf(pathname string) {
 	log.Println("Detaching", pathname, "from DF"+strIndex)
 
 	emulator.DetachAdf(index)
+}
+
+func detachAmigaDiskDeviceIso(pathname string) {
+	index := isoPathnameToCDIndex(pathname)
+	strIndex := fmt.Sprint(index)
+
+	currentIsoPathname := emulator.GetIso(index)
+
+	if currentIsoPathname == "" {
+		log.Println("ISO not attached to CD" + strIndex + ", cannot eject")
+
+		return
+	}
+
+	if currentIsoPathname != pathname {
+		log.Println(pathname + " not attached to CD" + strIndex + ", cannot eject")
+
+		return
+	}
+
+	log.Println("Detaching", pathname, "from CD"+strIndex)
+
+	emulator.DetachCd(index)
 }
 
 func attachAmigaDiskDeviceHdf(pathname string) {
@@ -151,6 +211,14 @@ func attachedAmigaDiskDeviceCallback(pathname string) {
 		return
 	}
 
+	isIso := strings.HasSuffix(pathname, consts.CD_ISO_FULL_EXTENSION)
+
+	if isIso {
+		attachAmigaDiskDeviceIso(pathname)
+
+		return
+	}
+
 	log.Fatalln(pathname, "not supported")
 }
 
@@ -167,6 +235,14 @@ func detachedAmigaDiskDeviceCallback(pathname string) {
 
 	if isHdf {
 		detachAmigaDiskDeviceHdf(pathname)
+
+		return
+	}
+
+	isIso := strings.HasSuffix(pathname, consts.CD_ISO_FULL_EXTENSION)
+
+	if isIso {
+		detachAmigaDiskDeviceIso(pathname)
 
 		return
 	}
