@@ -1,4 +1,4 @@
-; AMIPI400 configuration template for the Amiga 1200.
+; AMIPI400 configuration template for the Amiga CD32.
 ;
 ; To use it:
 ; - copy to /boot/ as /boot/amipi400.uae.template
