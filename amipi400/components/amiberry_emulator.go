@@ -11,12 +11,13 @@ import (
 	"time"
 
 	"github.com/skazanyNaGlany/go.amipi400/components"
+	components_base "github.com/skazanyNaGlany/go.amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/consts"
 )
 
 type AmiberryEmulator struct {
-	EmulatorBase
+	components_base.RunnerBase
 
 	emulatorCommand    *exec.Cmd
 	executablePathname string
