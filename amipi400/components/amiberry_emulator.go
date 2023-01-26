@@ -92,9 +92,9 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 			continue
 		}
 
-		key := fmt.Sprintf("{{floppy%v}}", i)
+		key, value := ae.commander.FormatSetFloppyConfigOption(i, pathname)
 
-		templateContentStr = strings.ReplaceAll(templateContentStr, key, pathname)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 	}
 
 	// hdfs
@@ -128,8 +128,11 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 			blocksize = 512
 		}
 
-		hard_drives += fmt.Sprintf("hardfile2=rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0\n", i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
-		hard_drives += fmt.Sprintf("uaehf%v=hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0\n", i, i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+		key, value := ae.commander.FormatHardFile2ConfigOption(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+		hard_drives += key + "=" + value + "\n"
+
+		key, value = ae.commander.FormatUaeHfConfigOption(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+		hard_drives += key + "=" + value + "\n"
 	}
 
 	hard_drives = strings.TrimSpace(hard_drives)
@@ -137,11 +140,9 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 
 	// cds
 	for i, pathname := range ae.cds {
-		pathname = pathname + ",image"
+		key, value := ae.commander.FormatSetCdConfigOption(i, pathname)
 
-		key := fmt.Sprintf("{{cdimage%v}}", i)
-
-		templateContentStr = strings.ReplaceAll(templateContentStr, key, pathname)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 	}
 
 	configPathname := filepath.Join(
@@ -234,7 +235,7 @@ func (ae *AmiberryEmulator) GetConfigPathname() string {
 
 func (ae *AmiberryEmulator) AttachAdf(index int, pathname string) error {
 	if ae.adfs[index] != "" {
-		ae.commander.PutSetFloppyCommand(index, "")
+		ae.commander.PutSetFloppyConfigOption(index, "")
 		ae.commander.PutConfigChangedCommand()
 		ae.commander.PutLocalCommitCommand()
 		ae.commander.PutLocalSleepCommand(1)
@@ -242,7 +243,7 @@ func (ae *AmiberryEmulator) AttachAdf(index int, pathname string) error {
 
 	ae.adfs[index] = pathname
 
-	ae.commander.PutSetFloppyCommand(index, pathname)
+	ae.commander.PutSetFloppyConfigOption(index, pathname)
 	ae.commander.PutConfigChangedCommand()
 	ae.commander.PutLocalCommitCommand()
 	ae.commander.PutLocalSleepCommand(1)
@@ -257,7 +258,7 @@ func (ae *AmiberryEmulator) DetachAdf(index int) error {
 		return nil
 	}
 
-	ae.commander.PutSetFloppyCommand(index, "")
+	ae.commander.PutSetFloppyConfigOption(index, "")
 	ae.commander.PutConfigChangedCommand()
 	ae.commander.PutLocalCommitCommand()
 	ae.commander.PutLocalSleepCommand(1)
@@ -358,7 +359,7 @@ func (ae *AmiberryEmulator) HardReset() error {
 
 func (ae *AmiberryEmulator) AttachCd(index int, pathname string) error {
 	if ae.cds[index] != "" {
-		ae.commander.PutSetCdCommand(index, "")
+		ae.commander.PutSetCdConfigOption(index, "")
 		ae.commander.PutConfigChangedCommand()
 		ae.commander.PutLocalCommitCommand()
 		ae.commander.PutLocalSleepCommand(1)
@@ -366,7 +367,7 @@ func (ae *AmiberryEmulator) AttachCd(index int, pathname string) error {
 
 	ae.cds[index] = pathname
 
-	ae.commander.PutSetCdCommand(index, pathname)
+	ae.commander.PutSetCdConfigOption(index, pathname)
 	ae.commander.PutConfigChangedCommand()
 	ae.commander.PutLocalCommitCommand()
 	ae.commander.PutLocalSleepCommand(1)
@@ -381,7 +382,7 @@ func (ae *AmiberryEmulator) DetachCd(index int) error {
 		return nil
 	}
 
-	ae.commander.PutSetCdCommand(index, "")
+	ae.commander.PutSetCdConfigOption(index, "")
 	ae.commander.PutConfigChangedCommand()
 	ae.commander.PutLocalCommitCommand()
 	ae.commander.PutLocalSleepCommand(1)

@@ -238,10 +238,16 @@ func (ac *AmiberryCommander) PutSetConfigOptionCommand(option string, value stri
 	ac.PutCommand(full, false, false)
 }
 
-func (ac *AmiberryCommander) PutSetFloppyCommand(index int, pathname string) {
-	option := fmt.Sprintf("floppy%v", index)
+func (ac *AmiberryCommander) FormatSetFloppyConfigOption(index int, pathname string) (string, string) {
+	key := fmt.Sprintf("floppy%v", index)
 
-	ac.PutSetConfigOptionCommand(option, pathname)
+	return key, pathname
+}
+
+func (ac *AmiberryCommander) PutSetFloppyConfigOption(index int, pathname string) {
+	key, value := ac.FormatSetFloppyConfigOption(index, pathname)
+
+	ac.PutSetConfigOptionCommand(key, value)
 }
 
 func (ac *AmiberryCommander) PutLocalCommitCommand() {
@@ -254,9 +260,45 @@ func (ac *AmiberryCommander) PutLocalSleepCommand(sleepSecs int) {
 	ac.PutCommand("local-sleep "+sleepSecsStr, false, false)
 }
 
-func (ac *AmiberryCommander) PutSetCdCommand(index int, pathname string) {
-	option := fmt.Sprintf("cdimage%v", index)
+func (ac *AmiberryCommander) FormatSetCdConfigOption(index int, pathname string) (string, string) {
+	key := fmt.Sprintf("cdimage%v", index)
 	value := pathname + ",image"
 
-	ac.PutSetConfigOptionCommand(option, value)
+	return key, value
+}
+
+func (ac *AmiberryCommander) PutSetCdConfigOption(index int, pathname string) {
+	key, value := ac.FormatSetCdConfigOption(index, pathname)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
+func (ac *AmiberryCommander) FormatHardFile2ConfigOption(
+	driveIndex int,
+	pathname string,
+	sectors int,
+	surfaces int,
+	reserved int,
+	blockSize int,
+	bootPriority int,
+	controllerIndex int) (string, string) {
+	key := "hardfile2"
+	value := fmt.Sprintf("rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0\n", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) FormatUaeHfConfigOption(
+	driveIndex int,
+	pathname string,
+	sectors int,
+	surfaces int,
+	reserved int,
+	blockSize int,
+	bootPriority int,
+	controllerIndex int) (string, string) {
+	key := fmt.Sprintf("uaehf%v", driveIndex)
+	value := fmt.Sprintf("hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0\n", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+
+	return key, value
 }
