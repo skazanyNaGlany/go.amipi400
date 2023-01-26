@@ -283,7 +283,7 @@ func (ac *AmiberryCommander) FormatHardFile2ConfigOption(
 	bootPriority int,
 	controllerIndex int) (string, string) {
 	key := "hardfile2"
-	value := fmt.Sprintf("rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0\n", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+	value := fmt.Sprintf("rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
 
 	return key, value
 }
@@ -298,7 +298,7 @@ func (ac *AmiberryCommander) FormatUaeHfConfigOption(
 	bootPriority int,
 	controllerIndex int) (string, string) {
 	key := fmt.Sprintf("uaehf%v", driveIndex)
-	value := fmt.Sprintf("hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0\n", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+	value := fmt.Sprintf("hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
 
 	return key, value
 }
