@@ -481,8 +481,8 @@ func printFloppyDevices() {
 		log.Println("Physicall floppy drives:")
 	}
 
-	for _, devicePathname := range floppyDevices {
-		log.Println("\t" + devicePathname)
+	for i, devicePathname := range floppyDevices {
+		log.Println("\t", i, devicePathname)
 	}
 }
 
@@ -493,8 +493,8 @@ func printCDROMDevices() {
 		log.Println("Physicall CDROM drives:")
 	}
 
-	for _, devicePathname := range cdroms {
-		log.Println("\t" + devicePathname)
+	for i, devicePathname := range cdroms {
+		log.Println("\t", i, devicePathname)
 	}
 }
 

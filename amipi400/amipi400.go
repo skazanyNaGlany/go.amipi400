@@ -286,8 +286,8 @@ func printCDROMDevices() {
 		log.Println("Physicall CDROM drives:")
 	}
 
-	for _, devicePathname := range cdroms {
-		log.Println("\t" + devicePathname)
+	for i, devicePathname := range cdroms {
+		log.Println("\t", i, devicePathname)
 	}
 }
 
