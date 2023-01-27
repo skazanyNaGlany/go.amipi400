@@ -19,6 +19,7 @@ var amigaDiskDevicesDiscovery components_amipi400.AmigaDiskDevicesDiscovery
 var emulator components_amipi400.AmiberryEmulator
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var commander components_amipi400.AmiberryCommander
+var blockDevices components.BlockDevices
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()
@@ -258,6 +259,42 @@ func keyEventCallback(sender any, key string, pressed bool) {
 	}
 }
 
+func attachedBlockDeviceCallback(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	if utils.BlockDeviceUtilsInstance.IsInternalMedium(name) {
+		return
+	}
+
+	if utils.BlockDeviceUtilsInstance.IsPoolMedium(name) {
+		return
+	}
+
+	log.Println("Found new block device", path)
+
+	utils.BlockDeviceUtilsInstance.PrintBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+}
+
+func detachedBlockDeviceCallback(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	if utils.BlockDeviceUtilsInstance.IsInternalMedium(name) {
+		return
+	}
+
+	if utils.BlockDeviceUtilsInstance.IsPoolMedium(name) {
+		return
+	}
+
+	log.Println("Removed block device", path)
+
+	utils.BlockDeviceUtilsInstance.PrintBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+}
+
 func discoverDriveDevices() {
 	log.Println("Getting information about physicall drives")
 
@@ -310,6 +347,8 @@ func main() {
 	emulator.SetExecutablePathname(consts.AMIBERRY_EXE_PATHNAME)
 	emulator.SetConfigPathname(consts.AMIPI400_AMIBERRY_CONFIG_PATHNAME)
 	emulator.SetAmiberryCommander(&commander)
+	blockDevices.AddAttachedCallback(attachedBlockDeviceCallback)
+	blockDevices.AddDetachedCallback(detachedBlockDeviceCallback)
 
 	discoverDriveDevices()
 	printFloppyDevices()
@@ -323,21 +362,26 @@ func main() {
 	emulator.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 	commander.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
 	commander.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	blockDevices.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
+	blockDevices.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
 
 	amigaDiskDevicesDiscovery.Start(&amigaDiskDevicesDiscovery)
 	allKeyboardsControl.Start(&allKeyboardsControl)
 	emulator.Start(&emulator)
 	commander.Start(&commander)
+	blockDevices.Start(&blockDevices)
 
 	defer amigaDiskDevicesDiscovery.Stop(&amigaDiskDevicesDiscovery)
 	defer allKeyboardsControl.Stop(&allKeyboardsControl)
 	defer emulator.Stop(&emulator)
 	defer commander.Stop(&commander)
+	defer blockDevices.Stop(&blockDevices)
 
 	runnersBlocker.AddRunner(&amigaDiskDevicesDiscovery)
 	runnersBlocker.AddRunner(&allKeyboardsControl)
 	runnersBlocker.AddRunner(&emulator)
 	runnersBlocker.AddRunner(&commander)
+	runnersBlocker.AddRunner(&blockDevices)
 
 	runnersBlocker.BlockUntilRunning()
 }

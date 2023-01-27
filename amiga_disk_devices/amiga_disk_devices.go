@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 
 	components_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components"
@@ -33,30 +32,6 @@ var allKeyboardsControl components.AllKeyboardsControl
 var cachedAdfsDir = ""
 
 var floppyDevices []string
-
-func isInternalMedium(name string) bool {
-	return strings.HasPrefix(name, consts.SYSTEM_INTERNAL_SD_CARD_NAME)
-}
-
-func isPoolMedium(name string) bool {
-	return strings.HasPrefix(name, consts.POOL_DEVICE_NAME)
-}
-
-func printBlockDevice(
-	name string,
-	size uint64,
-	_type, mountpoint, label, path, fsType, ptType string,
-	readOnly bool) {
-	log.Println("\tName:          " + name)
-	log.Println("\tSize:          " + strconv.FormatUint(size, 10))
-	log.Println("\tType:          " + _type)
-	log.Println("\tMountpoint:    " + mountpoint)
-	log.Println("\tLabel:         " + label)
-	log.Println("\tPathname:      " + path)
-	log.Println("\tFsType:        " + fsType)
-	log.Println("\tPtType:        " + ptType)
-	log.Println("\tRead-only:     " + strconv.FormatBool(readOnly))
-}
 
 func ProbeMediumForDriver(
 	name string,
@@ -209,17 +184,17 @@ func attachedBlockDeviceCallback(
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
-	if isInternalMedium(name) {
+	if utils.BlockDeviceUtilsInstance.IsInternalMedium(name) {
 		return
 	}
 
-	if isPoolMedium(name) {
+	if utils.BlockDeviceUtilsInstance.IsPoolMedium(name) {
 		return
 	}
 
 	log.Println("Found new block device", path)
 
-	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	utils.BlockDeviceUtilsInstance.PrintBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
 	formatted := false
 
@@ -272,17 +247,17 @@ func detachedBlockDeviceCallback(
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
-	if isInternalMedium(name) {
+	if utils.BlockDeviceUtilsInstance.IsInternalMedium(name) {
 		return
 	}
 
-	if isPoolMedium(name) {
+	if utils.BlockDeviceUtilsInstance.IsPoolMedium(name) {
 		return
 	}
 
 	log.Println("Removed block device", path)
 
-	printBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	utils.BlockDeviceUtilsInstance.PrintBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 
 	if _, err := fileSystem.RemoveMediumByDevicePathname(path); err != nil {
 		log.Println("Unable to close medium:", path, ":", err)
