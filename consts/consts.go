@@ -2,6 +2,7 @@ package consts
 
 import (
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -16,8 +17,12 @@ const AMIPI400_VERSION = "0.1"
 const _AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
 const _AMIBERRY_EXE_PATHNAME = "../amiberry/amiberry"
 const AMIBERRY_EMULATOR_TMP_INI_FILENAME = "amiberry.tmp.ini"
+const AP4_ROOT_MOUNTPOINT = "/media/"
 
 var SOFT_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
+var AP4_MEDIUM_DF_REG_EX = regexp.MustCompile(`^AP4_DF([0-9]?|X)$`)
+var AP4_MEDIUM_DH_REG_EX = regexp.MustCompile(`^AP4_DH([0-9]?|X)$`)
+var AP4_MEDIUM_CD_REG_EX = regexp.MustCompile(`^AP4_CD([0-9]?|X)$`)
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"

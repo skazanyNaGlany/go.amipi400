@@ -199,6 +199,10 @@ func (gu *GoUtils) LogPrintLines(lines string) {
 	for _, iline := range strings.Split(lines, "\n") {
 		iline = strings.TrimSpace(iline)
 
+		if iline == "" {
+			continue
+		}
+
 		log.Println(iline)
 	}
 }

@@ -3,6 +3,7 @@ package utils
 import (
 	"log"
 	"os"
+	"os/exec"
 	"syscall"
 
 	"golang.org/x/sys/unix"
@@ -34,4 +35,13 @@ func (k *UnixUtils) SetDeviceReadAHead(handle *os.File, readAHead int) error {
 	}
 
 	return nil
+}
+
+func (k *UnixUtils) RunFsck(devicePathname string) (string, error) {
+	output, err := exec.Command(
+		"fsck",
+		"-y",
+		devicePathname).CombinedOutput()
+
+	return string(output), err
 }

@@ -3,8 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
+	"syscall"
 
 	components_amipi400 "github.com/skazanyNaGlany/go.amipi400/amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/components"
@@ -20,6 +24,7 @@ var emulator components_amipi400.AmiberryEmulator
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var commander components_amipi400.AmiberryCommander
 var blockDevices components.BlockDevices
+var mounted = make(map[string]string) // [devicePathname]mountpoint
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()
@@ -85,19 +90,50 @@ func getHdfSlot(pathname string) int {
 	return -1
 }
 
-func attachAmigaDiskDeviceAdf(pathname string) {
-	index := adfPathnameToDFIndex(pathname)
+func attachAdf(index int, pathname string) bool {
 	strIndex := fmt.Sprint(index)
 
 	if emulator.GetAdf(index) != "" {
 		log.Println("ADF already attached at DF" + strIndex + ", eject it first")
 
-		return
+		return false
 	}
 
 	log.Println("Attaching", pathname, "to DF"+strIndex)
 
 	emulator.AttachAdf(index, pathname)
+
+	return true
+}
+
+func detachAdf(index int, pathname string) bool {
+	strIndex := fmt.Sprint(index)
+
+	currentAdfPathname := emulator.GetAdf(index)
+
+	if currentAdfPathname == "" {
+		log.Println("ADF not attached to DF" + strIndex + ", cannot eject")
+
+		return false
+	}
+
+	if currentAdfPathname != pathname {
+		log.Println(pathname + " not attached to DF" + strIndex + ", cannot eject")
+
+		return false
+	}
+
+	log.Println("Detaching", pathname, "from DF"+strIndex)
+
+	emulator.DetachAdf(index)
+
+	return true
+}
+
+func attachAmigaDiskDeviceAdf(pathname string) {
+	index := adfPathnameToDFIndex(pathname)
+
+	attachAdf(index, pathname)
 }
 
 func attachAmigaDiskDeviceIso(pathname string) {
@@ -117,25 +153,8 @@ func attachAmigaDiskDeviceIso(pathname string) {
 
 func detachAmigaDiskDeviceAdf(pathname string) {
 	index := adfPathnameToDFIndex(pathname)
-	strIndex := fmt.Sprint(index)
 
-	currentAdfPathname := emulator.GetAdf(index)
-
-	if currentAdfPathname == "" {
-		log.Println("ADF not attached to DF" + strIndex + ", cannot eject")
-
-		return
-	}
-
-	if currentAdfPathname != pathname {
-		log.Println(pathname + " not attached to DF" + strIndex + ", cannot eject")
-
-		return
-	}
-
-	log.Println("Detaching", pathname, "from DF"+strIndex)
-
-	emulator.DetachAdf(index)
+	detachAdf(index, pathname)
 }
 
 func detachAmigaDiskDeviceIso(pathname string) {
@@ -259,6 +278,146 @@ func keyEventCallback(sender any, key string, pressed bool) {
 	}
 }
 
+func getDirectoryFirstFile(pathname, extension string) string {
+	files := utils.FileUtilsInstance.GetDirFiles(pathname)
+
+	sort.Strings(files)
+
+	for _, pathname := range files {
+		if strings.HasSuffix(pathname, extension) {
+			return pathname
+		}
+	}
+
+	return ""
+}
+
+func mediumLabelToIndex(label string) int {
+	char := label[6]
+
+	if char == 'X' {
+		return -1
+	}
+
+	index, err := strconv.ParseInt(string(char), 10, 32)
+
+	if err != nil {
+		return -1
+	}
+
+	return int(index)
+}
+
+func attachDFMediumDiskImage(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	// mount the medium if not mounted
+	if mountpoint == "" {
+		log.Println(path, label, "running fsck")
+
+		output, err := utils.UnixUtilsInstance.RunFsck(path)
+
+		if err != nil {
+			// fail or not, try to mount it anyway
+			log.Println(err)
+		}
+
+		log.Println("Fsck output:")
+		utils.GoUtilsInstance.LogPrintLines(output)
+
+		target := filepath.Join(consts.AP4_ROOT_MOUNTPOINT, label)
+
+		log.Println(path, label, "mounting as", target)
+
+		if err := os.MkdirAll(target, 0777); err != nil {
+			log.Println(err)
+
+			return
+		}
+
+		if err := syscall.Mount(path, target, fsType, syscall.MS_SYNC, ""); err != nil {
+			log.Println(err)
+
+			return
+		}
+
+		mounted[path] = target
+
+		mountpoint = target
+	}
+
+	// find first .adf file and attach it to the emulator
+	firstAdfpathname := getDirectoryFirstFile(mountpoint, consts.FLOPPY_ADF_FULL_EXTENSION)
+
+	if firstAdfpathname == "" {
+		log.Println(path, label, "contains no", consts.FLOPPY_ADF_EXTENSION, "files")
+
+		return
+	}
+
+	index := mediumLabelToIndex(label)
+
+	if index == -1 {
+		log.Println(path, label, "cannot get index for medium")
+
+		return
+	}
+
+	if attachAdf(index, firstAdfpathname) {
+		// TODO set floppy sound
+	}
+}
+
+func attachMediumDiskImage(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	if consts.AP4_MEDIUM_DF_REG_EX.MatchString(label) {
+		attachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	}
+}
+
+func detachDFMediumDiskImage(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	_mountpoint, exists := mounted[path]
+
+	if !exists {
+		log.Println(path, label, "not mounted")
+
+		return
+	}
+
+	for i := 0; i < consts.MAX_ADFS; i++ {
+		adfPathname := emulator.GetAdf(i)
+
+		if adfPathname == "" {
+			continue
+		}
+
+		if strings.HasPrefix(adfPathname, _mountpoint) {
+			if detachAdf(i, adfPathname) {
+				// TODO set floppy sound
+			}
+		}
+	}
+}
+
+func detachMediumDiskImage(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	if consts.AP4_MEDIUM_DF_REG_EX.MatchString(label) {
+		detachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	}
+}
+
 func attachedBlockDeviceCallback(
 	name string,
 	size uint64,
@@ -275,6 +434,8 @@ func attachedBlockDeviceCallback(
 	log.Println("Found new block device", path)
 
 	utils.BlockDeviceUtilsInstance.PrintBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+
+	attachMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 }
 
 func detachedBlockDeviceCallback(
@@ -293,6 +454,8 @@ func detachedBlockDeviceCallback(
 	log.Println("Removed block device", path)
 
 	utils.BlockDeviceUtilsInstance.PrintBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+
+	detachMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 }
 
 func discoverDriveDevices() {
