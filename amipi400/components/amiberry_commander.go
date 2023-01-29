@@ -238,14 +238,14 @@ func (ac *AmiberryCommander) PutSetConfigOptionCommand(option string, value stri
 	ac.PutCommand(full, false, false)
 }
 
-func (ac *AmiberryCommander) FormatSetFloppyConfigOption(index int, pathname string) (string, string) {
+func (ac *AmiberryCommander) FormatFloppyCO(index int, pathname string) (string, string) {
 	key := fmt.Sprintf("floppy%v", index)
 
 	return key, pathname
 }
 
-func (ac *AmiberryCommander) PutSetFloppyConfigOption(index int, pathname string) {
-	key, value := ac.FormatSetFloppyConfigOption(index, pathname)
+func (ac *AmiberryCommander) PutFloppyCO(index int, pathname string) {
+	key, value := ac.FormatFloppyCO(index, pathname)
 
 	ac.PutSetConfigOptionCommand(key, value)
 }
@@ -260,20 +260,20 @@ func (ac *AmiberryCommander) PutLocalSleepCommand(sleepSecs int) {
 	ac.PutCommand("local-sleep "+sleepSecsStr, false, false)
 }
 
-func (ac *AmiberryCommander) FormatSetCdConfigOption(index int, pathname string) (string, string) {
+func (ac *AmiberryCommander) FormatCdImageCO(index int, pathname string) (string, string) {
 	key := fmt.Sprintf("cdimage%v", index)
 	value := pathname + ",image"
 
 	return key, value
 }
 
-func (ac *AmiberryCommander) PutSetCdConfigOption(index int, pathname string) {
-	key, value := ac.FormatSetCdConfigOption(index, pathname)
+func (ac *AmiberryCommander) PutCdImageCO(index int, pathname string) {
+	key, value := ac.FormatCdImageCO(index, pathname)
 
 	ac.PutSetConfigOptionCommand(key, value)
 }
 
-func (ac *AmiberryCommander) FormatHardFile2ConfigOption(
+func (ac *AmiberryCommander) FormatHardFile2CO(
 	driveIndex int,
 	pathname string,
 	sectors int,
@@ -288,7 +288,7 @@ func (ac *AmiberryCommander) FormatHardFile2ConfigOption(
 	return key, value
 }
 
-func (ac *AmiberryCommander) FormatUaeHfConfigOption(
+func (ac *AmiberryCommander) FormatUaeHfCO(
 	driveIndex int,
 	pathname string,
 	sectors int,
@@ -316,21 +316,21 @@ func (ac *AmiberryCommander) FormatFloppySoundConfigOption(index int, enable boo
 	return key, value
 }
 
-func (ac *AmiberryCommander) PutFloppySoundConfigOption(index int, enable bool) {
+func (ac *AmiberryCommander) PutFloppySoundCO(index int, enable bool) {
 	key, value := ac.FormatFloppySoundConfigOption(index, enable)
 
 	ac.PutSetConfigOptionCommand(key, value)
 }
 
-func (ac *AmiberryCommander) FormatFloppySoundVolumeDisk(index, volume int) (string, string) {
+func (ac *AmiberryCommander) FormatFloppySoundVolumeDiskCO(index, volume int) (string, string) {
 	key := fmt.Sprintf("floppy%vsoundvolume_disk", index)
 	value := fmt.Sprintf("%v", 100-volume)
 
 	return key, value
 }
 
-func (ac *AmiberryCommander) PutFloppySoundVolumeDisk(index, volume int) {
-	key, value := ac.FormatFloppySoundVolumeDisk(index, volume)
+func (ac *AmiberryCommander) PutFloppySoundVolumeDiskCO(index, volume int) {
+	key, value := ac.FormatFloppySoundVolumeDiskCO(index, volume)
 
 	ac.PutSetConfigOptionCommand(key, value)
 }

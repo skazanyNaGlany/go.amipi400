@@ -89,7 +89,7 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 	// will be not filled, and it will
 	// stay at {{floppyN}}
 	for i, pathname := range ae.adfs {
-		key, value := ae.commander.FormatSetFloppyConfigOption(i, pathname)
+		key, value := ae.commander.FormatFloppyCO(i, pathname)
 
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 	}
@@ -125,10 +125,10 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 			blocksize = 512
 		}
 
-		key, value := ae.commander.FormatHardFile2ConfigOption(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+		key, value := ae.commander.FormatHardFile2CO(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
 		hard_drives += key + "=" + value + "\n"
 
-		key, value = ae.commander.FormatUaeHfConfigOption(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+		key, value = ae.commander.FormatUaeHfCO(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
 		hard_drives += key + "=" + value + "\n"
 	}
 
@@ -137,7 +137,7 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 
 	// cds
 	for i, pathname := range ae.cds {
-		key, value := ae.commander.FormatSetCdConfigOption(i, pathname)
+		key, value := ae.commander.FormatCdImageCO(i, pathname)
 
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 	}
@@ -147,7 +147,7 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 		key, value := ae.commander.FormatFloppySoundConfigOption(i, volume > 0)
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 
-		key, value = ae.commander.FormatFloppySoundVolumeDisk(i, volume)
+		key, value = ae.commander.FormatFloppySoundVolumeDiskCO(i, volume)
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 	}
 
@@ -241,7 +241,7 @@ func (ae *AmiberryEmulator) GetConfigPathname() string {
 
 func (ae *AmiberryEmulator) AttachAdf(index int, pathname string) error {
 	if ae.adfs[index] != "" {
-		ae.commander.PutSetFloppyConfigOption(index, "")
+		ae.commander.PutFloppyCO(index, "")
 		ae.commander.PutConfigChangedCommand()
 		ae.commander.PutLocalCommitCommand()
 		ae.commander.PutLocalSleepCommand(1)
@@ -249,7 +249,7 @@ func (ae *AmiberryEmulator) AttachAdf(index int, pathname string) error {
 
 	ae.adfs[index] = pathname
 
-	ae.commander.PutSetFloppyConfigOption(index, pathname)
+	ae.commander.PutFloppyCO(index, pathname)
 	ae.commander.PutConfigChangedCommand()
 	ae.commander.PutLocalCommitCommand()
 	ae.commander.PutLocalSleepCommand(1)
@@ -264,7 +264,7 @@ func (ae *AmiberryEmulator) DetachAdf(index int) error {
 		return nil
 	}
 
-	ae.commander.PutSetFloppyConfigOption(index, "")
+	ae.commander.PutFloppyCO(index, "")
 	ae.commander.PutConfigChangedCommand()
 	ae.commander.PutLocalCommitCommand()
 	ae.commander.PutLocalSleepCommand(1)
@@ -365,7 +365,7 @@ func (ae *AmiberryEmulator) HardReset() error {
 
 func (ae *AmiberryEmulator) AttachCd(index int, pathname string) error {
 	if ae.cds[index] != "" {
-		ae.commander.PutSetCdConfigOption(index, "")
+		ae.commander.PutCdImageCO(index, "")
 		ae.commander.PutConfigChangedCommand()
 		ae.commander.PutLocalCommitCommand()
 		ae.commander.PutLocalSleepCommand(1)
@@ -373,7 +373,7 @@ func (ae *AmiberryEmulator) AttachCd(index int, pathname string) error {
 
 	ae.cds[index] = pathname
 
-	ae.commander.PutSetCdConfigOption(index, pathname)
+	ae.commander.PutCdImageCO(index, pathname)
 	ae.commander.PutConfigChangedCommand()
 	ae.commander.PutLocalCommitCommand()
 	ae.commander.PutLocalSleepCommand(1)
@@ -388,7 +388,7 @@ func (ae *AmiberryEmulator) DetachCd(index int) error {
 		return nil
 	}
 
-	ae.commander.PutSetCdConfigOption(index, "")
+	ae.commander.PutCdImageCO(index, "")
 	ae.commander.PutConfigChangedCommand()
 	ae.commander.PutLocalCommitCommand()
 	ae.commander.PutLocalSleepCommand(1)
@@ -404,8 +404,8 @@ func (ae *AmiberryEmulator) DetachCd(index int) error {
 func (ae *AmiberryEmulator) SetFloppySoundVolumeDisk(index int, volume int) error {
 	ae.floppySoundVolumeDisk[index] = volume
 
-	ae.commander.PutFloppySoundConfigOption(index, volume > 0)
-	ae.commander.PutFloppySoundVolumeDisk(index, volume)
+	ae.commander.PutFloppySoundCO(index, volume > 0)
+	ae.commander.PutFloppySoundVolumeDiskCO(index, volume)
 
 	ae.commander.PutLocalCommitCommand()
 
