@@ -302,3 +302,35 @@ func (ac *AmiberryCommander) FormatUaeHfConfigOption(
 
 	return key, value
 }
+
+// Enable/disable floppy sound
+func (ac *AmiberryCommander) FormatFloppySoundConfigOption(index int, enable bool) (string, string) {
+	value := "0"
+
+	if enable {
+		value = "1"
+	}
+
+	key := fmt.Sprintf("floppy%vsound", index)
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) PutFloppySoundConfigOption(index int, enable bool) {
+	key, value := ac.FormatFloppySoundConfigOption(index, enable)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
+func (ac *AmiberryCommander) FormatFloppySoundVolumeDisk(index, volume int) (string, string) {
+	key := fmt.Sprintf("floppy%vsoundvolume_disk", index)
+	value := fmt.Sprintf("%v", 100-volume)
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) PutFloppySoundVolumeDisk(index, volume int) {
+	key, value := ac.FormatFloppySoundVolumeDisk(index, volume)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}

@@ -133,7 +133,12 @@ func detachAdf(index int, pathname string) bool {
 func attachAmigaDiskDeviceAdf(pathname string) {
 	index := adfPathnameToDFIndex(pathname)
 
-	attachAdf(index, pathname)
+	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
+	emulator.SetFloppySoundVolumeDisk(index, 0)
+
+	if !attachAdf(index, pathname) {
+		emulator.SetFloppySoundVolumeDisk(index, oldVolume)
+	}
 }
 
 func attachAmigaDiskDeviceIso(pathname string) {
@@ -154,7 +159,12 @@ func attachAmigaDiskDeviceIso(pathname string) {
 func detachAmigaDiskDeviceAdf(pathname string) {
 	index := adfPathnameToDFIndex(pathname)
 
-	detachAdf(index, pathname)
+	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
+	emulator.SetFloppySoundVolumeDisk(index, 0)
+
+	if !detachAdf(index, pathname) {
+		emulator.SetFloppySoundVolumeDisk(index, oldVolume)
+	}
 }
 
 func detachAmigaDiskDeviceIso(pathname string) {
@@ -344,7 +354,6 @@ func attachDFMediumDiskImage(
 		}
 
 		mounted[path] = target
-
 		mountpoint = target
 	}
 
@@ -365,8 +374,11 @@ func attachDFMediumDiskImage(
 		return
 	}
 
-	if attachAdf(index, firstAdfpathname) {
-		// TODO set floppy sound
+	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
+	emulator.SetFloppySoundVolumeDisk(index, consts.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
+
+	if !attachAdf(index, firstAdfpathname) {
+		emulator.SetFloppySoundVolumeDisk(index, oldVolume)
 	}
 }
 
@@ -387,7 +399,7 @@ func detachDFMediumDiskImage(
 	readOnly bool) {
 	_mountpoint, exists := mounted[path]
 
-	if !exists {
+	if !exists || _mountpoint == "" {
 		log.Println(path, label, "not mounted")
 
 		return
@@ -400,12 +412,21 @@ func detachDFMediumDiskImage(
 			continue
 		}
 
-		if strings.HasPrefix(adfPathname, _mountpoint) {
-			if detachAdf(i, adfPathname) {
-				// TODO set floppy sound
-			}
+		if !strings.HasPrefix(adfPathname, _mountpoint) {
+			continue
+		}
+
+		oldVolume := emulator.GetFloppySoundVolumeDisk(i)
+		emulator.SetFloppySoundVolumeDisk(i, 0)
+
+		if !detachAdf(i, adfPathname) {
+			emulator.SetFloppySoundVolumeDisk(i, oldVolume)
 		}
 	}
+
+	syscall.Unmount(_mountpoint, syscall.MNT_DETACH)
+
+	mounted[path] = ""
 }
 
 func detachMediumDiskImage(

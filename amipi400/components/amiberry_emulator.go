@@ -18,13 +18,14 @@ import (
 type AmiberryEmulator struct {
 	components.RunnerBase
 
-	emulatorCommand    *exec.Cmd
-	executablePathname string
-	configPathname     string
-	adfs               [consts.MAX_ADFS]string
-	hdfs               [consts.MAX_HDFS]string
-	cds                [consts.MAX_CDS]string
-	commander          *AmiberryCommander
+	emulatorCommand       *exec.Cmd
+	executablePathname    string
+	configPathname        string
+	adfs                  [consts.MAX_ADFS]string
+	hdfs                  [consts.MAX_HDFS]string
+	cds                   [consts.MAX_CDS]string
+	commander             *AmiberryCommander
+	floppySoundVolumeDisk [consts.MAX_ADFS]int // volume per disk
 }
 
 func (ae *AmiberryEmulator) SetAmiberryCommander(commander *AmiberryCommander) {
@@ -142,6 +143,15 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 	for i, pathname := range ae.cds {
 		key, value := ae.commander.FormatSetCdConfigOption(i, pathname)
 
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+	}
+
+	// floppy sound volume
+	for i, volume := range ae.floppySoundVolumeDisk {
+		key, value := ae.commander.FormatFloppySoundConfigOption(i, volume > 0)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+
+		key, value = ae.commander.FormatFloppySoundVolumeDisk(i, volume)
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 	}
 
@@ -392,4 +402,22 @@ func (ae *AmiberryEmulator) DetachCd(index int) error {
 	ae.cds[index] = ""
 
 	return nil
+}
+
+// This will enable/disable sound for a floppy and set its volume
+func (ae *AmiberryEmulator) SetFloppySoundVolumeDisk(index int, volume int) error {
+	ae.floppySoundVolumeDisk[index] = volume
+
+	ae.commander.PutFloppySoundConfigOption(index, volume > 0)
+	ae.commander.PutFloppySoundVolumeDisk(index, volume)
+
+	ae.commander.PutLocalCommitCommand()
+
+	ae.commander.Execute()
+
+	return nil
+}
+
+func (ae *AmiberryEmulator) GetFloppySoundVolumeDisk(index int) int {
+	return ae.floppySoundVolumeDisk[index]
 }
