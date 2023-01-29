@@ -318,43 +318,52 @@ func mediumLabelToIndex(label string) int {
 	return int(index)
 }
 
+func fixMountMedium(devicePathname, label, fsType string) (string, error) {
+	log.Println(devicePathname, label, "running Fsck")
+
+	output, err := utils.UnixUtilsInstance.RunFsck(devicePathname)
+
+	if err != nil {
+		// fail or not, try to mount it anyway
+		log.Println(err)
+	}
+
+	log.Println("Fsck output:")
+	utils.GoUtilsInstance.LogPrintLines(output)
+
+	target := filepath.Join(consts.AP4_ROOT_MOUNTPOINT, label)
+
+	log.Println(devicePathname, label, "mounting as", target)
+
+	if err := os.MkdirAll(target, 0777); err != nil {
+		return "", err
+	}
+
+	if err := syscall.Mount(devicePathname, target, fsType, syscall.MS_SYNC, ""); err != nil {
+		return "", err
+	}
+
+	mounted[devicePathname] = target
+
+	return target, nil
+}
+
 func attachDFMediumDiskImage(
 	name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
+	var err error
+
 	// mount the medium if not mounted
 	if mountpoint == "" {
-		log.Println(path, label, "running fsck")
-
-		output, err := utils.UnixUtilsInstance.RunFsck(path)
+		mountpoint, err = fixMountMedium(path, label, fsType)
 
 		if err != nil {
-			// fail or not, try to mount it anyway
-			log.Println(err)
-		}
-
-		log.Println("Fsck output:")
-		utils.GoUtilsInstance.LogPrintLines(output)
-
-		target := filepath.Join(consts.AP4_ROOT_MOUNTPOINT, label)
-
-		log.Println(path, label, "mounting as", target)
-
-		if err := os.MkdirAll(target, 0777); err != nil {
-			log.Println(err)
+			log.Println(path, label, err)
 
 			return
 		}
-
-		if err := syscall.Mount(path, target, fsType, syscall.MS_SYNC, ""); err != nil {
-			log.Println(err)
-
-			return
-		}
-
-		mounted[path] = target
-		mountpoint = target
 	}
 
 	// find first .adf file and attach it to the emulator
