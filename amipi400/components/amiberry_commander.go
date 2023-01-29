@@ -15,6 +15,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+// CO - config option
 type AmiberryCommander struct {
 	components.RunnerBase
 
