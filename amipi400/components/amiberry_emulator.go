@@ -125,10 +125,10 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 			blocksize = 512
 		}
 
-		key, value := ae.commander.FormatHardFile2CO(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+		key, value := ae.commander.FormatHardFile2_UaeController_CO(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
 		hard_drives += key + "=" + value + "\n"
 
-		key, value = ae.commander.FormatUaeHfCO(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+		key, value = ae.commander.FormatUaeHf_UaeController_CO(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
 		hard_drives += key + "=" + value + "\n"
 	}
 

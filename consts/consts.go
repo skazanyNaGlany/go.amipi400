@@ -100,7 +100,7 @@ var AMIBERRY_EMULATOR_TMP_INI_PATHNAME = filepath.Join(
 // amipi400.go, AmiberryEmulator
 const MAX_ADFS = 4
 const FLOPPY_ADF_FULL_EXTENSION = "." + FLOPPY_ADF_EXTENSION
-const MAX_HDFS = 5
+const MAX_HDFS = 7
 const MAX_CDS = 1
 const CD_ISO_FULL_EXTENSION = "." + CD_ISO_EXTENSION
 

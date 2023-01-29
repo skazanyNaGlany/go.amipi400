@@ -274,7 +274,7 @@ func (ac *AmiberryCommander) PutCdImageCO(index int, pathname string) {
 	ac.PutSetConfigOptionCommand(key, value)
 }
 
-func (ac *AmiberryCommander) FormatHardFile2CO(
+func (ac *AmiberryCommander) FormatHardFile2_IdeController_CO(
 	driveIndex int,
 	pathname string,
 	sectors int,
@@ -289,7 +289,22 @@ func (ac *AmiberryCommander) FormatHardFile2CO(
 	return key, value
 }
 
-func (ac *AmiberryCommander) FormatUaeHfCO(
+func (ac *AmiberryCommander) FormatHardFile2_UaeController_CO(
+	driveIndex int,
+	pathname string,
+	sectors int,
+	surfaces int,
+	reserved int,
+	blockSize int,
+	bootPriority int,
+	controllerIndex int) (string, string) {
+	key := "hardfile2"
+	value := fmt.Sprintf("rw,DH%v:%v,%v,%v,%v,%v,%v,,uae%v", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) FormatUaeHf_IdeController_CO(
 	driveIndex int,
 	pathname string,
 	sectors int,
@@ -300,6 +315,21 @@ func (ac *AmiberryCommander) FormatUaeHfCO(
 	controllerIndex int) (string, string) {
 	key := fmt.Sprintf("uaehf%v", driveIndex)
 	value := fmt.Sprintf("hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) FormatUaeHf_UaeController_CO(
+	driveIndex int,
+	pathname string,
+	sectors int,
+	surfaces int,
+	reserved int,
+	blockSize int,
+	bootPriority int,
+	controllerIndex int) (string, string) {
+	key := fmt.Sprintf("uaehf%v", driveIndex)
+	value := fmt.Sprintf("hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,uae%v", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
 
 	return key, value
 }
