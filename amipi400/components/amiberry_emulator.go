@@ -89,10 +89,6 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 	// will be not filled, and it will
 	// stay at {{floppyN}}
 	for i, pathname := range ae.adfs {
-		if pathname == "" {
-			continue
-		}
-
 		key, value := ae.commander.FormatSetFloppyConfigOption(i, pathname)
 
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
