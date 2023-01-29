@@ -106,6 +106,22 @@ func attachAdf(index int, pathname string) bool {
 	return true
 }
 
+func attachCd(index int, pathname string) bool {
+	strIndex := fmt.Sprint(index)
+
+	if emulator.GetIso(index) != "" {
+		log.Println("ISO already attached at CD" + strIndex + ", eject it first")
+
+		return false
+	}
+
+	log.Println("Attaching", pathname, "to CD"+strIndex)
+
+	emulator.AttachCd(index, pathname)
+
+	return true
+}
+
 func attachHdf(index int, pathname string) bool {
 	strIndex := fmt.Sprint(index)
 
@@ -119,6 +135,30 @@ func attachHdf(index int, pathname string) bool {
 
 	emulator.AttachHdf(index, pathname)
 	emulator.HardReset()
+
+	return true
+}
+
+func detachCd(index int, pathname string) bool {
+	strIndex := fmt.Sprint(index)
+
+	currentIsoPathname := emulator.GetIso(index)
+
+	if currentIsoPathname == "" {
+		log.Println("ISO not attached to CD" + strIndex + ", cannot eject")
+
+		return false
+	}
+
+	if currentIsoPathname != pathname {
+		log.Println(pathname + " not attached to CD" + strIndex + ", cannot eject")
+
+		return false
+	}
+
+	log.Println("Detaching", pathname, "from CD"+strIndex)
+
+	emulator.DetachCd(index)
 
 	return true
 }
@@ -185,17 +225,8 @@ func attachAmigaDiskDeviceAdf(pathname string) {
 
 func attachAmigaDiskDeviceIso(pathname string) {
 	index := isoPathnameToCDIndex(pathname)
-	strIndex := fmt.Sprint(index)
 
-	if emulator.GetIso(index) != "" {
-		log.Println("ISO already attached at CD" + strIndex + ", eject it first")
-
-		return
-	}
-
-	log.Println("Attaching", pathname, "to CD"+strIndex)
-
-	emulator.AttachCd(index, pathname)
+	attachCd(index, pathname)
 }
 
 func detachAmigaDiskDeviceAdf(pathname string) {
@@ -211,25 +242,8 @@ func detachAmigaDiskDeviceAdf(pathname string) {
 
 func detachAmigaDiskDeviceIso(pathname string) {
 	index := isoPathnameToCDIndex(pathname)
-	strIndex := fmt.Sprint(index)
 
-	currentIsoPathname := emulator.GetIso(index)
-
-	if currentIsoPathname == "" {
-		log.Println("ISO not attached to CD" + strIndex + ", cannot eject")
-
-		return
-	}
-
-	if currentIsoPathname != pathname {
-		log.Println(pathname + " not attached to CD" + strIndex + ", cannot eject")
-
-		return
-	}
-
-	log.Println("Detaching", pathname, "from CD"+strIndex)
-
-	emulator.DetachCd(index)
+	detachCd(index, pathname)
 }
 
 func attachAmigaDiskDeviceHdf(pathname string) {
