@@ -106,7 +106,7 @@ func attachAdf(index int, pathname string) bool {
 	return true
 }
 
-func attachCd(index int, pathname string) bool {
+func attachIso(index int, pathname string) bool {
 	strIndex := fmt.Sprint(index)
 
 	if emulator.GetIso(index) != "" {
@@ -139,7 +139,7 @@ func attachHdf(index int, pathname string) bool {
 	return true
 }
 
-func detachCd(index int, pathname string) bool {
+func detachIso(index int, pathname string) bool {
 	strIndex := fmt.Sprint(index)
 
 	currentIsoPathname := emulator.GetIso(index)
@@ -226,7 +226,7 @@ func attachAmigaDiskDeviceAdf(pathname string) {
 func attachAmigaDiskDeviceIso(pathname string) {
 	index := isoPathnameToCDIndex(pathname)
 
-	attachCd(index, pathname)
+	attachIso(index, pathname)
 }
 
 func detachAmigaDiskDeviceAdf(pathname string) {
@@ -243,7 +243,7 @@ func detachAmigaDiskDeviceAdf(pathname string) {
 func detachAmigaDiskDeviceIso(pathname string) {
 	index := isoPathnameToCDIndex(pathname)
 
-	detachCd(index, pathname)
+	detachIso(index, pathname)
 }
 
 func attachAmigaDiskDeviceHdf(pathname string) {
@@ -478,6 +478,47 @@ func attachDHMediumDiskImage(
 	attachHdf(index, firstHdfpathname)
 }
 
+func attachCDMediumDiskImage(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	var err error
+
+	syscall.Unmount(mountpoint, 0)
+	mountpoint = ""
+
+	// mount the medium if not mounted
+	if mountpoint == "" {
+		mountpoint, err = fixMountMedium(path, label, fsType)
+
+		if err != nil {
+			log.Println(path, label, err)
+
+			return
+		}
+	}
+
+	// find first .iso file and attach it to the emulator
+	firstIsoPathname := getDirectoryFirstFile(mountpoint, consts.CD_ISO_FULL_EXTENSION)
+
+	if firstIsoPathname == "" {
+		log.Println(path, label, "contains no", consts.CD_ISO_EXTENSION, "files")
+
+		return
+	}
+
+	index := mediumLabelToIndex(label)
+
+	if index == -1 {
+		log.Println(path, label, "cannot get index for medium")
+
+		return
+	}
+
+	attachIso(index, firstIsoPathname)
+}
+
 func attachMediumDiskImage(
 	name string,
 	size uint64,
@@ -487,6 +528,8 @@ func attachMediumDiskImage(
 		attachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	} else if consts.AP4_MEDIUM_DH_REG_EX.MatchString(label) {
 		attachDHMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	} else if consts.AP4_MEDIUM_CD_REG_EX.MatchString(label) {
+		attachCDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	}
 }
 
@@ -559,6 +602,38 @@ func detachDHMediumDiskImage(
 	mounted[path] = ""
 }
 
+func detachCDMediumDiskImage(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	_mountpoint, exists := mounted[path]
+
+	if !exists || _mountpoint == "" {
+		log.Println(path, label, "not mounted")
+
+		return
+	}
+
+	for i := 0; i < consts.MAX_CDS; i++ {
+		hdfPathname := emulator.GetIso(i)
+
+		if hdfPathname == "" {
+			continue
+		}
+
+		if !strings.HasPrefix(hdfPathname, _mountpoint) {
+			continue
+		}
+
+		detachIso(i, hdfPathname)
+	}
+
+	syscall.Unmount(_mountpoint, syscall.MNT_DETACH)
+
+	mounted[path] = ""
+}
+
 func detachMediumDiskImage(
 	name string,
 	size uint64,
@@ -568,6 +643,8 @@ func detachMediumDiskImage(
 		detachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	} else if consts.AP4_MEDIUM_DH_REG_EX.MatchString(label) {
 		detachDHMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	} else if consts.AP4_MEDIUM_CD_REG_EX.MatchString(label) {
+		detachCDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	}
 }
 
