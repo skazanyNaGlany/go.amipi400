@@ -444,6 +444,7 @@ func attachDHMediumDiskImage(
 	readOnly bool) {
 	var err error
 
+	// TODO unmount all
 	syscall.Unmount(mountpoint, 0)
 	mountpoint = ""
 
