@@ -21,9 +21,9 @@ const AP4_ROOT_MOUNTPOINT = "/media/"
 const FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME = 20
 
 var SOFT_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
-var AP4_MEDIUM_DF_REG_EX = regexp.MustCompile(`^AP4_DF([0-9]?|X)$`)
-var AP4_MEDIUM_DH_REG_EX = regexp.MustCompile(`^AP4_DH([0-9]?|X)$`)
-var AP4_MEDIUM_CD_REG_EX = regexp.MustCompile(`^AP4_CD([0-9]?|X)$`)
+var AP4_MEDIUM_DF_REG_EX = regexp.MustCompile(`^AP4_DF(?P<index>[0-9]?|X)$`)
+var AP4_MEDIUM_DH_REG_EX = regexp.MustCompile(`^AP4_DH(?P<index>[0-9]?|X)(_(?P<boot_priority>[0-9]))?$`)
+var AP4_MEDIUM_CD_REG_EX = regexp.MustCompile(`^AP4_CD(?P<index>[0-9]?|X)$`)
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"

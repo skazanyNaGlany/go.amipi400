@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -122,18 +123,16 @@ func attachIso(index int, pathname string) bool {
 	return true
 }
 
-func attachHdf(index int, pathname string) bool {
-	strIndex := fmt.Sprint(index)
-
+func attachHdf(index int, bootPriority int, pathname string) bool {
 	if emulator.GetHdf(index) != "" {
-		log.Println("HDF already attached at DH" + strIndex + ", eject it first")
+		log.Printf("HDF already attached at DH%v, eject it first\n", index)
 
 		return false
 	}
 
-	log.Println("Attaching", pathname, "to DH"+strIndex)
+	log.Printf("Attaching %v to DH%v (boot priority %v)\n", pathname, index, bootPriority)
 
-	emulator.AttachHdf(index, pathname)
+	emulator.AttachHdf(index, bootPriority, pathname)
 	emulator.HardReset()
 
 	return true
@@ -255,7 +254,7 @@ func attachAmigaDiskDeviceHdf(pathname string) {
 		return
 	}
 
-	attachHdf(index, pathname)
+	attachHdf(index, 0, pathname)
 }
 
 func detachAmigaDiskDeviceHdf(pathname string) {
@@ -348,20 +347,40 @@ func getDirectoryFirstFile(pathname, extension string) string {
 	return ""
 }
 
-func mediumLabelToIndex(label string) int {
-	char := label[6]
+func parseMediumLabel(label string, re *regexp.Regexp) (int, int, error) {
+	var err error
+	var index int64
+	var bootPriority int64
 
-	if char == 'X' {
-		return -1
+	matches := utils.RegExInstance.FindNamedMatches(re, label)
+
+	strIndex, ok1 := matches["index"]
+	strBootPriority, ok2 := matches["boot_priority"]
+
+	_ = ok1
+	_ = ok2
+
+	// index
+	if strIndex == "X" {
+		index = -1
+	} else {
+		index, err = strconv.ParseInt(strIndex, 10, 32)
+
+		if err != nil {
+			return 0, 0, err
+		}
 	}
 
-	index, err := strconv.ParseInt(string(char), 10, 32)
+	// boot priority (optional)
+	if strBootPriority != "" {
+		bootPriority, err = strconv.ParseInt(strBootPriority, 10, 32)
 
-	if err != nil {
-		return -1
+		if err != nil {
+			return 0, 0, err
+		}
 	}
 
-	return int(index)
+	return int(index), int(bootPriority), nil
 }
 
 func fixMountMedium(devicePathname, label, fsType string) (string, error) {
@@ -421,10 +440,10 @@ func attachDFMediumDiskImage(
 		return
 	}
 
-	index := mediumLabelToIndex(label)
+	index, _, err := parseMediumLabel(label, consts.AP4_MEDIUM_DF_REG_EX)
 
-	if index == -1 {
-		log.Println(path, label, "cannot get index for medium")
+	if err != nil || index == -1 {
+		log.Println(path, label, "cannot get index for medium: ", err)
 
 		return
 	}
@@ -468,15 +487,15 @@ func attachDHMediumDiskImage(
 		return
 	}
 
-	index := mediumLabelToIndex(label)
+	index, bootPriority, err := parseMediumLabel(label, consts.AP4_MEDIUM_DH_REG_EX)
 
-	if index == -1 {
-		log.Println(path, label, "cannot get index for medium")
+	if err != nil || index == -1 {
+		log.Println(path, label, "cannot get index for medium: ", err)
 
 		return
 	}
 
-	attachHdf(index, firstHdfpathname)
+	attachHdf(index, bootPriority, firstHdfpathname)
 }
 
 func attachCDMediumDiskImage(
@@ -509,10 +528,10 @@ func attachCDMediumDiskImage(
 		return
 	}
 
-	index := mediumLabelToIndex(label)
+	index, _, err := parseMediumLabel(label, consts.AP4_MEDIUM_CD_REG_EX)
 
-	if index == -1 {
-		log.Println(path, label, "cannot get index for medium")
+	if err != nil || index == -1 {
+		log.Println(path, label, "cannot get index for medium: ", err)
 
 		return
 	}

@@ -23,6 +23,7 @@ type AmiberryEmulator struct {
 	configPathname        string
 	adfs                  [consts.MAX_ADFS]string
 	hdfs                  [consts.MAX_HDFS]string
+	hdfsBootPriority      [consts.MAX_HDFS]int
 	cds                   [consts.MAX_CDS]string
 	commander             *AmiberryCommander
 	floppySoundVolumeDisk [consts.MAX_ADFS]int // volume per disk
@@ -112,7 +113,7 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 			continue
 		}
 
-		bootPriority := 0
+		bootPriority := ae.hdfsBootPriority[i]
 		sectors := 0
 		surfaces := 0
 		reserved := 0
@@ -320,7 +321,7 @@ func (ae *AmiberryEmulator) getHdfType(pathname string) (int, error) {
 	return 0, fmt.Errorf("cannot determine HDF type %v", pathname)
 }
 
-func (ae *AmiberryEmulator) AttachHdf(index int, pathname string) error {
+func (ae *AmiberryEmulator) AttachHdf(index int, bootPriority int, pathname string) error {
 	_, err := ae.getHdfType(pathname)
 
 	if err != nil {
@@ -328,6 +329,7 @@ func (ae *AmiberryEmulator) AttachHdf(index int, pathname string) error {
 	}
 
 	ae.hdfs[index] = pathname
+	ae.hdfsBootPriority[index] = bootPriority
 
 	return nil
 }
