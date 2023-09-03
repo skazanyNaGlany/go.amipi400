@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/interfaces"
-	"github.com/skazanyNaGlany/go.amipi400/components/utils"
-	"github.com/skazanyNaGlany/go.amipi400/consts"
+	"github.com/skazanyNaGlany/go.amipi400/shared"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 	"github.com/winfsp/cgofuse/fuse"
 )
 
@@ -197,7 +197,7 @@ func (mdb *MediumDriverBase) OpenMediumHandle(medium interfaces.Medium, readAhea
 		return nil, err
 	}
 
-	_readAhead := consts.DEFAULT_READ_AHEAD
+	_readAhead := shared.DEFAULT_READ_AHEAD
 
 	if len(readAhead) == 1 {
 		_readAhead = readAhead[0]

@@ -6,8 +6,8 @@ import (
 
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/interfaces"
-	"github.com/skazanyNaGlany/go.amipi400/components/utils"
-	"github.com/skazanyNaGlany/go.amipi400/consts"
+	"github.com/skazanyNaGlany/go.amipi400/shared"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 )
 
 type HardDiskMediumDriver struct {
@@ -25,11 +25,11 @@ func (hdmd *HardDiskMediumDriver) Probe(
 		}
 	}
 
-	if size < consts.HD_DEVICE_MIN_SIZE {
+	if size < shared.HD_DEVICE_MIN_SIZE {
 		return nil, nil
 	}
 
-	if _type != consts.HD_DEVICE_TYPE {
+	if _type != shared.HD_DEVICE_TYPE {
 		return nil, nil
 	}
 
@@ -45,7 +45,7 @@ func (hdmd *HardDiskMediumDriver) Probe(
 
 	medium := medium.MediumBase{}
 
-	filename := medium.DevicePathnameToPublicFilename(path, consts.HD_HDF_EXTENSION)
+	filename := medium.DevicePathnameToPublicFilename(path, shared.HD_HDF_EXTENSION)
 
 	medium.SetDriver(hdmd)
 	medium.SetDevicePathname(path)
@@ -71,13 +71,13 @@ func (hdmd *HardDiskMediumDriver) Probe(
 }
 
 func (hdmd *HardDiskMediumDriver) hasDOSheader(path string) (bool, error) {
-	data, n, err := utils.FileUtilsInstance.FileReadBytes(path, 0, consts.HD_DEVICE_SECTOR_SIZE, 0, 0, nil)
+	data, n, err := utils.FileUtilsInstance.FileReadBytes(path, 0, shared.HD_DEVICE_SECTOR_SIZE, 0, 0, nil)
 
 	if err != nil {
 		return false, err
 	}
 
-	if len(data) < consts.HD_DEVICE_SECTOR_SIZE || n < consts.HD_DEVICE_SECTOR_SIZE {
+	if len(data) < shared.HD_DEVICE_SECTOR_SIZE || n < shared.HD_DEVICE_SECTOR_SIZE {
 		return false, nil
 	}
 

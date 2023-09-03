@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/itchyny/volume-go"
-	components_base "github.com/skazanyNaGlany/go.amipi400/components"
+	shared_components "github.com/skazanyNaGlany/go.amipi400/shared/components"
 )
 
 type VolumeControl struct {
-	components_base.RunnerBase
+	shared_components.RunnerBase
 	muteForSecs int
 }
 

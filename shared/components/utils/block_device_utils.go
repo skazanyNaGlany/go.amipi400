@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/skazanyNaGlany/go.amipi400/consts"
+	"github.com/skazanyNaGlany/go.amipi400/shared"
 )
 
 type BlockDeviceUtils struct{}
@@ -13,11 +13,11 @@ type BlockDeviceUtils struct{}
 var BlockDeviceUtilsInstance BlockDeviceUtils
 
 func (bdu *BlockDeviceUtils) IsInternalMedium(name string) bool {
-	return strings.HasPrefix(name, consts.SYSTEM_INTERNAL_SD_CARD_NAME)
+	return strings.HasPrefix(name, shared.SYSTEM_INTERNAL_SD_CARD_NAME)
 }
 
 func (bdu *BlockDeviceUtils) IsPoolMedium(name string) bool {
-	return strings.HasPrefix(name, consts.POOL_DEVICE_NAME)
+	return strings.HasPrefix(name, shared.POOL_DEVICE_NAME)
 }
 
 func (bdu *BlockDeviceUtils) PrintBlockDevice(

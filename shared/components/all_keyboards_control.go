@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/MarinX/keylogger"
-	"github.com/skazanyNaGlany/go.amipi400/components/utils"
-	"github.com/skazanyNaGlany/go.amipi400/interfaces"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
+	"github.com/skazanyNaGlany/go.amipi400/shared/interfaces"
 	"github.com/thoas/go-funk"
 	"github.com/yookoala/realpath"
 )

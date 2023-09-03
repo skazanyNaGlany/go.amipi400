@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/skazanyNaGlany/go.amipi400/components"
-	"github.com/skazanyNaGlany/go.amipi400/components/utils"
-	"github.com/skazanyNaGlany/go.amipi400/consts"
+	"github.com/skazanyNaGlany/go.amipi400/shared"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 )
 
 type AmiberryEmulator struct {
@@ -21,12 +21,12 @@ type AmiberryEmulator struct {
 	emulatorCommand       *exec.Cmd
 	executablePathname    string
 	configPathname        string
-	adfs                  [consts.MAX_ADFS]string
-	hdfs                  [consts.MAX_HDFS]string
-	hdfsBootPriority      [consts.MAX_HDFS]int
-	cds                   [consts.MAX_CDS]string
+	adfs                  [shared.MAX_ADFS]string
+	hdfs                  [shared.MAX_HDFS]string
+	hdfsBootPriority      [shared.MAX_HDFS]int
+	cds                   [shared.MAX_CDS]string
 	commander             *AmiberryCommander
-	floppySoundVolumeDisk [consts.MAX_ADFS]int // volume per disk
+	floppySoundVolumeDisk [shared.MAX_ADFS]int // volume per disk
 }
 
 func (ae *AmiberryEmulator) SetAmiberryCommander(commander *AmiberryCommander) {
@@ -119,7 +119,7 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 		reserved := 0
 		blocksize := 512
 
-		if hdfType == consts.HDF_TYPE_HDF {
+		if hdfType == shared.HDF_TYPE_HDF {
 			sectors = 32
 			surfaces = 1
 			reserved = 2
@@ -154,7 +154,7 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 
 	configPathname := filepath.Join(
 		os.TempDir(),
-		consts.AMIBERRY_TEMPORARY_CONFIG_FILENAME)
+		shared.AMIBERRY_TEMPORARY_CONFIG_FILENAME)
 
 	n, err = utils.FileUtilsInstance.FileWriteBytes(
 		configPathname,
@@ -201,8 +201,8 @@ func (ae *AmiberryEmulator) loop() {
 		ae.emulatorCommand.Dir = filepath.Dir(ae.executablePathname)
 
 		buffer := components.New(
-			make([]byte, 0, consts.OUTPUT_BUFFER_MAX_SIZE),
-			consts.OUTPUT_BUFFER_MAX_SIZE)
+			make([]byte, 0, shared.OUTPUT_BUFFER_MAX_SIZE),
+			shared.OUTPUT_BUFFER_MAX_SIZE)
 
 		ae.emulatorCommand.Stdout = buffer
 		ae.emulatorCommand.Stderr = buffer
@@ -295,7 +295,7 @@ func (ae *AmiberryEmulator) getHdfType(pathname string) (int, error) {
 	header, n, err := utils.FileUtilsInstance.FileReadBytes(
 		pathname,
 		0,
-		consts.HDD_SECTOR_SIZE,
+		shared.HDD_SECTOR_SIZE,
 		0,
 		0,
 		nil)
@@ -304,18 +304,18 @@ func (ae *AmiberryEmulator) getHdfType(pathname string) (int, error) {
 		return 0, err
 	}
 
-	if n < consts.HDD_SECTOR_SIZE {
+	if n < shared.HDD_SECTOR_SIZE {
 		return 0, fmt.Errorf("cannot read file header %v", pathname)
 	}
 
 	if header[0] == 'R' && header[1] == 'D' && header[2] == 'S' && header[3] == 'K' {
-		return consts.HDF_TYPE_HDFRDB, nil
+		return shared.HDF_TYPE_HDFRDB, nil
 	} else if header[0] == 'D' && header[1] == 'O' && header[2] == 'S' {
 		if stat.Size() < 4*1024*1024 {
-			return consts.HDF_TYPE_DISKIMAGE, nil
+			return shared.HDF_TYPE_DISKIMAGE, nil
 		}
 
-		return consts.HDF_TYPE_HDF, nil
+		return shared.HDF_TYPE_HDF, nil
 	}
 
 	return 0, fmt.Errorf("cannot determine HDF type %v", pathname)

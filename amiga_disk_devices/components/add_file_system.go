@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/interfaces"
-	components_base "github.com/skazanyNaGlany/go.amipi400/components"
+	shared_components "github.com/skazanyNaGlany/go.amipi400/shared/components"
 	"github.com/winfsp/cgofuse/fuse"
 	"golang.org/x/exp/slices"
 )
 
 type ADDFileSystem struct {
-	components_base.RunnerBase
+	shared_components.RunnerBase
 	fuse.FileSystemBase
 
 	mountDir string

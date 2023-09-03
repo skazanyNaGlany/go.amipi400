@@ -3,7 +3,7 @@ package components
 import (
 	"log"
 
-	"github.com/skazanyNaGlany/go.amipi400/interfaces"
+	"github.com/skazanyNaGlany/go.amipi400/shared/interfaces"
 )
 
 type RunnerBase struct {

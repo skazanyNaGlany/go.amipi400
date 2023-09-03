@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/skazanyNaGlany/go.amipi400/components"
-	"github.com/skazanyNaGlany/go.amipi400/components/utils"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 	"golang.org/x/exp/slices"
 )
 

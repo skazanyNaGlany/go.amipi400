@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/skazanyNaGlany/go.amipi400/amipi400/interfaces"
-	"github.com/skazanyNaGlany/go.amipi400/components"
-	"github.com/skazanyNaGlany/go.amipi400/components/utils"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 	"github.com/thoas/go-funk"
 )
 

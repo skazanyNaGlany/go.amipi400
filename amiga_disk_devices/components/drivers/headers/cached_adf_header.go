@@ -3,8 +3,8 @@ package headers
 import (
 	"strings"
 
-	"github.com/skazanyNaGlany/go.amipi400/components/utils"
-	"github.com/skazanyNaGlany/go.amipi400/consts"
+	"github.com/skazanyNaGlany/go.amipi400/shared"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 )
 
 type CachedADFHeader struct {
@@ -15,8 +15,8 @@ type CachedADFHeader struct {
 }
 
 func (cah *CachedADFHeader) Init() *CachedADFHeader {
-	copy(cah.Magic[:], []byte(consts.CACHED_ADF_HEADER_MAGIC))
-	copy(cah.HeaderType[:], []byte(consts.CACHED_ADF_HEADER_HEADER_TYPE))
+	copy(cah.Magic[:], []byte(shared.CACHED_ADF_HEADER_MAGIC))
+	copy(cah.HeaderType[:], []byte(shared.CACHED_ADF_HEADER_HEADER_TYPE))
 
 	return cah
 }
@@ -50,9 +50,9 @@ func (cah *CachedADFHeader) IsValid() bool {
 	headerType := cah.GetHeaderType()
 	sha512 := cah.GetSha512()
 
-	if magic != consts.CACHED_ADF_HEADER_MAGIC ||
-		headerType != consts.CACHED_ADF_HEADER_HEADER_TYPE ||
-		len(sha512) != consts.CACHED_ADF_HEADER_SHA512_LENGTH {
+	if magic != shared.CACHED_ADF_HEADER_MAGIC ||
+		headerType != shared.CACHED_ADF_HEADER_HEADER_TYPE ||
+		len(sha512) != shared.CACHED_ADF_HEADER_SHA512_LENGTH {
 		return false
 	}
 

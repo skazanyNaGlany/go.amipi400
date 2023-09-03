@@ -13,8 +13,8 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/drivers/headers"
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/interfaces"
-	"github.com/skazanyNaGlany/go.amipi400/components/utils"
-	"github.com/skazanyNaGlany/go.amipi400/consts"
+	"github.com/skazanyNaGlany/go.amipi400/shared"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 	"github.com/winfsp/cgofuse/fuse"
 )
 
@@ -45,24 +45,24 @@ func (fmd *FloppyMediumDriver) Probe(
 		}
 	}
 
-	if size != consts.FLOPPY_DEVICE_SIZE {
+	if size != shared.FLOPPY_DEVICE_SIZE {
 		return nil, nil
 	}
 
-	if _type != consts.FLOPPY_DEVICE_TYPE {
+	if _type != shared.FLOPPY_DEVICE_TYPE {
 		return nil, nil
 	}
 
 	_medium := medium.FloppyMedium{}
 
-	filename := _medium.DevicePathnameToPublicFilename(path, consts.FLOPPY_ADF_EXTENSION)
+	filename := _medium.DevicePathnameToPublicFilename(path, shared.FLOPPY_ADF_EXTENSION)
 
 	_medium.SetDriver(fmd)
 	_medium.SetDevicePathname(path)
 	_medium.SetPublicPathname(
 		filepath.Join(basePath, filename),
 	)
-	_medium.SetSize(consts.FLOPPY_ADF_SIZE)
+	_medium.SetSize(shared.FLOPPY_ADF_SIZE)
 
 	// in Linux all devices are readable by default
 	_medium.SetReadable(true)
@@ -107,7 +107,7 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 	var err error
 	var n int
 
-	handle, err := fmd.OpenMediumHandle(_medium, consts.FLOPPY_READ_AHEAD)
+	handle, err := fmd.OpenMediumHandle(_medium, shared.FLOPPY_READ_AHEAD)
 
 	if err != nil {
 		return err
@@ -116,7 +116,7 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 	data, len_data, err := utils.FileUtilsInstance.FileReadBytes(
 		"",
 		0,
-		consts.FLOPPY_ADF_SIZE,
+		shared.FLOPPY_ADF_SIZE,
 		0,
 		0,
 		handle)
@@ -125,11 +125,11 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 		return err
 	}
 
-	if len_data < consts.FLOPPY_ADF_SIZE {
+	if len_data < shared.FLOPPY_ADF_SIZE {
 		return errors.New("cannot read medium data")
 	}
 
-	if len(data) < consts.FLOPPY_ADF_SIZE {
+	if len(data) < shared.FLOPPY_ADF_SIZE {
 		return errors.New("cannot read medium data")
 	}
 
@@ -143,7 +143,7 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 
 	cachedAdfPathname := path.Join(
 		fmd.cachedAdfsDirectory,
-		fmd.buildCachedAdfFilename(sha512Id, consts.FLOPPY_ADF_EXTENSION))
+		fmd.buildCachedAdfFilename(sha512Id, shared.FLOPPY_ADF_EXTENSION))
 
 	if err = fmd.preCacheADFCallback(_medium, cachedAdfPathname); err != nil {
 		return err
@@ -209,7 +209,7 @@ func (fmd *FloppyMediumDriver) updateCachedADFHeader(pathname, sha512Id string, 
 
 	fmd.outsideAsyncFileWriterCallback(
 		pathname,
-		consts.FLOPPY_DEVICE_LAST_SECTOR,
+		shared.FLOPPY_DEVICE_LAST_SECTOR,
 		data,
 		os.O_SYNC|os.O_RDWR,
 		0777,
@@ -225,8 +225,8 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 
 	deviceRawHeader, n, err := utils.FileUtilsInstance.FileReadBytes(
 		_medium.GetDevicePathname(),
-		consts.FLOPPY_DEVICE_LAST_SECTOR,
-		consts.FLOPPY_DEVICE_SECTOR_SIZE,
+		shared.FLOPPY_DEVICE_LAST_SECTOR,
+		shared.FLOPPY_DEVICE_SECTOR_SIZE,
 		os.O_RDONLY,
 		0,
 		nil)
@@ -254,7 +254,7 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 
 	cachedAdfPathname := path.Join(
 		fmd.cachedAdfsDirectory,
-		fmd.buildCachedAdfFilename(sha512Id, consts.FLOPPY_ADF_EXTENSION))
+		fmd.buildCachedAdfFilename(sha512Id, shared.FLOPPY_ADF_EXTENSION))
 
 	stat, err := os.Stat(cachedAdfPathname)
 
@@ -266,7 +266,7 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 		return errors.New("cached ADF file is a directory")
 	}
 
-	if stat.Size() < consts.FLOPPY_ADF_SIZE {
+	if stat.Size() < shared.FLOPPY_ADF_SIZE {
 		return nil
 	}
 
@@ -341,7 +341,7 @@ func (fmd *FloppyMediumDriver) OpenMediumHandle(_medium interfaces.Medium, readA
 		return nil, err
 	}
 
-	_readAhead := consts.DEFAULT_READ_AHEAD
+	_readAhead := shared.DEFAULT_READ_AHEAD
 
 	if len(readAhead) == 1 {
 		_readAhead = readAhead[0]
@@ -420,8 +420,8 @@ func (mdb *FloppyMediumDriver) realRead2(
 	size int64,
 	fh uint64) ([]byte, int64, error) {
 	// "rr" stand for "read_result"
-	_floppyAdfSize := int64(consts.FLOPPY_ADF_SIZE)
-	_floppySectorReadTimeMs := int64(consts.FLOPPY_SECTOR_READ_TIME_MS)
+	_floppyAdfSize := int64(shared.FLOPPY_ADF_SIZE)
+	_floppySectorReadTimeMs := int64(shared.FLOPPY_SECTOR_READ_TIME_MS)
 	currentTime := time.Now().UnixMilli()
 
 	if floppyMedium.GetLastCachingTime() == 0 {
@@ -430,7 +430,7 @@ func (mdb *FloppyMediumDriver) realRead2(
 
 	rr_all_data, rr_total_read_time_ms, _, rr_err := mdb.partialRead(floppyMedium, path, offset, size, nil, nil, fh)
 
-	if rr_total_read_time_ms > consts.FLOPPY_SECTOR_READ_TIME_MS {
+	if rr_total_read_time_ms > shared.FLOPPY_SECTOR_READ_TIME_MS {
 		floppyMedium.SetFullyCached(false)
 	}
 
@@ -438,8 +438,8 @@ func (mdb *FloppyMediumDriver) realRead2(
 		return rr_all_data, int64(len(rr_all_data)), rr_err
 	}
 
-	if rr_total_read_time_ms < consts.FLOPPY_SECTOR_READ_TIME_MS && !floppyMedium.IsFullyCached() &&
-		currentTime-floppyMedium.GetLastCachingTime() >= consts.FLOPPY_CACHE_DATA_BETWEEN_SECS {
+	if rr_total_read_time_ms < shared.FLOPPY_SECTOR_READ_TIME_MS && !floppyMedium.IsFullyCached() &&
+		currentTime-floppyMedium.GetLastCachingTime() >= shared.FLOPPY_CACHE_DATA_BETWEEN_SECS {
 
 		floppyMedium.SetCachingNow(true)
 
@@ -447,7 +447,7 @@ func (mdb *FloppyMediumDriver) realRead2(
 			floppyMedium,
 			path,
 			0,
-			consts.FLOPPY_DEVICE_SECTOR_SIZE,
+			shared.FLOPPY_DEVICE_SECTOR_SIZE,
 			&_floppyAdfSize,
 			&_floppySectorReadTimeMs,
 			fh)
@@ -455,7 +455,7 @@ func (mdb *FloppyMediumDriver) realRead2(
 		floppyMedium.SetCachingNow(false)
 		floppyMedium.SetLastCachingTime(currentTime)
 
-		if rr2_total_read_time_ms < consts.FLOPPY_SECTOR_READ_TIME_MS {
+		if rr2_total_read_time_ms < shared.FLOPPY_SECTOR_READ_TIME_MS {
 			floppyMedium.SetFullyCached(true)
 
 			if !floppyMedium.IsCachingDisabled() && floppyMedium.IsWritable() {
@@ -497,7 +497,7 @@ func (mdb *FloppyMediumDriver) partialRead(
 	read_time_ms := int64(0)
 	total_len_data := int64(0)
 
-	handle, err := mdb.OpenMediumHandle(medium, consts.FLOPPY_READ_AHEAD)
+	handle, err := mdb.OpenMediumHandle(medium, shared.FLOPPY_READ_AHEAD)
 
 	if err != nil {
 		return nil, 0, 0, err
@@ -516,7 +516,7 @@ func (mdb *FloppyMediumDriver) partialRead(
 		data, len_data, err := utils.FileUtilsInstance.FileReadBytes(
 			"",
 			dynamic_offset,
-			consts.FLOPPY_DEVICE_SECTOR_SIZE,
+			shared.FLOPPY_DEVICE_SECTOR_SIZE,
 			0,
 			0,
 			handle)
@@ -535,14 +535,14 @@ func (mdb *FloppyMediumDriver) partialRead(
 
 		medium.CallPostReadCallbacks(medium, path, data, dynamic_offset, fh, len_data, read_time_ms)
 
-		if read_time_ms > consts.FLOPPY_SECTOR_READ_TIME_MS {
+		if read_time_ms > shared.FLOPPY_SECTOR_READ_TIME_MS {
 			count_real_read_sectors += 1
 		}
 
 		all_data = append(all_data, data...)
 		to_read_size -= int64(len_data)
 
-		if len_data < consts.FLOPPY_DEVICE_SECTOR_SIZE {
+		if len_data < shared.FLOPPY_DEVICE_SECTOR_SIZE {
 			break
 		}
 
@@ -643,7 +643,7 @@ func (fmd *FloppyMediumDriver) Write(_medium interfaces.Medium, path string, buf
 }
 
 func (fmd *FloppyMediumDriver) realWrite(floppyMedium *medium.FloppyMedium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
-	handle, err := fmd.OpenMediumHandle(floppyMedium, consts.FLOPPY_READ_AHEAD)
+	handle, err := fmd.OpenMediumHandle(floppyMedium, shared.FLOPPY_READ_AHEAD)
 
 	if err != nil {
 		return 0, err

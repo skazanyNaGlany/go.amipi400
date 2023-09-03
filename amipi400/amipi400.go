@@ -12,9 +12,9 @@ import (
 	"syscall"
 
 	components_amipi400 "github.com/skazanyNaGlany/go.amipi400/amipi400/components"
-	"github.com/skazanyNaGlany/go.amipi400/components"
-	"github.com/skazanyNaGlany/go.amipi400/components/utils"
-	"github.com/skazanyNaGlany/go.amipi400/consts"
+	"github.com/skazanyNaGlany/go.amipi400/shared"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 	"github.com/thoas/go-funk"
 )
 
@@ -34,7 +34,7 @@ func adfPathnameToDFIndex(pathname string) int {
 	// to the device pathname
 	baseName := filepath.Base(pathname)
 	baseName = strings.ReplaceAll(baseName, "__", "/")
-	baseName = strings.Replace(baseName, consts.FLOPPY_ADF_FULL_EXTENSION, "", 1)
+	baseName = strings.Replace(baseName, shared.FLOPPY_ADF_FULL_EXTENSION, "", 1)
 
 	index := funk.IndexOfString(floppyDevices, baseName)
 
@@ -42,7 +42,7 @@ func adfPathnameToDFIndex(pathname string) int {
 		return 0
 	}
 
-	if index >= consts.MAX_ADFS {
+	if index >= shared.MAX_ADFS {
 		return 0
 	}
 
@@ -56,7 +56,7 @@ func isoPathnameToCDIndex(pathname string) int {
 	// to the device pathname
 	baseName := filepath.Base(pathname)
 	baseName = strings.ReplaceAll(baseName, "__", "/")
-	baseName = strings.Replace(baseName, consts.CD_ISO_FULL_EXTENSION, "", 1)
+	baseName = strings.Replace(baseName, shared.CD_ISO_FULL_EXTENSION, "", 1)
 
 	index := funk.IndexOfString(cdromDevices, baseName)
 
@@ -64,7 +64,7 @@ func isoPathnameToCDIndex(pathname string) int {
 		return 0
 	}
 
-	if index >= consts.MAX_CDS {
+	if index >= shared.MAX_CDS {
 		return 0
 	}
 
@@ -72,7 +72,7 @@ func isoPathnameToCDIndex(pathname string) int {
 }
 
 func getHdfFreeSlot() int {
-	for index := 0; index < consts.MAX_HDFS; index++ {
+	for index := 0; index < shared.MAX_HDFS; index++ {
 		if emulator.GetHdf(index) == "" {
 			return index
 		}
@@ -82,7 +82,7 @@ func getHdfFreeSlot() int {
 }
 
 func getHdfSlot(pathname string) int {
-	for index := 0; index < consts.MAX_HDFS; index++ {
+	for index := 0; index < shared.MAX_HDFS; index++ {
 		if emulator.GetHdf(index) == pathname {
 			return index
 		}
@@ -270,7 +270,7 @@ func detachAmigaDiskDeviceHdf(pathname string) {
 }
 
 func attachedAmigaDiskDeviceCallback(pathname string) {
-	isAdf := strings.HasSuffix(pathname, consts.FLOPPY_ADF_FULL_EXTENSION)
+	isAdf := strings.HasSuffix(pathname, shared.FLOPPY_ADF_FULL_EXTENSION)
 
 	if isAdf {
 		attachAmigaDiskDeviceAdf(pathname)
@@ -278,7 +278,7 @@ func attachedAmigaDiskDeviceCallback(pathname string) {
 		return
 	}
 
-	isHdf := strings.HasSuffix(pathname, consts.HD_HDF_FULL_EXTENSION)
+	isHdf := strings.HasSuffix(pathname, shared.HD_HDF_FULL_EXTENSION)
 
 	if isHdf {
 		attachAmigaDiskDeviceHdf(pathname)
@@ -286,7 +286,7 @@ func attachedAmigaDiskDeviceCallback(pathname string) {
 		return
 	}
 
-	isIso := strings.HasSuffix(pathname, consts.CD_ISO_FULL_EXTENSION)
+	isIso := strings.HasSuffix(pathname, shared.CD_ISO_FULL_EXTENSION)
 
 	if isIso {
 		attachAmigaDiskDeviceIso(pathname)
@@ -298,7 +298,7 @@ func attachedAmigaDiskDeviceCallback(pathname string) {
 }
 
 func detachedAmigaDiskDeviceCallback(pathname string) {
-	isAdf := strings.HasSuffix(pathname, consts.FLOPPY_ADF_FULL_EXTENSION)
+	isAdf := strings.HasSuffix(pathname, shared.FLOPPY_ADF_FULL_EXTENSION)
 
 	if isAdf {
 		detachAmigaDiskDeviceAdf(pathname)
@@ -306,7 +306,7 @@ func detachedAmigaDiskDeviceCallback(pathname string) {
 		return
 	}
 
-	isHdf := strings.HasSuffix(pathname, consts.HD_HDF_FULL_EXTENSION)
+	isHdf := strings.HasSuffix(pathname, shared.HD_HDF_FULL_EXTENSION)
 
 	if isHdf {
 		detachAmigaDiskDeviceHdf(pathname)
@@ -314,7 +314,7 @@ func detachedAmigaDiskDeviceCallback(pathname string) {
 		return
 	}
 
-	isIso := strings.HasSuffix(pathname, consts.CD_ISO_FULL_EXTENSION)
+	isIso := strings.HasSuffix(pathname, shared.CD_ISO_FULL_EXTENSION)
 
 	if isIso {
 		detachAmigaDiskDeviceIso(pathname)
@@ -326,7 +326,7 @@ func detachedAmigaDiskDeviceCallback(pathname string) {
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
-	if allKeyboardsControl.IsKeysPressed(consts.SOFT_RESET_KEYS) {
+	if allKeyboardsControl.IsKeysPressed(shared.SOFT_RESET_KEYS) {
 		allKeyboardsControl.ClearPressedKeys()
 
 		emulator.SoftReset()
@@ -396,7 +396,7 @@ func fixMountMedium(devicePathname, label, fsType string) (string, error) {
 	log.Println("Fsck output:")
 	utils.GoUtilsInstance.LogPrintLines(output)
 
-	target := filepath.Join(consts.AP4_ROOT_MOUNTPOINT, label)
+	target := filepath.Join(shared.AP4_ROOT_MOUNTPOINT, label)
 
 	log.Println(devicePathname, label, "mounting as", target)
 
@@ -432,15 +432,15 @@ func attachDFMediumDiskImage(
 	}
 
 	// find first .adf file and attach it to the emulator
-	firstAdfpathname := getDirectoryFirstFile(mountpoint, consts.FLOPPY_ADF_FULL_EXTENSION)
+	firstAdfpathname := getDirectoryFirstFile(mountpoint, shared.FLOPPY_ADF_FULL_EXTENSION)
 
 	if firstAdfpathname == "" {
-		log.Println(path, label, "contains no", consts.FLOPPY_ADF_EXTENSION, "files")
+		log.Println(path, label, "contains no", shared.FLOPPY_ADF_EXTENSION, "files")
 
 		return
 	}
 
-	index, _, err := parseMediumLabel(label, consts.AP4_MEDIUM_DF_REG_EX)
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_REG_EX)
 
 	if err != nil || index == -1 {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -449,7 +449,7 @@ func attachDFMediumDiskImage(
 	}
 
 	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
-	emulator.SetFloppySoundVolumeDisk(index, consts.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
+	emulator.SetFloppySoundVolumeDisk(index, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
 
 	if !attachAdf(index, firstAdfpathname) {
 		emulator.SetFloppySoundVolumeDisk(index, oldVolume)
@@ -479,15 +479,15 @@ func attachDHMediumDiskImage(
 	}
 
 	// find first .hdf file and attach it to the emulator
-	firstHdfpathname := getDirectoryFirstFile(mountpoint, consts.HD_HDF_FULL_EXTENSION)
+	firstHdfpathname := getDirectoryFirstFile(mountpoint, shared.HD_HDF_FULL_EXTENSION)
 
 	if firstHdfpathname == "" {
-		log.Println(path, label, "contains no", consts.HD_HDF_EXTENSION, "files")
+		log.Println(path, label, "contains no", shared.HD_HDF_EXTENSION, "files")
 
 		return
 	}
 
-	index, bootPriority, err := parseMediumLabel(label, consts.AP4_MEDIUM_DH_REG_EX)
+	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_REG_EX)
 
 	if err != nil || index == -1 {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -520,15 +520,15 @@ func attachCDMediumDiskImage(
 	}
 
 	// find first .iso file and attach it to the emulator
-	firstIsoPathname := getDirectoryFirstFile(mountpoint, consts.CD_ISO_FULL_EXTENSION)
+	firstIsoPathname := getDirectoryFirstFile(mountpoint, shared.CD_ISO_FULL_EXTENSION)
 
 	if firstIsoPathname == "" {
-		log.Println(path, label, "contains no", consts.CD_ISO_EXTENSION, "files")
+		log.Println(path, label, "contains no", shared.CD_ISO_EXTENSION, "files")
 
 		return
 	}
 
-	index, _, err := parseMediumLabel(label, consts.AP4_MEDIUM_CD_REG_EX)
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_REG_EX)
 
 	if err != nil || index == -1 {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -544,11 +544,11 @@ func attachMediumDiskImage(
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
-	if consts.AP4_MEDIUM_DF_REG_EX.MatchString(label) {
+	if shared.AP4_MEDIUM_DF_REG_EX.MatchString(label) {
 		attachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
-	} else if consts.AP4_MEDIUM_DH_REG_EX.MatchString(label) {
+	} else if shared.AP4_MEDIUM_DH_REG_EX.MatchString(label) {
 		attachDHMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
-	} else if consts.AP4_MEDIUM_CD_REG_EX.MatchString(label) {
+	} else if shared.AP4_MEDIUM_CD_REG_EX.MatchString(label) {
 		attachCDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	}
 }
@@ -566,7 +566,7 @@ func detachDFMediumDiskImage(
 		return
 	}
 
-	for i := 0; i < consts.MAX_ADFS; i++ {
+	for i := 0; i < shared.MAX_ADFS; i++ {
 		adfPathname := emulator.GetAdf(i)
 
 		if adfPathname == "" {
@@ -603,7 +603,7 @@ func detachDHMediumDiskImage(
 		return
 	}
 
-	for i := 0; i < consts.MAX_HDFS; i++ {
+	for i := 0; i < shared.MAX_HDFS; i++ {
 		hdfPathname := emulator.GetHdf(i)
 
 		if hdfPathname == "" {
@@ -635,7 +635,7 @@ func detachCDMediumDiskImage(
 		return
 	}
 
-	for i := 0; i < consts.MAX_CDS; i++ {
+	for i := 0; i < shared.MAX_CDS; i++ {
 		hdfPathname := emulator.GetIso(i)
 
 		if hdfPathname == "" {
@@ -659,11 +659,11 @@ func detachMediumDiskImage(
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
-	if consts.AP4_MEDIUM_DF_REG_EX.MatchString(label) {
+	if shared.AP4_MEDIUM_DF_REG_EX.MatchString(label) {
 		detachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
-	} else if consts.AP4_MEDIUM_DH_REG_EX.MatchString(label) {
+	} else if shared.AP4_MEDIUM_DH_REG_EX.MatchString(label) {
 		detachDHMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
-	} else if consts.AP4_MEDIUM_CD_REG_EX.MatchString(label) {
+	} else if shared.AP4_MEDIUM_CD_REG_EX.MatchString(label) {
 		detachCDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	}
 }
@@ -748,17 +748,17 @@ func main() {
 	exeDir := utils.GoUtilsInstance.MustCwdToExeOrScript()
 	logFilename := utils.GoUtilsInstance.MustDuplicateLog(exeDir)
 
-	log.Printf("%v v%v\n", consts.AMIPI400_UNIXNAME, consts.AMIPI400_VERSION)
+	log.Printf("%v v%v\n", shared.AMIPI400_UNIXNAME, shared.AMIPI400_VERSION)
 	log.Printf("Executable directory %v\n", exeDir)
 	log.Printf("Log filename %v\n", logFilename)
 
 	amigaDiskDevicesDiscovery.SetAttachedAmigaDiskDeviceCallback(attachedAmigaDiskDeviceCallback)
 	amigaDiskDevicesDiscovery.SetDetachedAmigaDiskDeviceCallback(detachedAmigaDiskDeviceCallback)
-	amigaDiskDevicesDiscovery.SetMountpoint(consts.FILE_SYSTEM_MOUNT)
+	amigaDiskDevicesDiscovery.SetMountpoint(shared.FILE_SYSTEM_MOUNT)
 	allKeyboardsControl.SetKeyEventCallback(keyEventCallback)
-	commander.SetTmpIniPathname(consts.AMIBERRY_EMULATOR_TMP_INI_PATHNAME)
-	emulator.SetExecutablePathname(consts.AMIBERRY_EXE_PATHNAME)
-	emulator.SetConfigPathname(consts.AMIPI400_AMIBERRY_CONFIG_PATHNAME)
+	commander.SetTmpIniPathname(shared.AMIBERRY_EMULATOR_TMP_INI_PATHNAME)
+	emulator.SetExecutablePathname(shared.AMIBERRY_EXE_PATHNAME)
+	emulator.SetConfigPathname(shared.AMIPI400_AMIBERRY_CONFIG_PATHNAME)
 	emulator.SetAmiberryCommander(&commander)
 	blockDevices.AddAttachedCallback(attachedBlockDeviceCallback)
 	blockDevices.AddDetachedCallback(detachedBlockDeviceCallback)
@@ -767,16 +767,16 @@ func main() {
 	printFloppyDevices()
 	printCDROMDevices()
 
-	amigaDiskDevicesDiscovery.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
-	amigaDiskDevicesDiscovery.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
-	allKeyboardsControl.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
-	allKeyboardsControl.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
-	emulator.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
-	emulator.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
-	commander.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
-	commander.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
-	blockDevices.SetVerboseMode(consts.RUNNERS_VERBOSE_MODE)
-	blockDevices.SetDebugMode(consts.RUNNERS_DEBUG_MODE)
+	amigaDiskDevicesDiscovery.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	amigaDiskDevicesDiscovery.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	allKeyboardsControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	allKeyboardsControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	emulator.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	emulator.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	commander.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	commander.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	blockDevices.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	blockDevices.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 
 	amigaDiskDevicesDiscovery.Start(&amigaDiskDevicesDiscovery)
 	allKeyboardsControl.Start(&allKeyboardsControl)

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/MarinX/keylogger"
-	"github.com/skazanyNaGlany/go.amipi400/interfaces"
+	"github.com/skazanyNaGlany/go.amipi400/shared/interfaces"
 	"github.com/thoas/go-funk"
 	"golang.org/x/exp/slices"
 )

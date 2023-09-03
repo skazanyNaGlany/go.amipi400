@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/skazanyNaGlany/go.amipi400/components/utils"
-	"github.com/skazanyNaGlany/go.amipi400/consts"
+	"github.com/skazanyNaGlany/go.amipi400/shared"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 )
 
 type LEDControl struct {
@@ -46,7 +46,7 @@ func (lc *LEDControl) setPowerLedBrightness(brightness int) {
 	brightnessStr := strconv.FormatInt(int64(brightness), 10)
 
 	utils.FileUtilsInstance.FileWriteBytes(
-		consts.LED0_BRIGHTNESS_PATHNAME,
+		shared.LED0_BRIGHTNESS_PATHNAME,
 		0,
 		[]byte(brightnessStr),
 		os.O_WRONLY,
