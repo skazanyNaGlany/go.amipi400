@@ -15,7 +15,7 @@ const AMIPI400_VERSION = "0.1"
 
 // amipi400.go
 const _AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
-const _AMIBERRY_EXE_PATHNAME = "../amiberry/amiberry"
+const _AMIBERRY_EXE_PATHNAME = "../../amiberry/amiberry"
 const AMIBERRY_EMULATOR_TMP_INI_FILENAME = "amiberry.tmp.ini"
 const AP4_ROOT_MOUNTPOINT = "/media/"
 const FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME = 20
