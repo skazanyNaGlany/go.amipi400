@@ -67,11 +67,15 @@ func (akc *AllKeyboardsControl) IsRunning() bool {
 	return true
 }
 
-func (akc *AllKeyboardsControl) GetPressedKeys() []string {
-	all := make([]string, 0)
+func (akc *AllKeyboardsControl) GetPressedKeys() map[string]int {
+	all := make(map[string]int)
 
 	for _, kc := range akc.keyboardControls {
-		all = append(all, kc.GetPressedKeys()...)
+		pressedKeys := kc.GetPressedKeys()
+
+		for ikey, timestamp := range pressedKeys {
+			all[ikey] = timestamp
+		}
 	}
 
 	return all

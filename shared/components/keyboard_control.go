@@ -7,7 +7,6 @@ import (
 	"github.com/MarinX/keylogger"
 	"github.com/skazanyNaGlany/go.amipi400/shared/interfaces"
 	"github.com/thoas/go-funk"
-	"golang.org/x/exp/slices"
 )
 
 // key codes that does not exists in
@@ -20,7 +19,7 @@ type KeyboardControl struct {
 	RunnerBase
 
 	keyboard          *keylogger.KeyLogger
-	pressedKeys       []string
+	pressedKeys       map[string]int
 	keyEventCallbacks []interfaces.KeyEventCallback
 	keyboardDevice    string
 }
@@ -28,7 +27,7 @@ type KeyboardControl struct {
 func (kc *KeyboardControl) init() bool {
 	var err error
 
-	kc.pressedKeys = make([]string, 0)
+	kc.pressedKeys = make(map[string]int)
 	kc.keyboard, err = keylogger.New(kc.keyboardDevice)
 
 	if err != nil {
@@ -113,17 +112,17 @@ func (kc *KeyboardControl) Stop(_runner interfaces.Runner) error {
 	return nil
 }
 
-func (kc *KeyboardControl) GetPressedKeys() []string {
+func (kc *KeyboardControl) GetPressedKeys() map[string]int {
 	return kc.pressedKeys
 }
 
 func (kc *KeyboardControl) ClearPressedKeys() {
-	kc.pressedKeys = make([]string, 0)
+	kc.pressedKeys = make(map[string]int)
 }
 
 func (kc *KeyboardControl) SetPressedKey(key string) bool {
-	if !funk.ContainsString(kc.pressedKeys, key) {
-		kc.pressedKeys = append(kc.pressedKeys, key)
+	if _, isPressed := kc.pressedKeys[key]; !isPressed {
+		kc.pressedKeys[key] = time.Now().Nanosecond()
 
 		return true
 	}
@@ -132,8 +131,8 @@ func (kc *KeyboardControl) SetPressedKey(key string) bool {
 }
 
 func (kc *KeyboardControl) ClearPressedKey(key string) bool {
-	if index := funk.IndexOfString(kc.pressedKeys, key); index != -1 {
-		kc.pressedKeys = slices.Delete(kc.pressedKeys, index, index+1)
+	if _, isPressed := kc.pressedKeys[key]; isPressed {
+		delete(kc.pressedKeys, key)
 
 		return true
 	}
@@ -142,14 +141,16 @@ func (kc *KeyboardControl) ClearPressedKey(key string) bool {
 }
 
 func (kc *KeyboardControl) IsKeyPressed(key string) bool {
-	return funk.ContainsString(kc.pressedKeys, key)
+	_, isPressed := kc.pressedKeys[key]
+
+	return isPressed
 }
 
 func (kc *KeyboardControl) IsKeysPressed(keys []string) bool {
 	count := 0
 
-	for _, key := range kc.pressedKeys {
-		if funk.ContainsString(keys, key) {
+	for ikey := range kc.pressedKeys {
+		if funk.ContainsString(keys, ikey) {
 			count++
 		}
 	}
