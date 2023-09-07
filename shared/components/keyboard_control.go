@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/MarinX/keylogger"
+	"github.com/skazanyNaGlany/go.amipi400/shared"
 	"github.com/skazanyNaGlany/go.amipi400/shared/interfaces"
 	"github.com/thoas/go-funk"
 )
@@ -15,6 +16,12 @@ var extendedKeyCodeMap = map[uint16]string{
 	125: "KEY_LEFTMETA",
 }
 
+type KeySequence struct {
+	Key       string
+	Timestamp int
+	Pressed   bool
+}
+
 type KeyboardControl struct {
 	RunnerBase
 
@@ -22,12 +29,14 @@ type KeyboardControl struct {
 	pressedKeys       map[string]int
 	keyEventCallbacks []interfaces.KeyEventCallback
 	keyboardDevice    string
+	keysSequence      []KeySequence
 }
 
 func (kc *KeyboardControl) init() bool {
 	var err error
 
 	kc.pressedKeys = make(map[string]int)
+	kc.keysSequence = make([]KeySequence, 0)
 	kc.keyboard, err = keylogger.New(kc.keyboardDevice)
 
 	if err != nil {
@@ -120,9 +129,31 @@ func (kc *KeyboardControl) ClearPressedKeys() {
 	kc.pressedKeys = make(map[string]int)
 }
 
+func (kc *KeyboardControl) AddKeySequence(key string, timestamp int, pressed bool) {
+	kc.keysSequence = append(kc.keysSequence, KeySequence{
+		Key:       key,
+		Timestamp: timestamp,
+		Pressed:   pressed})
+
+	if len(kc.keysSequence) >= shared.MAX_KEYS_SEQUENCE {
+		kc.keysSequence = kc.keysSequence[1:]
+	}
+}
+
+func (kc *KeyboardControl) ClearKeysSequence() {
+	kc.keysSequence = make([]KeySequence, 0)
+}
+
+func (kc *KeyboardControl) GetKeysSequence() []KeySequence {
+	return kc.keysSequence
+}
+
 func (kc *KeyboardControl) SetPressedKey(key string) bool {
 	if _, isPressed := kc.pressedKeys[key]; !isPressed {
-		kc.pressedKeys[key] = time.Now().Nanosecond()
+		timestamp := time.Now().Nanosecond()
+
+		kc.pressedKeys[key] = timestamp
+		kc.AddKeySequence(key, timestamp, true)
 
 		return true
 	}
@@ -133,6 +164,7 @@ func (kc *KeyboardControl) SetPressedKey(key string) bool {
 func (kc *KeyboardControl) ClearPressedKey(key string) bool {
 	if _, isPressed := kc.pressedKeys[key]; isPressed {
 		delete(kc.pressedKeys, key)
+		kc.AddKeySequence(key, time.Now().Nanosecond(), false)
 
 		return true
 	}

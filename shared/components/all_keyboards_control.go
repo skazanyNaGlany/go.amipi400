@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/MarinX/keylogger"
+	"github.com/skazanyNaGlany/go.amipi400/shared"
 	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/shared/interfaces"
 	"github.com/thoas/go-funk"
@@ -85,6 +86,28 @@ func (akc *AllKeyboardsControl) ClearPressedKeys() {
 	for _, kc := range akc.keyboardControls {
 		kc.ClearPressedKeys()
 	}
+}
+
+func (akc *AllKeyboardsControl) AddKeySequence(key string, timestamp int, pressed bool) {
+	for _, kc := range akc.keyboardControls {
+		kc.AddKeySequence(key, timestamp, pressed)
+	}
+}
+
+func (akc *AllKeyboardsControl) ClearKeysSequence() {
+	for _, kc := range akc.keyboardControls {
+		kc.ClearKeysSequence()
+	}
+}
+
+func (akc *AllKeyboardsControl) GetKeysSequence() []KeySequence {
+	all := make([]KeySequence, 0)
+
+	for _, kc := range akc.keyboardControls {
+		all = append(all, kc.GetKeysSequence()...)
+	}
+
+	return all[0:shared.MAX_KEYS_SEQUENCE]
 }
 
 func (akc *AllKeyboardsControl) SetPressedKey(key string) bool {
