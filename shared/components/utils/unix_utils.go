@@ -45,3 +45,11 @@ func (k *UnixUtils) RunFsck(devicePathname string) (string, error) {
 
 	return string(output), err
 }
+
+func (k *UnixUtils) Sync() (string, error) {
+	output, err := exec.Command(
+		"sync",
+	).CombinedOutput()
+
+	return string(output), err
+}

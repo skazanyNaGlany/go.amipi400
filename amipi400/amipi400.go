@@ -133,6 +133,8 @@ func attachHdf(index int, bootPriority int, pathname string) bool {
 	log.Printf("Attaching %v to DH%v (boot priority %v)\n", pathname, index, bootPriority)
 
 	emulator.AttachHdf(index, bootPriority, pathname)
+
+	utils.UnixUtilsInstance.Sync()
 	emulator.HardReset()
 
 	return true
@@ -206,6 +208,8 @@ func detachHdf(index int, pathname string) bool {
 	log.Println("Detaching", pathname, "from DH"+strIndex)
 
 	emulator.DetachHdf(index)
+
+	utils.UnixUtilsInstance.Sync()
 	emulator.HardReset()
 
 	return true
@@ -329,6 +333,7 @@ func keyEventCallback(sender any, key string, pressed bool) {
 	if allKeyboardsControl.IsKeysPressed(shared.SOFT_RESET_KEYS) {
 		allKeyboardsControl.ClearPressedKeys()
 
+		utils.UnixUtilsInstance.Sync()
 		emulator.SoftReset()
 	}
 }
