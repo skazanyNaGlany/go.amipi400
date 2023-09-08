@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	components_amipi400 "github.com/skazanyNaGlany/go.amipi400/amipi400/components"
 	"github.com/skazanyNaGlany/go.amipi400/shared"
@@ -329,17 +330,51 @@ func detachedAmigaDiskDeviceCallback(pathname string) {
 	log.Fatalln(pathname, "not supported")
 }
 
-func keyEventCallback(
-	sender any,
-	key string,
-	pressed bool,
-	prevPressedKeys map[string]int,
-	newPressedKeys map[string]int) {
-	if allKeyboardsControl.IsKeysPressed(shared.SOFT_RESET_KEYS) {
+func isSoftResetKeys() bool {
+	releasedKeys := allKeyboardsControl.GetReleasedKeys()
+	currentTimestamp := time.Now().UnixMilli()
+	goodCount := 0
+
+	for key, pressedTimestamp := range releasedKeys {
+		if funk.ContainsString(shared.SOFT_RESET_KEYS, key) {
+			if currentTimestamp-pressedTimestamp < shared.SOFT_RESET_KEYS_MAX_MS {
+				goodCount++
+			}
+		}
+	}
+
+	return goodCount == len(shared.SOFT_RESET_KEYS)
+}
+
+func isHardResetKeys() bool {
+	releasedKeys := allKeyboardsControl.GetReleasedKeys()
+	currentTimestamp := time.Now().UnixMilli()
+	goodCount := 0
+
+	for key, pressedTimestamp := range releasedKeys {
+		if funk.ContainsString(shared.HARD_RESET_KEYS, key) {
+			if currentTimestamp-pressedTimestamp >= shared.HARD_RESET_KEYS_MIN_MS {
+				goodCount++
+			}
+		}
+	}
+
+	return goodCount == len(shared.HARD_RESET_KEYS)
+}
+
+func keyEventCallback(sender any, key string, pressed bool) {
+	if isSoftResetKeys() {
 		allKeyboardsControl.ClearPressedKeys()
+		allKeyboardsControl.ClearReleasedKeys()
 
 		utils.UnixUtilsInstance.Sync()
 		emulator.SoftReset()
+	} else if isHardResetKeys() {
+		allKeyboardsControl.ClearPressedKeys()
+		allKeyboardsControl.ClearReleasedKeys()
+
+		utils.UnixUtilsInstance.Sync()
+		emulator.HardReset()
 	}
 }
 

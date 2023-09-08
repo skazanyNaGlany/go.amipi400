@@ -18,7 +18,7 @@ var extendedKeyCodeMap = map[uint16]string{
 
 type KeySequence struct {
 	Key       string
-	Timestamp int
+	Timestamp int64
 	Pressed   bool
 }
 
@@ -26,7 +26,8 @@ type KeyboardControl struct {
 	RunnerBase
 
 	keyboard          *keylogger.KeyLogger
-	pressedKeys       map[string]int
+	pressedKeys       map[string]int64
+	releasedKeys      map[string]int64
 	keyEventCallbacks []interfaces.KeyEventCallback
 	keyboardDevice    string
 	keysSequence      []KeySequence
@@ -35,7 +36,8 @@ type KeyboardControl struct {
 func (kc *KeyboardControl) init() bool {
 	var err error
 
-	kc.pressedKeys = make(map[string]int)
+	kc.pressedKeys = make(map[string]int64)
+	kc.releasedKeys = make(map[string]int64)
 	kc.keysSequence = make([]KeySequence, 0)
 	kc.keyboard, err = keylogger.New(kc.keyboardDevice)
 
@@ -49,16 +51,6 @@ func (kc *KeyboardControl) init() bool {
 	}
 
 	return true
-}
-
-func (kc *KeyboardControl) copyPressedKeys() map[string]int {
-	_copy := make(map[string]int)
-
-	for k, c := range kc.pressedKeys {
-		_copy[k] = c
-	}
-
-	return _copy
 }
 
 func (kc *KeyboardControl) loop() {
@@ -78,26 +70,14 @@ func (kc *KeyboardControl) loop() {
 				}
 
 				if ievent.KeyPress() {
-					pressedKeysCopy := kc.copyPressedKeys()
-
 					if kc.SetPressedKey(keyStr) {
-						kc.callKeyEventCallbacks(
-							keyStr,
-							true,
-							pressedKeysCopy,
-							kc.pressedKeys)
+						kc.callKeyEventCallbacks(keyStr, true)
 					}
 				}
 
 				if ievent.KeyRelease() {
-					pressedKeysCopy := kc.copyPressedKeys()
-
 					if kc.ClearPressedKey(keyStr) {
-						kc.callKeyEventCallbacks(
-							keyStr,
-							false,
-							pressedKeysCopy,
-							kc.pressedKeys)
+						kc.callKeyEventCallbacks(keyStr, false)
 					}
 				}
 			}
@@ -143,15 +123,23 @@ func (kc *KeyboardControl) Stop(_runner interfaces.Runner) error {
 	return nil
 }
 
-func (kc *KeyboardControl) GetPressedKeys() map[string]int {
+func (kc *KeyboardControl) GetPressedKeys() map[string]int64 {
 	return kc.pressedKeys
 }
 
 func (kc *KeyboardControl) ClearPressedKeys() {
-	kc.pressedKeys = make(map[string]int)
+	kc.pressedKeys = make(map[string]int64)
 }
 
-func (kc *KeyboardControl) AddKeySequence(key string, timestamp int, pressed bool) {
+func (kc *KeyboardControl) GetReleasedKeys() map[string]int64 {
+	return kc.releasedKeys
+}
+
+func (kc *KeyboardControl) ClearReleasedKeys() {
+	kc.releasedKeys = make(map[string]int64)
+}
+
+func (kc *KeyboardControl) AddKeySequence(key string, timestamp int64, pressed bool) {
 	kc.keysSequence = append(kc.keysSequence, KeySequence{
 		Key:       key,
 		Timestamp: timestamp,
@@ -172,9 +160,11 @@ func (kc *KeyboardControl) GetKeysSequence() []KeySequence {
 
 func (kc *KeyboardControl) SetPressedKey(key string) bool {
 	if _, isPressed := kc.pressedKeys[key]; !isPressed {
-		timestamp := time.Now().Nanosecond()
+		timestamp := time.Now().UnixMilli()
 
 		kc.pressedKeys[key] = timestamp
+		delete(kc.releasedKeys, key)
+
 		kc.AddKeySequence(key, timestamp, true)
 
 		return true
@@ -185,8 +175,12 @@ func (kc *KeyboardControl) SetPressedKey(key string) bool {
 
 func (kc *KeyboardControl) ClearPressedKey(key string) bool {
 	if _, isPressed := kc.pressedKeys[key]; isPressed {
+		oldTimestamp := kc.pressedKeys[key]
+
 		delete(kc.pressedKeys, key)
-		kc.AddKeySequence(key, time.Now().Nanosecond(), false)
+		kc.releasedKeys[key] = oldTimestamp
+
+		kc.AddKeySequence(key, time.Now().UnixMilli(), false)
 
 		return true
 	}
@@ -216,13 +210,9 @@ func (kc *KeyboardControl) AddKeyEventCallback(callback interfaces.KeyEventCallb
 	kc.keyEventCallbacks = append(kc.keyEventCallbacks, callback)
 }
 
-func (kc *KeyboardControl) callKeyEventCallbacks(
-	key string,
-	pressed bool,
-	prevPressedKeys map[string]int,
-	newPressedKeys map[string]int) {
+func (kc *KeyboardControl) callKeyEventCallbacks(key string, pressed bool) {
 	for _, callback := range kc.keyEventCallbacks {
-		callback(kc, key, pressed, prevPressedKeys, newPressedKeys)
+		callback(kc, key, pressed)
 	}
 }
 

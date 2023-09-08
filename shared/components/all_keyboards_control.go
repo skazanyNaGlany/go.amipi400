@@ -68,8 +68,8 @@ func (akc *AllKeyboardsControl) IsRunning() bool {
 	return true
 }
 
-func (akc *AllKeyboardsControl) GetPressedKeys() map[string]int {
-	all := make(map[string]int)
+func (akc *AllKeyboardsControl) GetPressedKeys() map[string]int64 {
+	all := make(map[string]int64)
 
 	for _, kc := range akc.keyboardControls {
 		pressedKeys := kc.GetPressedKeys()
@@ -88,7 +88,27 @@ func (akc *AllKeyboardsControl) ClearPressedKeys() {
 	}
 }
 
-func (akc *AllKeyboardsControl) AddKeySequence(key string, timestamp int, pressed bool) {
+func (akc *AllKeyboardsControl) GetReleasedKeys() map[string]int64 {
+	all := make(map[string]int64)
+
+	for _, kc := range akc.keyboardControls {
+		pressedKeys := kc.GetReleasedKeys()
+
+		for ikey, timestamp := range pressedKeys {
+			all[ikey] = timestamp
+		}
+	}
+
+	return all
+}
+
+func (akc *AllKeyboardsControl) ClearReleasedKeys() {
+	for _, kc := range akc.keyboardControls {
+		kc.ClearReleasedKeys()
+	}
+}
+
+func (akc *AllKeyboardsControl) AddKeySequence(key string, timestamp int64, pressed bool) {
 	for _, kc := range akc.keyboardControls {
 		kc.AddKeySequence(key, timestamp, pressed)
 	}
