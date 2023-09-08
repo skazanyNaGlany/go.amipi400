@@ -329,7 +329,12 @@ func detachedAmigaDiskDeviceCallback(pathname string) {
 	log.Fatalln(pathname, "not supported")
 }
 
-func keyEventCallback(sender any, key string, pressed bool) {
+func keyEventCallback(
+	sender any,
+	key string,
+	pressed bool,
+	prevPressedKeys map[string]int,
+	newPressedKeys map[string]int) {
 	if allKeyboardsControl.IsKeysPressed(shared.SOFT_RESET_KEYS) {
 		allKeyboardsControl.ClearPressedKeys()
 

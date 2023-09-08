@@ -51,6 +51,16 @@ func (kc *KeyboardControl) init() bool {
 	return true
 }
 
+func (kc *KeyboardControl) copyPressedKeys() map[string]int {
+	_copy := make(map[string]int)
+
+	for k, c := range kc.pressedKeys {
+		_copy[k] = c
+	}
+
+	return _copy
+}
+
 func (kc *KeyboardControl) loop() {
 	defer kc.keyboard.Close()
 
@@ -68,14 +78,26 @@ func (kc *KeyboardControl) loop() {
 				}
 
 				if ievent.KeyPress() {
+					pressedKeysCopy := kc.copyPressedKeys()
+
 					if kc.SetPressedKey(keyStr) {
-						kc.callKeyEventCallbacks(keyStr, true)
+						kc.callKeyEventCallbacks(
+							keyStr,
+							true,
+							pressedKeysCopy,
+							kc.pressedKeys)
 					}
 				}
 
 				if ievent.KeyRelease() {
+					pressedKeysCopy := kc.copyPressedKeys()
+
 					if kc.ClearPressedKey(keyStr) {
-						kc.callKeyEventCallbacks(keyStr, false)
+						kc.callKeyEventCallbacks(
+							keyStr,
+							false,
+							pressedKeysCopy,
+							kc.pressedKeys)
 					}
 				}
 			}
@@ -194,9 +216,13 @@ func (kc *KeyboardControl) AddKeyEventCallback(callback interfaces.KeyEventCallb
 	kc.keyEventCallbacks = append(kc.keyEventCallbacks, callback)
 }
 
-func (kc *KeyboardControl) callKeyEventCallbacks(key string, pressed bool) {
+func (kc *KeyboardControl) callKeyEventCallbacks(
+	key string,
+	pressed bool,
+	prevPressedKeys map[string]int,
+	newPressedKeys map[string]int) {
 	for _, callback := range kc.keyEventCallbacks {
-		callback(kc, key, pressed)
+		callback(kc, key, pressed, prevPressedKeys, newPressedKeys)
 	}
 }
 
