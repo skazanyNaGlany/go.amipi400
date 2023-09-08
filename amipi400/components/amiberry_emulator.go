@@ -356,6 +356,10 @@ func (ae *AmiberryEmulator) HardReset() error {
 		return nil
 	}
 
+	if ae.emulatorCommand.Process == nil {
+		return nil
+	}
+
 	if err := ae.emulatorCommand.Process.Kill(); err != nil {
 		if ae.IsDebugMode() {
 			log.Println(err)
