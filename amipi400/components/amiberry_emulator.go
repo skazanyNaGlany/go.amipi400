@@ -180,6 +180,10 @@ func (ae *AmiberryEmulator) loop() {
 	for ae.IsRunning() {
 		time.Sleep(time.Second * 3)
 
+		if !shared.AUTORUN_EMULATOR {
+			continue
+		}
+
 		configPathname, err := ae.getEmulatorProcessedConfig()
 
 		if err != nil {
