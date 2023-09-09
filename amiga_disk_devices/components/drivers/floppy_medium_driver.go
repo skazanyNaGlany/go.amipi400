@@ -347,6 +347,12 @@ func (fmd *FloppyMediumDriver) OpenMediumHandle(_medium interfaces.Medium, readA
 		_readAhead = readAhead[0]
 	}
 
+	// TODO also set read-a-head for read device file, even if the
+	// medium is cached, to speed-up motor move in FileReadBytesDirect in
+	// amiga_disk_devices/amiga_disk_devices.go
+
+	// TODO use open real device handle to read data in FileReadBytesDirect
+	// amiga_disk_devices/amiga_disk_devices.go (to speed-up motor move)
 	if floppyMedium.GetCachedAdfPathname() == "" {
 		// set read-a-head value for device or file handle
 		// for block-device and the file-system
