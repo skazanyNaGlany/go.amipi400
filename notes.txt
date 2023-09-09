@@ -86,3 +86,49 @@ Skaut Kwtermaster
 Monkey Island 2
 Kajko I kokosz
 
+
+
+
+
+
+
+
+to expand and center:
+amiberry.gfx_auto_crop=true
+gfx_center_horizontal=smart
+gfx_center_vertical=smart
+
+
+
+
+
+def pause_emulator(pause: bool):
+    global is_emulator_paused
+
+    is_emulator_paused = pause
+    pause_str = '1' if pause else '0'
+
+    put_command('pause_emulation ' + pause_str, False, True)
+    put_command('config_changed 1', False, True)
+
+
+
+
+
+
+
+
+
+
+gfx_width=720						      |	gfx_width=704
+gfx_height=568						      |	gfx_height=512
+gfx_width_windowed=720					      |	gfx_width_windowed=704
+gfx_height_windowed=568					      |	gfx_height_windowed=512
+
+
+
+
+
+
+
+

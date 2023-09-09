@@ -362,6 +362,10 @@ func isHardResetKeys() bool {
 	return goodCount == len(shared.HARD_RESET_KEYS)
 }
 
+func isToggleAutoHeightKeys() bool {
+	return allKeyboardsControl.IsKeysReleased(shared.TOGGLE_AUTO_HEIGHT_KEYS)
+}
+
 func keyEventCallback(sender any, key string, pressed bool) {
 	if isSoftResetKeys() {
 		allKeyboardsControl.ClearPressedKeys()
@@ -375,6 +379,11 @@ func keyEventCallback(sender any, key string, pressed bool) {
 
 		utils.UnixUtilsInstance.Sync()
 		emulator.HardReset()
+	} else if isToggleAutoHeightKeys() {
+		allKeyboardsControl.ClearPressedKeys()
+		allKeyboardsControl.ClearReleasedKeys()
+
+		emulator.ToggleAutoHeight()
 	}
 }
 

@@ -27,6 +27,7 @@ type AmiberryEmulator struct {
 	cds                   [shared.MAX_CDS]string
 	commander             *AmiberryCommander
 	floppySoundVolumeDisk [shared.MAX_ADFS]int // volume per disk
+	isAutoHeight          bool
 }
 
 func (ae *AmiberryEmulator) SetAmiberryCommander(commander *AmiberryCommander) {
@@ -352,6 +353,10 @@ func (ae *AmiberryEmulator) SoftReset() error {
 }
 
 func (ae *AmiberryEmulator) HardReset() error {
+	// isAutoHeight is temporary so it must be reset when hard
+	// resetting the emulator
+	ae.isAutoHeight = false
+
 	if ae.emulatorCommand == nil {
 		return nil
 	}
@@ -422,4 +427,33 @@ func (ae *AmiberryEmulator) SetFloppySoundVolumeDisk(index int, volume int) erro
 
 func (ae *AmiberryEmulator) GetFloppySoundVolumeDisk(index int) int {
 	return ae.floppySoundVolumeDisk[index]
+}
+
+func (ae *AmiberryEmulator) SetAutoHeight(autoHeight bool) {
+	// WARNING these settings are temporary and will not be
+	// synced with the config at getEmulatorProcessedConfig
+	if autoHeight {
+		ae.commander.PutAmiberryGfxAutoCropCO(true)
+		ae.commander.PutGfxCenterHorizontalCO(true)
+		ae.commander.PutGfxCenterVerticalCO(true)
+		ae.commander.PutGfxHeightCO(shared.AMIBERRY_DEFAULT_WINDOW_HEIGHT)
+		ae.commander.PutGfxHeightWindowedCO(shared.AMIBERRY_DEFAULT_WINDOW_HEIGHT)
+	} else {
+		ae.commander.PutAmiberryGfxAutoCropCO(false)
+		ae.commander.PutGfxCenterHorizontalCO(false)
+		ae.commander.PutGfxCenterVerticalCO(false)
+		ae.commander.PutGfxHeightCO(shared.AMIBERRY_DEFAULT_WINDOW_HEIGHT)
+		ae.commander.PutGfxHeightWindowedCO(shared.AMIBERRY_DEFAULT_WINDOW_HEIGHT)
+	}
+
+	ae.commander.PutConfigChangedCommand()
+	ae.commander.PutLocalCommitCommand()
+
+	ae.commander.Execute()
+
+	ae.isAutoHeight = autoHeight
+}
+
+func (ae *AmiberryEmulator) ToggleAutoHeight() {
+	ae.SetAutoHeight(!ae.isAutoHeight)
 }

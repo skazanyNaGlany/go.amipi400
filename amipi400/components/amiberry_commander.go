@@ -360,8 +360,114 @@ func (ac *AmiberryCommander) FormatFloppySoundVolumeDiskCO(index, volume int) (s
 	return key, value
 }
 
+func (ac *AmiberryCommander) FormatAmiberryGfxAutoCropCO(enable bool) (string, string) {
+	value := "false"
+
+	if enable {
+		value = "true"
+	}
+
+	key := "amiberry.gfx_auto_crop"
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) FormatGfxCenterHorizontalCO(center bool) (string, string) {
+	value := "none"
+
+	if center {
+		value = "smart"
+	}
+
+	key := "gfx_center_horizontal"
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) FormatGfxCenterVerticalCO(center bool) (string, string) {
+	value := "none"
+
+	if center {
+		value = "smart"
+	}
+
+	key := "gfx_center_vertical"
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) FormatGfxWidthCO(width int) (string, string) {
+	key := "gfx_width"
+	value := fmt.Sprintf("%v", width)
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) FormatGfxHeightCO(height int) (string, string) {
+	key := "gfx_height"
+	value := fmt.Sprintf("%v", height)
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) FormatGfxWidthWindowedCO(width int) (string, string) {
+	key := "gfx_width_windowed"
+	value := fmt.Sprintf("%v", width)
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) FormatGfxHeightWindowedCO(height int) (string, string) {
+	key := "gfx_height_windowed"
+	value := fmt.Sprintf("%v", height)
+
+	return key, value
+}
+
 func (ac *AmiberryCommander) PutFloppySoundVolumeDiskCO(index, volume int) {
 	key, value := ac.FormatFloppySoundVolumeDiskCO(index, volume)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
+func (ac *AmiberryCommander) PutAmiberryGfxAutoCropCO(enable bool) {
+	key, value := ac.FormatAmiberryGfxAutoCropCO(enable)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
+func (ac *AmiberryCommander) PutGfxCenterHorizontalCO(center bool) {
+	key, value := ac.FormatGfxCenterHorizontalCO(center)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
+func (ac *AmiberryCommander) PutGfxCenterVerticalCO(center bool) {
+	key, value := ac.FormatGfxCenterVerticalCO(center)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
+func (ac *AmiberryCommander) PutGfxWidthCO(width int) {
+	key, value := ac.FormatGfxWidthCO(width)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
+func (ac *AmiberryCommander) PutGfxHeightCO(height int) {
+	key, value := ac.FormatGfxHeightCO(height)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
+func (ac *AmiberryCommander) PutGfxWidthWindowedCO(width int) {
+	key, value := ac.FormatGfxWidthWindowedCO(width)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
+func (ac *AmiberryCommander) PutGfxHeightWindowedCO(height int) {
+	key, value := ac.FormatGfxHeightWindowedCO(height)
 
 	ac.PutSetConfigOptionCommand(key, value)
 }

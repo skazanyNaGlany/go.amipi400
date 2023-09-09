@@ -166,6 +166,16 @@ func (akc *AllKeyboardsControl) IsKeysPressed(keys []string) bool {
 	return false
 }
 
+func (akc *AllKeyboardsControl) IsKeysReleased(keys []string) bool {
+	for _, kc := range akc.keyboardControls {
+		if kc.IsKeysReleased(keys) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (akc *AllKeyboardsControl) FindAllKeyboardDevices() []string {
 	devices := keylogger.FindAllKeyboardDevices()
 

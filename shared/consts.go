@@ -50,6 +50,7 @@ const DRIVERS_DEBUG_MODE = true
 var FORCE_INSERT_KEYS []string = []string{"KEY_LEFTMETA", "L_SHIFT"}
 var FORMAT_DEVICE_KEYS []string = []string{"KEY_LEFTMETA", "Del"}
 var EMPTY_DEVICE_HEADER [2048]byte = [2048]byte{'D', 'O', 'S'}
+var TOGGLE_AUTO_HEIGHT_KEYS []string = []string{"KEY_LEFTMETA", "H"}
 
 // LEDControl
 const LED0_BRIGHTNESS_PATHNAME = "/sys/class/leds/led0/brightness"
@@ -113,6 +114,7 @@ const OUTPUT_BUFFER_MAX_SIZE = 10485760
 const HDF_TYPE_HDFRDB = 8
 const HDF_TYPE_DISKIMAGE = 2
 const HDF_TYPE_HDF = 5
+const AMIBERRY_DEFAULT_WINDOW_HEIGHT = 568
 
 // AllKeyboardsControl / KeyboardControl
 const MAX_KEYS_SEQUENCE = 128
