@@ -357,7 +357,7 @@ func preReadCallback(_medium interfaces_amiga_disk_devices.Medium, path string, 
 }
 
 func postReadCallback(_medium interfaces_amiga_disk_devices.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
-	onFloppyRead(_medium, ofst)
+	// onFloppyRead(_medium, ofst)
 	onHardDiskRead(_medium)
 }
 
