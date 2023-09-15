@@ -468,6 +468,13 @@ func fixMountMedium(devicePathname, label, fsType string) (string, error) {
 	return target, nil
 }
 
+func unmountMedium(devicePathname string, mountpoint string, flags int) {
+	log.Println("Unmount", mountpoint)
+
+	syscall.Unmount(mountpoint, flags)
+	delete(mounted, devicePathname)
+}
+
 func attachDFMediumDiskImage(
 	name string,
 	size uint64,
@@ -490,9 +497,7 @@ func attachDFMediumDiskImage(
 	}
 
 	if mountpoint != "" {
-		log.Println("Unmount", mountpoint)
-
-		syscall.Unmount(mountpoint, 0)
+		unmountMedium(path, mountpoint, 0)
 		mountpoint = ""
 	}
 
@@ -550,9 +555,7 @@ func attachDHMediumDiskImage(
 
 	// TODO unmount all
 	if mountpoint != "" {
-		log.Println("Unmount", mountpoint)
-
-		syscall.Unmount(mountpoint, 0)
+		unmountMedium(path, mountpoint, 0)
 		mountpoint = ""
 	}
 
@@ -604,9 +607,7 @@ func attachCDMediumDiskImage(
 	}
 
 	if mountpoint != "" {
-		log.Println("Unmount", mountpoint)
-
-		syscall.Unmount(mountpoint, 0)
+		unmountMedium(path, mountpoint, 0)
 		mountpoint = ""
 	}
 
@@ -682,9 +683,7 @@ func detachDFMediumDiskImage(
 		}
 	}
 
-	syscall.Unmount(_mountpoint, syscall.MNT_DETACH)
-
-	mounted[path] = ""
+	unmountMedium(path, _mountpoint, syscall.MNT_DETACH)
 }
 
 func detachDHMediumDiskImage(
@@ -714,9 +713,7 @@ func detachDHMediumDiskImage(
 		detachHdf(i, hdfPathname)
 	}
 
-	syscall.Unmount(_mountpoint, syscall.MNT_DETACH)
-
-	mounted[path] = ""
+	unmountMedium(path, _mountpoint, syscall.MNT_DETACH)
 }
 
 func detachCDMediumDiskImage(
@@ -746,9 +743,7 @@ func detachCDMediumDiskImage(
 		detachIso(i, hdfPathname)
 	}
 
-	syscall.Unmount(_mountpoint, syscall.MNT_DETACH)
-
-	mounted[path] = ""
+	unmountMedium(path, _mountpoint, syscall.MNT_DETACH)
 }
 
 func detachMediumDiskImage(
