@@ -475,6 +475,20 @@ func attachDFMediumDiskImage(
 	readOnly bool) {
 	var err error
 
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_REG_EX)
+
+	if err != nil || index == -1 {
+		log.Println(path, label, "cannot get index for medium: ", err)
+
+		return
+	}
+
+	if emulator.GetAdf(index) != "" {
+		log.Printf("ADF already attached at DF%v, eject it first\n", index)
+
+		return
+	}
+
 	// mount the medium if not mounted
 	if mountpoint == "" {
 		mountpoint, err = fixMountMedium(path, label, fsType)
@@ -491,14 +505,6 @@ func attachDFMediumDiskImage(
 
 	if firstAdfpathname == "" {
 		log.Println(path, label, "contains no", shared.FLOPPY_ADF_EXTENSION, "files")
-
-		return
-	}
-
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_REG_EX)
-
-	if err != nil || index == -1 {
-		log.Println(path, label, "cannot get index for medium: ", err)
 
 		return
 	}
@@ -520,6 +526,20 @@ func attachDHMediumDiskImage(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	var err error
+
+	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_REG_EX)
+
+	if err != nil || index == -1 {
+		log.Println(path, label, "cannot get index for medium: ", err)
+
+		return
+	}
+
+	if emulator.GetHdf(index) != "" {
+		log.Printf("HDF already attached at DH%v, eject it first\n", index)
+
+		return
+	}
 
 	// TODO unmount all
 	syscall.Unmount(mountpoint, 0)
@@ -545,14 +565,6 @@ func attachDHMediumDiskImage(
 		return
 	}
 
-	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_REG_EX)
-
-	if err != nil || index == -1 {
-		log.Println(path, label, "cannot get index for medium: ", err)
-
-		return
-	}
-
 	// TODO unmount when attachHdf return false and the medium
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
@@ -565,6 +577,20 @@ func attachCDMediumDiskImage(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	var err error
+
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_REG_EX)
+
+	if err != nil || index == -1 {
+		log.Println(path, label, "cannot get index for medium: ", err)
+
+		return
+	}
+
+	if emulator.GetIso(index) != "" {
+		log.Printf("ISO already attached at CD%v, eject it first\n", index)
+
+		return
+	}
 
 	syscall.Unmount(mountpoint, 0)
 	mountpoint = ""
@@ -585,14 +611,6 @@ func attachCDMediumDiskImage(
 
 	if firstIsoPathname == "" {
 		log.Println(path, label, "contains no", shared.CD_ISO_EXTENSION, "files")
-
-		return
-	}
-
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_REG_EX)
-
-	if err != nil || index == -1 {
-		log.Println(path, label, "cannot get index for medium: ", err)
 
 		return
 	}
