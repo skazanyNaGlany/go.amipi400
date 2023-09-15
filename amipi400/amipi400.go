@@ -497,7 +497,7 @@ func attachDFMediumDiskImage(
 	}
 
 	if mountpoint != "" {
-		unmountMedium(path, mountpoint, 0)
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
 		mountpoint = ""
 	}
 
@@ -518,6 +518,8 @@ func attachDFMediumDiskImage(
 	if firstAdfpathname == "" {
 		log.Println(path, label, "contains no", shared.FLOPPY_ADF_EXTENSION, "files")
 
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+
 		return
 	}
 
@@ -528,6 +530,8 @@ func attachDFMediumDiskImage(
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
 	if !attachAdf(index, firstAdfpathname) {
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+
 		emulator.SetFloppySoundVolumeDisk(index, oldVolume)
 	}
 }
@@ -555,7 +559,7 @@ func attachDHMediumDiskImage(
 
 	// TODO unmount all
 	if mountpoint != "" {
-		unmountMedium(path, mountpoint, 0)
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
 		mountpoint = ""
 	}
 
@@ -576,13 +580,17 @@ func attachDHMediumDiskImage(
 	if firstHdfpathname == "" {
 		log.Println(path, label, "contains no", shared.HD_HDF_EXTENSION, "files")
 
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+
 		return
 	}
 
 	// TODO unmount when attachHdf return false and the medium
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
-	attachHdf(index, bootPriority, firstHdfpathname)
+	if !attachHdf(index, bootPriority, firstHdfpathname) {
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+	}
 }
 
 func attachCDMediumDiskImage(
@@ -607,7 +615,7 @@ func attachCDMediumDiskImage(
 	}
 
 	if mountpoint != "" {
-		unmountMedium(path, mountpoint, 0)
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
 		mountpoint = ""
 	}
 
@@ -628,13 +636,17 @@ func attachCDMediumDiskImage(
 	if firstIsoPathname == "" {
 		log.Println(path, label, "contains no", shared.CD_ISO_EXTENSION, "files")
 
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+
 		return
 	}
 
 	// TODO unmount when attachIso return false and the medium
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
-	attachIso(index, firstIsoPathname)
+	if !attachIso(index, firstIsoPathname) {
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+	}
 }
 
 func attachMediumDiskImage(
