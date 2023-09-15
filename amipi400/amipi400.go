@@ -489,6 +489,13 @@ func attachDFMediumDiskImage(
 		return
 	}
 
+	if mountpoint != "" {
+		log.Println("Unmount", mountpoint)
+
+		syscall.Unmount(mountpoint, 0)
+		mountpoint = ""
+	}
+
 	// mount the medium if not mounted
 	if mountpoint == "" {
 		mountpoint, err = fixMountMedium(path, label, fsType)
@@ -542,8 +549,12 @@ func attachDHMediumDiskImage(
 	}
 
 	// TODO unmount all
-	syscall.Unmount(mountpoint, 0)
-	mountpoint = ""
+	if mountpoint != "" {
+		log.Println("Unmount", mountpoint)
+
+		syscall.Unmount(mountpoint, 0)
+		mountpoint = ""
+	}
 
 	// mount the medium if not mounted
 	if mountpoint == "" {
@@ -592,8 +603,12 @@ func attachCDMediumDiskImage(
 		return
 	}
 
-	syscall.Unmount(mountpoint, 0)
-	mountpoint = ""
+	if mountpoint != "" {
+		log.Println("Unmount", mountpoint)
+
+		syscall.Unmount(mountpoint, 0)
+		mountpoint = ""
+	}
 
 	// mount the medium if not mounted
 	if mountpoint == "" {
