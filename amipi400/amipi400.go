@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -845,6 +846,31 @@ func printCDROMDevices() {
 	}
 }
 
+func unmountAll() {
+	for devicePathname, mountpoint := range mounted {
+		unmountMedium(devicePathname, mountpoint, syscall.MNT_DETACH)
+	}
+}
+
+func stopServices() {
+	amigaDiskDevicesDiscovery.Stop(&amigaDiskDevicesDiscovery)
+	allKeyboardsControl.Stop(&allKeyboardsControl)
+	emulator.Stop(&emulator)
+	commander.Stop(&commander)
+	blockDevices.Stop(&blockDevices)
+}
+
+func gracefulShutdown() {
+	signalChan := make(chan os.Signal, 1)
+
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	<-signalChan
+
+	unmountAll()
+	stopServices()
+}
+
 func main() {
 	utils.GoUtilsInstance.CheckPlatform()
 	utils.UnixUtilsInstance.CheckForRoot()
@@ -888,17 +914,13 @@ func main() {
 	commander.Start(&commander)
 	blockDevices.Start(&blockDevices)
 
-	defer amigaDiskDevicesDiscovery.Stop(&amigaDiskDevicesDiscovery)
-	defer allKeyboardsControl.Stop(&allKeyboardsControl)
-	defer emulator.Stop(&emulator)
-	defer commander.Stop(&commander)
-	defer blockDevices.Stop(&blockDevices)
-
 	runnersBlocker.AddRunner(&amigaDiskDevicesDiscovery)
 	runnersBlocker.AddRunner(&allKeyboardsControl)
 	runnersBlocker.AddRunner(&emulator)
 	runnersBlocker.AddRunner(&commander)
 	runnersBlocker.AddRunner(&blockDevices)
+
+	go gracefulShutdown()
 
 	runnersBlocker.BlockUntilRunning()
 }
