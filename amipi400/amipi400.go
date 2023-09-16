@@ -460,7 +460,12 @@ func fixMountMedium(devicePathname, label, fsType string) (string, error) {
 		return "", err
 	}
 
-	if err := syscall.Mount(devicePathname, target, fsType, syscall.MS_SYNC, ""); err != nil {
+	if err := syscall.Mount(
+		devicePathname,
+		target,
+		fsType,
+		syscall.MS_SYNCHRONOUS,
+		"flush"); err != nil {
 		return "", err
 	}
 
