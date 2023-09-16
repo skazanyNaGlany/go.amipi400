@@ -599,6 +599,63 @@ func attachDHMediumDiskImage(
 	}
 }
 
+func attachHFMediumDiskImage(
+	name string,
+	size uint64,
+	_type, mountpoint, label, path, fsType, ptType string,
+	readOnly bool) {
+	var err error
+
+	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_HF_REG_EX)
+
+	if err != nil || index == -1 {
+		log.Println(path, label, "cannot get index for medium: ", err)
+
+		return
+	}
+
+	if emulator.GetHdf(index) != "" {
+		log.Printf("HDF already attached at DH%v, eject it first\n", index)
+
+		return
+	}
+
+	// TODO unmount all
+	if mountpoint != "" {
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		mountpoint = ""
+	}
+
+	// mount the medium if not mounted
+	if mountpoint == "" {
+		mountpoint, err = fixMountMedium(path, label, fsType)
+
+		if err != nil {
+			log.Println(path, label, err)
+
+			return
+		}
+	}
+
+	// find first .hdf file and attach it to the emulator
+	firstHdfpathname := getDirectoryFirstFile(mountpoint, shared.HD_HDF_FULL_EXTENSION)
+
+	if firstHdfpathname == "" {
+		log.Println(path, label, "contains no", shared.HD_HDF_EXTENSION, "files")
+
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+
+		return
+	}
+
+	// TODO unmount when attachHdf return false and the medium
+	// was not mounted prevoiusly mountpoint == "", so it means
+	// the file was not attached
+	if !attachHdf(index, bootPriority, firstHdfpathname) {
+		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+	}
+}
+
 func attachCDMediumDiskImage(
 	name string,
 	size uint64,
@@ -664,6 +721,8 @@ func attachMediumDiskImage(
 		attachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	} else if shared.AP4_MEDIUM_DH_REG_EX.MatchString(label) {
 		attachDHMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	} else if shared.AP4_MEDIUM_HF_REG_EX.MatchString(label) {
+		attachHFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	} else if shared.AP4_MEDIUM_CD_REG_EX.MatchString(label) {
 		attachCDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	}

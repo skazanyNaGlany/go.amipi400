@@ -27,6 +27,7 @@ var SOFT_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
 var HARD_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
 var AP4_MEDIUM_DF_REG_EX = regexp.MustCompile(`^AP4_DF(?P<index>[0-9]?|X)$`)
 var AP4_MEDIUM_DH_REG_EX = regexp.MustCompile(`^AP4_DH(?P<index>[0-9]?|X)(_(?P<boot_priority>[0-9]))?$`)
+var AP4_MEDIUM_HF_REG_EX = regexp.MustCompile(`^AP4_HF(?P<index>[0-9]?|X)(_(?P<boot_priority>[0-9]))?$`)
 var AP4_MEDIUM_CD_REG_EX = regexp.MustCompile(`^AP4_CD(?P<index>[0-9]?|X)$`)
 
 // amiga_disk_devices.go
