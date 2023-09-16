@@ -852,6 +852,8 @@ func printCDROMDevices() {
 }
 
 func unmountAll() {
+	utils.UnixUtilsInstance.Sync()
+
 	for devicePathname, mountpoint := range mounted {
 		unmountMedium(devicePathname, mountpoint, syscall.MNT_DETACH)
 	}
