@@ -507,15 +507,12 @@ func attachDFMediumDiskImage(
 		mountpoint = ""
 	}
 
-	// mount the medium if not mounted
-	if mountpoint == "" {
-		mountpoint, err = fixMountMedium(path, label, fsType)
+	mountpoint, err = fixMountMedium(path, label, fsType)
 
-		if err != nil {
-			log.Println(path, label, err)
+	if err != nil {
+		log.Println(path, label, err)
 
-			return
-		}
+		return
 	}
 
 	// find first .adf file and attach it to the emulator
@@ -569,15 +566,12 @@ func attachDHMediumDiskImage(
 		mountpoint = ""
 	}
 
-	// mount the medium if not mounted
-	if mountpoint == "" {
-		mountpoint, err = fixMountMedium(path, label, fsType)
+	mountpoint, err = fixMountMedium(path, label, fsType)
 
-		if err != nil {
-			log.Println(path, label, err)
+	if err != nil {
+		log.Println(path, label, err)
 
-			return
-		}
+		return
 	}
 
 	// find first .hdf file and attach it to the emulator
@@ -626,15 +620,12 @@ func attachHFMediumDiskImage(
 		mountpoint = ""
 	}
 
-	// mount the medium if not mounted
-	if mountpoint == "" {
-		mountpoint, err = fixMountMedium(path, label, fsType)
+	mountpoint, err = fixMountMedium(path, label, fsType)
 
-		if err != nil {
-			log.Println(path, label, err)
+	if err != nil {
+		log.Println(path, label, err)
 
-			return
-		}
+		return
 	}
 
 	// find first .hdf file and attach it to the emulator
@@ -682,15 +673,12 @@ func attachCDMediumDiskImage(
 		mountpoint = ""
 	}
 
-	// mount the medium if not mounted
-	if mountpoint == "" {
-		mountpoint, err = fixMountMedium(path, label, fsType)
+	mountpoint, err = fixMountMedium(path, label, fsType)
 
-		if err != nil {
-			log.Println(path, label, err)
+	if err != nil {
+		log.Println(path, label, err)
 
-			return
-		}
+		return
 	}
 
 	// find first .iso file and attach it to the emulator
