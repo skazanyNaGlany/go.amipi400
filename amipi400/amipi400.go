@@ -736,6 +736,7 @@ func detachDFMediumDiskImage(
 			continue
 		}
 
+		// TODO check with _mountpoint + '/'
 		if !strings.HasPrefix(adfPathname, _mountpoint) {
 			continue
 		}
@@ -771,6 +772,7 @@ func detachDHMediumDiskImage(
 			continue
 		}
 
+		// TODO check with _mountpoint + '/'
 		if !strings.HasPrefix(hdfPathname, _mountpoint) {
 			continue
 		}
@@ -801,6 +803,7 @@ func detachCDMediumDiskImage(
 			continue
 		}
 
+		// TODO check with _mountpoint + '/'
 		if !strings.HasPrefix(hdfPathname, _mountpoint) {
 			continue
 		}
