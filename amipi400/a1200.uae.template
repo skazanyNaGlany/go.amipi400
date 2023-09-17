@@ -46,6 +46,7 @@ floppy0soundvolume_disk={{floppy0soundvolume_disk}}
 floppy1soundvolume_disk={{floppy1soundvolume_disk}}
 floppy2soundvolume_disk={{floppy2soundvolume_disk}}
 floppy3soundvolume_disk={{floppy3soundvolume_disk}}
+cdimage0={{cdimage0}}
 floppy2type=0
 floppy3type=0
 nr_floppies=4
