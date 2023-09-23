@@ -660,6 +660,7 @@ func attachHFMediumDiskImage(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	var err error
+	var firstHdfpathname string
 
 	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_HF_REG_EX)
 
@@ -689,8 +690,14 @@ func attachHFMediumDiskImage(
 		return
 	}
 
-	// find first .hdf file and attach it to the emulator
-	firstHdfpathname := getDirectoryFirstFile(mountpoint, shared.HD_HDF_FULL_EXTENSION)
+	loadMediumConfig(path, mountpoint)
+
+	firstHdfpathname = getMediumDefaultFile(path)
+
+	if firstHdfpathname == "" {
+		// find first .hdf file and attach it to the emulator
+		firstHdfpathname = getDirectoryFirstFile(mountpoint, shared.HD_HDF_FULL_EXTENSION)
+	}
 
 	if firstHdfpathname == "" {
 		log.Println(path, label, "contains no", shared.HD_HDF_EXTENSION, "files")
@@ -714,6 +721,7 @@ func attachCDMediumDiskImage(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	var err error
+	var firstIsoPathname string
 
 	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_REG_EX)
 
@@ -742,8 +750,14 @@ func attachCDMediumDiskImage(
 		return
 	}
 
-	// find first .iso file and attach it to the emulator
-	firstIsoPathname := getDirectoryFirstFile(mountpoint, shared.CD_ISO_FULL_EXTENSION)
+	loadMediumConfig(path, mountpoint)
+
+	firstIsoPathname = getMediumDefaultFile(path)
+
+	if firstIsoPathname == "" {
+		// find first .iso file and attach it to the emulator
+		firstIsoPathname = getDirectoryFirstFile(mountpoint, shared.CD_ISO_FULL_EXTENSION)
+	}
 
 	if firstIsoPathname == "" {
 		log.Println(path, label, "contains no", shared.CD_ISO_EXTENSION, "files")
