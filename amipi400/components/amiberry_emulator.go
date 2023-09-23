@@ -24,6 +24,7 @@ type AmiberryEmulator struct {
 	adfs                  [shared.MAX_ADFS]string
 	hdfs                  [shared.MAX_HDFS]string
 	hdfsBootPriority      [shared.MAX_HDFS]int
+	hdfsLabel             [shared.MAX_HDFS]string
 	cds                   [shared.MAX_CDS]string
 	commander             *AmiberryCommander
 	floppySoundVolumeDisk [shared.MAX_ADFS]int // volume per disk
@@ -104,34 +105,54 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 			continue
 		}
 
-		hdfType, err := ae.getHdfType(pathname)
+		stat, err := os.Stat(pathname)
 
 		if err != nil {
-			if ae.IsDebugMode() {
-				log.Println(pathname, err)
-			}
-
+			log.Println(pathname, err)
 			continue
 		}
 
-		bootPriority := ae.hdfsBootPriority[i]
-		sectors := 0
-		surfaces := 0
-		reserved := 0
-		blocksize := 512
+		if stat.IsDir() {
+			// directory
+			bootPriority := ae.hdfsBootPriority[i]
+			label := ae.hdfsLabel[i]
 
-		if hdfType == shared.HDF_TYPE_HDF {
-			sectors = 32
-			surfaces = 1
-			reserved = 2
-			blocksize = 512
+			key, value := ae.commander.FormatFileSystem2_CO(i, label, pathname, bootPriority)
+			hard_drives += key + "=" + value + "\n"
+
+			key, value = ae.commander.FormatUaeHfDir_CO(i, label, pathname, bootPriority)
+			hard_drives += key + "=" + value + "\n"
+		} else {
+			// hdf
+			hdfType, err := ae.getHdfType(pathname)
+
+			if err != nil {
+				if ae.IsDebugMode() {
+					log.Println(pathname, err)
+				}
+
+				continue
+			}
+
+			bootPriority := ae.hdfsBootPriority[i]
+			sectors := 0
+			surfaces := 0
+			reserved := 0
+			blocksize := 512
+
+			if hdfType == shared.HDF_TYPE_HDF {
+				sectors = 32
+				surfaces = 1
+				reserved = 2
+				blocksize = 512
+			}
+
+			key, value := ae.commander.FormatHardFile2_UaeController_CO(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+			hard_drives += key + "=" + value + "\n"
+
+			key, value = ae.commander.FormatUaeHf_UaeController_CO(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
+			hard_drives += key + "=" + value + "\n"
 		}
-
-		key, value := ae.commander.FormatHardFile2_UaeController_CO(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
-		hard_drives += key + "=" + value + "\n"
-
-		key, value = ae.commander.FormatUaeHf_UaeController_CO(i, pathname, sectors, surfaces, reserved, blocksize, bootPriority, i)
-		hard_drives += key + "=" + value + "\n"
 	}
 
 	hard_drives = strings.TrimSpace(hard_drives)
@@ -329,7 +350,17 @@ func (ae *AmiberryEmulator) getHdfType(pathname string) (int, error) {
 
 func (ae *AmiberryEmulator) AttachHdf(index int, bootPriority int, pathname string) error {
 	// TODO attach with read-write or read-only mode
-	_, err := ae.getHdfType(pathname)
+	stat, err := os.Stat(pathname)
+
+	if err != nil {
+		return err
+	}
+
+	if stat.IsDir() {
+		return errors.New("must be a file")
+	}
+
+	_, err = ae.getHdfType(pathname)
 
 	if err != nil {
 		return err
@@ -341,13 +372,34 @@ func (ae *AmiberryEmulator) AttachHdf(index int, bootPriority int, pathname stri
 	return nil
 }
 
-func (ae *AmiberryEmulator) DetachHdf(index int) error {
-	ae.hdfs[index] = ""
+func (ae *AmiberryEmulator) AttachHdDir(index int, bootPriority int, pathname string) error {
+	// TODO attach with read-write or read-only mode
+	stat, err := os.Stat(pathname)
+
+	if err != nil {
+		return err
+	}
+
+	if !stat.IsDir() {
+		return errors.New("must be a directory")
+	}
+
+	ae.hdfs[index] = pathname
+	ae.hdfsBootPriority[index] = bootPriority
+	ae.hdfsLabel[index] = filepath.Base(pathname)
 
 	return nil
 }
 
-func (ae *AmiberryEmulator) GetHdf(index int) string {
+func (ae *AmiberryEmulator) DetachHd(index int) error {
+	ae.hdfs[index] = ""
+	ae.hdfsBootPriority[index] = 0
+	ae.hdfsLabel[index] = ""
+
+	return nil
+}
+
+func (ae *AmiberryEmulator) GetHd(index int) string {
 	return ae.hdfs[index]
 }
 

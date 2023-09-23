@@ -304,6 +304,28 @@ func (ac *AmiberryCommander) FormatHardFile2_UaeController_CO(
 	return key, value
 }
 
+func (ac *AmiberryCommander) FormatFileSystem2_CO(
+	driveIndex int,
+	label string,
+	pathname string,
+	bootPriority int) (string, string) {
+	key := "filesystem2"
+	value := fmt.Sprintf("rw,DH%v:%v:%v,%v", driveIndex, label, pathname, bootPriority)
+
+	return key, value
+}
+
+func (ac *AmiberryCommander) FormatUaeHfDir_CO(
+	driveIndex int,
+	label string,
+	pathname string,
+	bootPriority int) (string, string) {
+	key := fmt.Sprintf("uaehf%v", driveIndex)
+	value := fmt.Sprintf("dir,rw,DH%v:%v:%v,%v", driveIndex, label, pathname, bootPriority)
+
+	return key, value
+}
+
 func (ac *AmiberryCommander) FormatUaeHf_IdeController_CO(
 	driveIndex int,
 	pathname string,

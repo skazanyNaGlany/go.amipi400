@@ -75,7 +75,7 @@ func isoPathnameToCDIndex(pathname string) int {
 
 func getHdfFreeSlot() int {
 	for index := 0; index < shared.MAX_HDFS; index++ {
-		if emulator.GetHdf(index) == "" {
+		if emulator.GetHd(index) == "" {
 			return index
 		}
 	}
@@ -85,7 +85,7 @@ func getHdfFreeSlot() int {
 
 func getHdfSlot(pathname string) int {
 	for index := 0; index < shared.MAX_HDFS; index++ {
-		if emulator.GetHdf(index) == pathname {
+		if emulator.GetHd(index) == pathname {
 			return index
 		}
 	}
@@ -126,7 +126,7 @@ func attachIso(index int, pathname string) bool {
 }
 
 func attachHdf(index int, bootPriority int, pathname string) bool {
-	if emulator.GetHdf(index) != "" {
+	if emulator.GetHd(index) != "" {
 		log.Printf("HDF already attached at DH%v, eject it first\n", index)
 
 		return false
@@ -135,6 +135,23 @@ func attachHdf(index int, bootPriority int, pathname string) bool {
 	log.Printf("Attaching %v to DH%v (boot priority %v)\n", pathname, index, bootPriority)
 
 	emulator.AttachHdf(index, bootPriority, pathname)
+
+	utils.UnixUtilsInstance.Sync()
+	emulator.HardReset()
+
+	return true
+}
+
+func attachHdDir(index int, bootPriority int, pathname string) bool {
+	if emulator.GetHd(index) != "" {
+		log.Printf("HDF already attached at DH%v, eject it first\n", index)
+
+		return false
+	}
+
+	log.Printf("Attaching %v to DH%v (boot priority %v)\n", pathname, index, bootPriority)
+
+	emulator.AttachHdDir(index, bootPriority, pathname)
 
 	utils.UnixUtilsInstance.Sync()
 	emulator.HardReset()
@@ -190,10 +207,10 @@ func detachAdf(index int, pathname string) bool {
 	return true
 }
 
-func detachHdf(index int, pathname string) bool {
+func detachHd(index int, pathname string) bool {
 	strIndex := fmt.Sprint(index)
 
-	currentHdfPathname := emulator.GetHdf(index)
+	currentHdfPathname := emulator.GetHd(index)
 
 	if currentHdfPathname == "" {
 		log.Println("HDF not attached to DH" + strIndex + ", cannot eject")
@@ -209,7 +226,7 @@ func detachHdf(index int, pathname string) bool {
 
 	log.Println("Detaching", pathname, "from DH"+strIndex)
 
-	emulator.DetachHdf(index)
+	emulator.DetachHd(index)
 
 	utils.UnixUtilsInstance.Sync()
 	emulator.HardReset()
@@ -272,7 +289,7 @@ func detachAmigaDiskDeviceHdf(pathname string) {
 		return
 	}
 
-	detachHdf(index, pathname)
+	detachHd(index, pathname)
 }
 
 func attachedAmigaDiskDeviceCallback(pathname string) {
@@ -554,7 +571,7 @@ func attachDHMediumDiskImage(
 		return
 	}
 
-	if emulator.GetHdf(index) != "" {
+	if emulator.GetHd(index) != "" {
 		log.Printf("HDF already attached at DH%v, eject it first\n", index)
 
 		return
@@ -574,21 +591,10 @@ func attachDHMediumDiskImage(
 		return
 	}
 
-	// find first .hdf file and attach it to the emulator
-	firstHdfpathname := getDirectoryFirstFile(mountpoint, shared.HD_HDF_FULL_EXTENSION)
-
-	if firstHdfpathname == "" {
-		log.Println(path, label, "contains no", shared.HD_HDF_EXTENSION, "files")
-
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
-
-		return
-	}
-
 	// TODO unmount when attachHdf return false and the medium
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
-	if !attachHdf(index, bootPriority, firstHdfpathname) {
+	if !attachHdDir(index, bootPriority, mountpoint) {
 		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
 	}
 }
@@ -608,7 +614,7 @@ func attachHFMediumDiskImage(
 		return
 	}
 
-	if emulator.GetHdf(index) != "" {
+	if emulator.GetHd(index) != "" {
 		log.Printf("HDF already attached at DH%v, eject it first\n", index)
 
 		return
@@ -752,7 +758,8 @@ func detachDFMediumDiskImage(
 	unmountMedium(path, _mountpoint, syscall.MNT_DETACH)
 }
 
-func detachDHMediumDiskImage(
+// One function for both HDF files and directories
+func detachHDMediumDiskImage(
 	name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
@@ -766,7 +773,7 @@ func detachDHMediumDiskImage(
 	}
 
 	for i := 0; i < shared.MAX_HDFS; i++ {
-		hdfPathname := emulator.GetHdf(i)
+		hdfPathname := emulator.GetHd(i)
 
 		if hdfPathname == "" {
 			continue
@@ -777,7 +784,7 @@ func detachDHMediumDiskImage(
 			continue
 		}
 
-		detachHdf(i, hdfPathname)
+		detachHd(i, hdfPathname)
 	}
 
 	unmountMedium(path, _mountpoint, syscall.MNT_DETACH)
@@ -822,7 +829,9 @@ func detachMediumDiskImage(
 	if shared.AP4_MEDIUM_DF_REG_EX.MatchString(label) {
 		detachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	} else if shared.AP4_MEDIUM_DH_REG_EX.MatchString(label) {
-		detachDHMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+		detachHDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	} else if shared.AP4_MEDIUM_HF_REG_EX.MatchString(label) {
+		detachHDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	} else if shared.AP4_MEDIUM_CD_REG_EX.MatchString(label) {
 		detachCDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	}
