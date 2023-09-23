@@ -21,6 +21,9 @@ const AP4_ROOT_MOUNTPOINT = "/media/"
 const FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME = 20
 const SOFT_RESET_KEYS_MAX_MS = 1000 // max 1 second
 const HARD_RESET_KEYS_MIN_MS = 4000 // min 4 seconds
+const MEDIUM_CONFIG_INI_NAME = "amipi400.ini"
+const MEDIUM_CONFIG_DEFAULT_SECTION = "amipi400"
+const MEDIUM_CONFIG_DEFAULT_FILE = "default_file"
 const AUTORUN_EMULATOR = true
 
 var SOFT_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}

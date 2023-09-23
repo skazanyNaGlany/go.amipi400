@@ -18,6 +18,7 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/shared/components"
 	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 	"github.com/thoas/go-funk"
+	"gopkg.in/ini.v1"
 )
 
 var runnersBlocker components.RunnersBlocker
@@ -27,7 +28,8 @@ var emulator components_amipi400.AmiberryEmulator
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var commander components_amipi400.AmiberryCommander
 var blockDevices components.BlockDevices
-var mounted = make(map[string]string) // [devicePathname]mountpoint
+var mounted = make(map[string]string)         // [devicePathname]mountpoint
+var mediumConfig = make(map[string]*ini.File) // [devicePathname]*ini.File
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()
@@ -498,12 +500,59 @@ func unmountMedium(devicePathname string, mountpoint string, flags int) {
 	delete(mounted, devicePathname)
 }
 
+func loadMediumConfig(devicePathname string, mountpoint string) error {
+	mediumConfig[devicePathname] = nil
+
+	cfg, err := ini.Load(
+		filepath.Join(mountpoint, shared.MEDIUM_CONFIG_INI_NAME))
+
+	if err != nil {
+		log.Println(devicePathname, mountpoint, "medium config does not exists")
+		return err
+	}
+
+	mediumConfig[devicePathname] = cfg
+
+	return nil
+}
+
+func getMediumDefaultFile(devicePathname string) string {
+	cfg, exists := mediumConfig[devicePathname]
+
+	if !exists || cfg == nil {
+		return ""
+	}
+
+	if !cfg.HasSection(shared.MEDIUM_CONFIG_DEFAULT_SECTION) {
+		return ""
+	}
+
+	if !cfg.Section(shared.MEDIUM_CONFIG_DEFAULT_SECTION).HasKey(
+		shared.MEDIUM_CONFIG_DEFAULT_FILE) {
+		return ""
+	}
+
+	filename := cfg.Section(shared.MEDIUM_CONFIG_DEFAULT_SECTION).Key(
+		shared.MEDIUM_CONFIG_DEFAULT_FILE).String()
+
+	fullPathname := filepath.Join(mounted[devicePathname], filename)
+
+	stat, err := os.Stat(fullPathname)
+
+	if err != nil || stat.IsDir() {
+		return ""
+	}
+
+	return fullPathname
+}
+
 func attachDFMediumDiskImage(
 	name string,
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	var err error
+	var firstAdfpathname string
 
 	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_REG_EX)
 
@@ -532,8 +581,14 @@ func attachDFMediumDiskImage(
 		return
 	}
 
-	// find first .adf file and attach it to the emulator
-	firstAdfpathname := getDirectoryFirstFile(mountpoint, shared.FLOPPY_ADF_FULL_EXTENSION)
+	loadMediumConfig(path, mountpoint)
+
+	firstAdfpathname = getMediumDefaultFile(path)
+
+	if firstAdfpathname == "" {
+		// find first .adf file and attach it to the emulator
+		firstAdfpathname = getDirectoryFirstFile(mountpoint, shared.FLOPPY_ADF_FULL_EXTENSION)
+	}
 
 	if firstAdfpathname == "" {
 		log.Println(path, label, "contains no", shared.FLOPPY_ADF_EXTENSION, "files")

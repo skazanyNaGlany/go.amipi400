@@ -19,4 +19,5 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	golang.org/x/exp v0.0.0-20221217163422-3c43f8badb15 // indirect
 	golang.org/x/sys v0.2.0 // indirect
+	gopkg.in/ini.v1 v1.67.0 // indirect
 )
