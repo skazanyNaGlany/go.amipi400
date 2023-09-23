@@ -123,3 +123,5 @@ const AMIBERRY_DEFAULT_WINDOW_HEIGHT = 568
 
 // AllKeyboardsControl / KeyboardControl
 const MAX_KEYS_SEQUENCE = 128
+const KEY_ESC = "ESC"
+const KEY_TAB = "TAB"

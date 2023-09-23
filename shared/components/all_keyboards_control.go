@@ -127,7 +127,11 @@ func (akc *AllKeyboardsControl) GetKeysSequence() []KeySequence {
 		all = append(all, kc.GetKeysSequence()...)
 	}
 
-	return all[0:shared.MAX_KEYS_SEQUENCE]
+	if len(all) > shared.MAX_KEYS_SEQUENCE {
+		return all[0:shared.MAX_KEYS_SEQUENCE]
+	}
+
+	return all
 }
 
 func (akc *AllKeyboardsControl) SetPressedKey(key string) bool {

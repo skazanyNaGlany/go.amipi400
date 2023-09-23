@@ -386,25 +386,84 @@ func isToggleAutoHeightKeys() bool {
 	return allKeyboardsControl.IsKeysReleased(shared.TOGGLE_AUTO_HEIGHT_KEYS)
 }
 
+func isReleasedKey(key string) bool {
+	releasedKeys := allKeyboardsControl.GetReleasedKeys()
+
+	_, exists := releasedKeys[key]
+
+	return exists
+}
+
+func getReleasedKeysSequence() []string {
+	released := make([]string, 0)
+
+	for _, ks := range allKeyboardsControl.GetKeysSequence() {
+		if ks.Pressed {
+			continue
+		}
+
+		released = append(released, ks.Key)
+	}
+
+	return released
+}
+
+func getKeyboardCommand() string {
+	releasedSequence := getReleasedKeysSequence()
+	lenReleasedSequence := len(releasedSequence)
+
+	if lenReleasedSequence < 4 {
+		return ""
+	}
+
+	if releasedSequence[0] != shared.KEY_TAB ||
+		releasedSequence[1] != shared.KEY_TAB ||
+		releasedSequence[lenReleasedSequence-1] != shared.KEY_TAB ||
+		releasedSequence[lenReleasedSequence-2] != shared.KEY_TAB {
+		return ""
+	}
+
+	releasedSequence = releasedSequence[2:]
+	lenReleasedSequence = len(releasedSequence)
+
+	releasedSequence = releasedSequence[0 : lenReleasedSequence-2]
+
+	return strings.Join(releasedSequence, "")
+}
+
+func clearAllKeyboardsControl() {
+	allKeyboardsControl.ClearPressedKeys()
+	allKeyboardsControl.ClearReleasedKeys()
+	allKeyboardsControl.ClearKeysSequence()
+}
+
+func processKeyboardCommand(keyboardCommand string) {
+	// TODO
+}
+
 func keyEventCallback(sender any, key string, pressed bool) {
 	if isSoftResetKeys() {
-		allKeyboardsControl.ClearPressedKeys()
-		allKeyboardsControl.ClearReleasedKeys()
+		clearAllKeyboardsControl()
 
 		utils.UnixUtilsInstance.Sync()
 		emulator.SoftReset()
 	} else if isHardResetKeys() {
-		allKeyboardsControl.ClearPressedKeys()
-		allKeyboardsControl.ClearReleasedKeys()
+		clearAllKeyboardsControl()
 
 		// TODO detach and unmount all mediums
 		utils.UnixUtilsInstance.Sync()
 		emulator.HardReset()
 	} else if isToggleAutoHeightKeys() {
-		allKeyboardsControl.ClearPressedKeys()
-		allKeyboardsControl.ClearReleasedKeys()
+		clearAllKeyboardsControl()
 
 		emulator.ToggleAutoHeight()
+	} else if isReleasedKey(shared.KEY_ESC) {
+		clearAllKeyboardsControl()
+	} else {
+		if keyboardCommand := getKeyboardCommand(); keyboardCommand != "" {
+			clearAllKeyboardsControl()
+			processKeyboardCommand(keyboardCommand)
+		}
 	}
 }
 
