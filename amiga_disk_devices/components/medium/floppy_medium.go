@@ -1,14 +1,25 @@
 package medium
 
+import "os"
+
 type FloppyMedium struct {
 	MediumBase
 
-	fullyCached       bool
-	lastCachingTime   int64
-	cachingNow        bool
-	cachedAdfPathname string
-	cachedAdfSha512   string
-	cachingDisabled   bool
+	fullyCached          bool
+	lastCachingTime      int64
+	cachingNow           bool
+	cachedAdfPathname    string
+	cachedAdfSha512      string
+	cachingDisabled      bool
+	deviceDirectIOHandle *os.File
+}
+
+func (fm *FloppyMedium) GetDeviceDirectIOHandle() (*os.File, error) {
+	return fm.deviceDirectIOHandle, nil
+}
+
+func (fm *FloppyMedium) SetDeviceDirectIOHandle(handle *os.File) {
+	fm.deviceDirectIOHandle = handle
 }
 
 func (fm *FloppyMedium) SetCachedAdfPathname(cachedAdfPathname string) {
@@ -65,4 +76,12 @@ func (fm *FloppyMedium) Read(path string, buff []byte, ofst int64, fh uint64) (i
 
 func (mb *FloppyMedium) Write(path string, buff []byte, ofst int64, fh uint64) (int, error) {
 	return mb.driver.Write(mb, path, buff, ofst, fh)
+}
+
+func (fm *FloppyMedium) Close() error {
+	err := fm.driver.CloseMedium(fm)
+
+	fm.CallClosedCallbacks(fm, err)
+
+	return err
 }

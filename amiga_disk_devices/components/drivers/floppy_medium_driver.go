@@ -10,6 +10,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/ncw/directio"
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/drivers/headers"
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/medium"
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/interfaces"
@@ -310,6 +311,7 @@ func (fmd *FloppyMediumDriver) OpenMediumHandle(_medium interfaces.Medium, readA
 	}
 
 	if handle != nil {
+		// already open
 		return handle, nil
 	}
 
@@ -324,15 +326,27 @@ func (fmd *FloppyMediumDriver) OpenMediumHandle(_medium interfaces.Medium, readA
 		flag |= os.O_RDONLY
 	}
 
-	pathname := floppyMedium.GetCachedAdfPathname()
+	cachedAdfPathname := floppyMedium.GetCachedAdfPathname()
+	devicePathname := floppyMedium.GetDevicePathname()
 
-	if pathname == "" {
-		// ADF is not cached, reading from the original medium
-		pathname = floppyMedium.GetDevicePathname()
+	if cachedAdfPathname == "" && devicePathname != "" {
+		// not cached yet, just open device handle
+		return fmd.openDeviceHandle(floppyMedium, flag, readAhead...)
+	} else if cachedAdfPathname != "" && devicePathname != "" {
+		// cached, open two handles, one for device, second for cached ADF
+		// set 0 bytes read-a-head for device handle to speed-up FileReadBytesDirect
+		// (to speed-up moving the motor)
+		return fmd.openDeviceAndADFHandles(floppyMedium, flag, readAhead...)
 	}
 
-	handle, err = os.OpenFile(
-		pathname,
+	return nil, nil
+}
+
+func (fmd *FloppyMediumDriver) openDeviceHandle(floppyMedium *medium.FloppyMedium, flag int, readAhead ...int) (*os.File, error) {
+	devicePathname := floppyMedium.GetDevicePathname()
+
+	deviceHandle, err := os.OpenFile(
+		devicePathname,
 		flag,
 		0,
 	)
@@ -347,25 +361,95 @@ func (fmd *FloppyMediumDriver) OpenMediumHandle(_medium interfaces.Medium, readA
 		_readAhead = readAhead[0]
 	}
 
-	// TODO also set read-a-head for read device file, even if the
-	// medium is cached, to speed-up motor move in FileReadBytesDirect in
-	// amiga_disk_devices/amiga_disk_devices.go
+	if err = utils.UnixUtilsInstance.SetDeviceReadAHead(deviceHandle, _readAhead); err != nil {
+		deviceHandle.Close()
 
-	// TODO use open real device handle to read data in FileReadBytesDirect
-	// amiga_disk_devices/amiga_disk_devices.go (to speed-up motor move)
-	if floppyMedium.GetCachedAdfPathname() == "" {
-		// set read-a-head value for device or file handle
-		// for block-device and the file-system
-		if err = utils.UnixUtilsInstance.SetDeviceReadAHead(handle, _readAhead); err != nil {
-			handle.Close()
-
-			return nil, err
-		}
+		return nil, err
 	}
 
-	floppyMedium.SetHandle(handle)
+	floppyMedium.SetHandle(deviceHandle)
 
-	return handle, nil
+	return deviceHandle, nil
+
+}
+
+func (fmd *FloppyMediumDriver) openDeviceAndADFHandles(floppyMedium *medium.FloppyMedium, flag int, readAhead ...int) (*os.File, error) {
+	cachedAdfPathname := floppyMedium.GetCachedAdfPathname()
+	devicePathname := floppyMedium.GetDevicePathname()
+
+	// cached ADF handle, will be used as main handle for all read/write operations
+	cachedAdfHandle, err := os.OpenFile(
+		cachedAdfPathname,
+		flag,
+		0,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// device deviceHandle, will be used to move the motor
+	// to move real floppy drive motor we need a special direct-io-handle
+	// instead of a regular one
+	deviceHandle, err := directio.OpenFile(devicePathname, flag, 0)
+
+	if err != nil {
+		cachedAdfHandle.Close()
+
+		return nil, err
+	}
+
+	if err = utils.UnixUtilsInstance.SetDeviceReadAHead(deviceHandle, 0); err != nil {
+		cachedAdfHandle.Close()
+		deviceHandle.Close()
+
+		return nil, err
+	}
+
+	floppyMedium.SetHandle(cachedAdfHandle)
+	floppyMedium.SetDeviceDirectIOHandle(deviceHandle)
+
+	return cachedAdfHandle, nil
+}
+
+func (fmd *FloppyMediumDriver) CloseMedium(_medium interfaces.Medium) error {
+	floppyMedium, castOk := _medium.(*medium.FloppyMedium)
+
+	if !castOk {
+		return errors.New("cannot cast Medium to FloppyMedium")
+	}
+
+	handle, err0 := floppyMedium.GetHandle()
+	directIOhandle, err1 := floppyMedium.GetDeviceDirectIOHandle()
+
+	if handle == nil {
+		// handle not open yet, or already closed
+		return nil
+	}
+
+	floppyMedium.SetHandle(nil)
+	floppyMedium.SetDeviceDirectIOHandle(nil)
+
+	if err0 != nil {
+		return err0
+	}
+
+	if err1 != nil {
+		return err1
+	}
+
+	err0 = handle.Close()
+	err1 = directIOhandle.Close()
+
+	if err0 != nil {
+		return err0
+	}
+
+	if err1 != nil {
+		return err1
+	}
+
+	return nil
 }
 
 func (fmd *FloppyMediumDriver) SetOutsideAsyncFileWriterCallback(callback interfaces.OutsideAsyncFileWriterCallback) {

@@ -301,6 +301,14 @@ func onFloppyRead(_medium interfaces_amiga_disk_devices.Medium, ofst int64) {
 			flag = os.O_RDONLY
 		}
 
+		deviceDirectIOHandle, err := floppyMedium.GetDeviceDirectIOHandle()
+
+		if err != nil {
+			log.Println(devicePathname, err)
+
+			return
+		}
+
 		// reading from cached floppy medium
 		// read from real device to move the motor
 		// TODO use one handle, do not open a new one
@@ -310,7 +318,7 @@ func onFloppyRead(_medium interfaces_amiga_disk_devices.Medium, ofst int64) {
 			ofst,
 			flag,
 			0,
-			nil,
+			deviceDirectIOHandle,
 			1,
 			nil)
 	}
