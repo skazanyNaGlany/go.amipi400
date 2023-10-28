@@ -183,7 +183,7 @@ func (akc *AllKeyboardsControl) IsKeysReleased(keys []string) bool {
 func (akc *AllKeyboardsControl) FindAllKeyboardDevices() []string {
 	devices := keylogger.FindAllKeyboardDevices()
 
-	for _, pathname := range utils.FileUtilsInstance.GetDirFiles("/dev/input/by-path") {
+	for _, pathname := range utils.FileUtilsInstance.GetDirFiles("/dev/input/by-path", false) {
 		if !strings.HasSuffix(pathname, "-event-kbd") {
 			continue
 		}

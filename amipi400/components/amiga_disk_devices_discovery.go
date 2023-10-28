@@ -22,7 +22,7 @@ func (addd *AmigaDiskDevicesDiscovery) loop() {
 	for addd.IsRunning() {
 		time.Sleep(time.Millisecond * 10)
 
-		files := utils.FileUtilsInstance.GetDirFiles(addd.mountpoint)
+		files := utils.FileUtilsInstance.GetDirFiles(addd.mountpoint, false)
 
 		addd.callCallbacks(files, oldFiles)
 

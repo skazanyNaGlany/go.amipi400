@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -56,12 +57,40 @@ func (fu *FileUtils) GetDirSize(path string) (int64, error) {
 	return size, err
 }
 
-func (fu *FileUtils) GetDirFiles(dir string) []string {
+func (fu *FileUtils) GetDirFiles(dir string, relative bool, extensions ...string) []string {
 	result := make([]string, 0)
-	files, _ := ioutil.ReadDir(dir)
+	files, err := ioutil.ReadDir(dir)
 
-	for _, filename := range files {
-		result = append(result, filepath.Join(dir, filename.Name()))
+	if err != nil {
+		return result
+	}
+
+	for _, fileInfo := range files {
+		if fileInfo.IsDir() {
+			continue
+		}
+
+		add := true
+
+		if len(extensions) > 0 {
+			add = false
+			filename := fileInfo.Name()
+
+			for _, iExtension := range extensions {
+				if strings.HasSuffix(filename, iExtension) {
+					add = true
+					break
+				}
+			}
+		}
+
+		if add {
+			if !relative {
+				result = append(result, filepath.Join(dir, fileInfo.Name()))
+			} else {
+				result = append(result, fileInfo.Name())
+			}
+		}
 	}
 
 	return result

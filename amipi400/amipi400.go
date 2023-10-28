@@ -28,8 +28,9 @@ var emulator components_amipi400.AmiberryEmulator
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var commander components_amipi400.AmiberryCommander
 var blockDevices components.BlockDevices
-var mounted = make(map[string]string)         // [devicePathname]mountpoint
-var mediumConfig = make(map[string]*ini.File) // [devicePathname]*ini.File
+var mounted = make(map[string]string)           // [devicePathname]mountpoint
+var mediumConfig = make(map[string]*ini.File)   // [devicePathname]*ini.File
+var mountpointFiles = make(map[string][]string) // [mountpoint]romFiles
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()
@@ -467,12 +468,8 @@ func keyEventCallback(sender any, key string, pressed bool) {
 	}
 }
 
-func getDirectoryFirstFile(pathname, extension string) string {
-	files := utils.FileUtilsInstance.GetDirFiles(pathname)
-
-	sort.Strings(files)
-
-	for _, pathname := range files {
+func getMountpointFirstFile(mounpoint string, extension string) string {
+	for _, pathname := range mountpointFiles[mounpoint] {
 		if strings.HasSuffix(pathname, extension) {
 			return pathname
 		}
@@ -611,7 +608,7 @@ func attachDFMediumDiskImage(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	var err error
-	var firstAdfpathname string
+	var firstAdfPathname string
 
 	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_REG_EX)
 
@@ -640,16 +637,17 @@ func attachDFMediumDiskImage(
 		return
 	}
 
+	loadMountpointFiles(mountpoint, []string{shared.FLOPPY_ADF_FULL_EXTENSION})
 	loadMediumConfig(path, mountpoint)
 
-	firstAdfpathname = getMediumDefaultFile(path)
+	firstAdfPathname = getMediumDefaultFile(path)
 
-	if firstAdfpathname == "" {
+	if firstAdfPathname == "" {
 		// find first .adf file and attach it to the emulator
-		firstAdfpathname = getDirectoryFirstFile(mountpoint, shared.FLOPPY_ADF_FULL_EXTENSION)
+		firstAdfPathname = getMountpointFirstFile(mountpoint, shared.FLOPPY_ADF_FULL_EXTENSION)
 	}
 
-	if firstAdfpathname == "" {
+	if firstAdfPathname == "" {
 		log.Println(path, label, "contains no", shared.FLOPPY_ADF_EXTENSION, "files")
 
 		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
@@ -663,11 +661,19 @@ func attachDFMediumDiskImage(
 	// TODO unmount when attachAdf return false and the medium
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
-	if !attachAdf(index, firstAdfpathname) {
+	if !attachAdf(index, firstAdfPathname) {
 		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
 
 		emulator.SetFloppySoundVolumeDisk(index, oldVolume)
 	}
+}
+
+func loadMountpointFiles(mountpoint string, extensions []string) {
+	files := utils.FileUtilsInstance.GetDirFiles(mountpoint, false, extensions...)
+
+	sort.Strings(files)
+
+	mountpointFiles[mountpoint] = files
 }
 
 func attachDHMediumDiskImage(
@@ -719,7 +725,7 @@ func attachHFMediumDiskImage(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	var err error
-	var firstHdfpathname string
+	var firstHdfPathname string
 
 	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_HF_REG_EX)
 
@@ -749,16 +755,17 @@ func attachHFMediumDiskImage(
 		return
 	}
 
+	loadMountpointFiles(mountpoint, []string{shared.HD_HDF_FULL_EXTENSION})
 	loadMediumConfig(path, mountpoint)
 
-	firstHdfpathname = getMediumDefaultFile(path)
+	firstHdfPathname = getMediumDefaultFile(path)
 
-	if firstHdfpathname == "" {
+	if firstHdfPathname == "" {
 		// find first .hdf file and attach it to the emulator
-		firstHdfpathname = getDirectoryFirstFile(mountpoint, shared.HD_HDF_FULL_EXTENSION)
+		firstHdfPathname = getMountpointFirstFile(mountpoint, shared.HD_HDF_FULL_EXTENSION)
 	}
 
-	if firstHdfpathname == "" {
+	if firstHdfPathname == "" {
 		log.Println(path, label, "contains no", shared.HD_HDF_EXTENSION, "files")
 
 		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
@@ -769,7 +776,7 @@ func attachHFMediumDiskImage(
 	// TODO unmount when attachHdf return false and the medium
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
-	if !attachHdf(index, bootPriority, firstHdfpathname) {
+	if !attachHdf(index, bootPriority, firstHdfPathname) {
 		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
 	}
 }
@@ -809,13 +816,14 @@ func attachCDMediumDiskImage(
 		return
 	}
 
+	loadMountpointFiles(mountpoint, []string{shared.CD_ISO_FULL_EXTENSION})
 	loadMediumConfig(path, mountpoint)
 
 	firstIsoPathname = getMediumDefaultFile(path)
 
 	if firstIsoPathname == "" {
 		// find first .iso file and attach it to the emulator
-		firstIsoPathname = getDirectoryFirstFile(mountpoint, shared.CD_ISO_FULL_EXTENSION)
+		firstIsoPathname = getMountpointFirstFile(mountpoint, shared.CD_ISO_FULL_EXTENSION)
 	}
 
 	if firstIsoPathname == "" {
