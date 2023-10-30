@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -31,6 +32,9 @@ var blockDevices components.BlockDevices
 var mounted = make(map[string]string)           // [devicePathname]mountpoint
 var mediumConfig = make(map[string]*ini.File)   // [devicePathname]*ini.File
 var mountpointFiles = make(map[string][]string) // [mountpoint]romFiles
+var dfIndexMountpoint = make(map[int]string)    // [driveIndex]mountpoint
+var hdIndexMountpoint = make(map[int]string)    // [driveIndex]mountpoint
+var cdIndexMountpoint = make(map[int]string)    // [driveIndex]mountpoint
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()
@@ -83,7 +87,7 @@ func getHdfFreeSlot() int {
 		}
 	}
 
-	return -1
+	return shared.DRIVE_INDEX_UNSPECIFIED
 }
 
 func getHdfSlot(pathname string) int {
@@ -93,7 +97,7 @@ func getHdfSlot(pathname string) int {
 		}
 	}
 
-	return -1
+	return shared.DRIVE_INDEX_UNSPECIFIED
 }
 
 func attachAdf(index int, pathname string) bool {
@@ -274,7 +278,7 @@ func detachAmigaDiskDeviceIso(pathname string) {
 func attachAmigaDiskDeviceHdf(pathname string) {
 	index := getHdfFreeSlot()
 
-	if index == -1 {
+	if index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println("Cannot find free HDF slot, eject other HDF")
 
 		return
@@ -286,7 +290,7 @@ func attachAmigaDiskDeviceHdf(pathname string) {
 func detachAmigaDiskDeviceHdf(pathname string) {
 	index := getHdfSlot(pathname)
 
-	if index == -1 {
+	if index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println("HDF", pathname, "not attached")
 
 		return
@@ -429,6 +433,15 @@ func getKeyboardCommand() string {
 
 	releasedSequence = releasedSequence[0 : lenReleasedSequence-2]
 
+	// replace some key codes into real keys
+	for i, key := range releasedSequence {
+		if key == shared.KEY_SPACE {
+			releasedSequence[i] = " "
+		} else {
+			releasedSequence[i] = key
+		}
+	}
+
 	return strings.Join(releasedSequence, "")
 }
 
@@ -439,7 +452,165 @@ func clearAllKeyboardsControl() {
 }
 
 func processKeyboardCommand(keyboardCommand string) {
+	if dfEjectRule := utils.RegExInstance.FindNamedMatches(
+		shared.DF_EJECT_FROM_SOURCE_INDEX,
+		keyboardCommand); len(dfEjectRule) > 0 {
+		// example: df0
+		dfEjectFromSourceIndex(dfEjectRule["source_index"])
+	} else if dfSourceTargetRule := utils.RegExInstance.FindNamedMatches(
+		shared.DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX,
+		keyboardCommand); len(dfSourceTargetRule) > 0 {
+		// example: df0kwater disk 2df1
+		dfInsertFromSourceIndexToTargetIndex(
+			dfSourceTargetRule["filename_part"],
+			dfSourceTargetRule["source_index"],
+			dfSourceTargetRule["target_index"])
+	} else if dfSourceRule := utils.RegExInstance.FindNamedMatches(
+		shared.DF_INSERT_FROM_SOURCE_INDEX,
+		keyboardCommand); len(dfSourceRule) > 0 {
+		// example: df0traps
+		dfInsertFromSourceIndexToTargetIndex(
+			dfSourceRule["filename_part"],
+			dfSourceRule["source_index"],
+			shared.DRIVE_INDEX_UNSPECIFIED_STR)
+	}
+}
+
+// DF medium - detach rom from source DF<index>, find other rom by name pattern (filename part)
+// and attach it to target DF<index>
+//
+// target_index as -1 means (unspecified), so it will be source_index
+func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
+	if targetIndex == "N" {
+		dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex)
+		return
+	}
+
+	filenamePart = strings.TrimSpace(filenamePart)
+	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
+	targetIndexInt, _ := utils.StringUtilsInstance.StringToInt(targetIndex, 10, 16)
+
+	if filenamePart == "" {
+		return
+	}
+
+	if targetIndexInt == shared.DRIVE_INDEX_UNSPECIFIED {
+		targetIndexInt = sourceIndexInt
+	}
+
+	if sourceIndexInt > shared.MAX_ADFS-1 || targetIndexInt > shared.MAX_ADFS-1 {
+		return
+	}
+
+	mountpoint, mountpointExists := dfIndexMountpoint[sourceIndexInt]
+
+	if !mountpointExists {
+		return
+	}
+
+	targetIndexAdf := emulator.GetAdf(targetIndexInt)
+
+	if targetIndexAdf != "" {
+		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
+		emulator.SetFloppySoundVolumeDisk(targetIndexInt, 0)
+
+		if !detachAdf(targetIndexInt, targetIndexAdf) {
+			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume)
+			return
+		}
+	}
+
+	foundAdfPathname := findSimilarROMFile(mountpoint, filenamePart)
+
+	if foundAdfPathname == "" {
+		return
+	}
+
+	if isAdfAttached(foundAdfPathname) {
+		return
+	}
+
+	targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
+	emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
+
+	if !attachAdf(targetIndexInt, foundAdfPathname) {
+		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume)
+	}
+}
+
+// DF medium - detach rom from source DF<index>, find other rom by name pattern (filename part)
+// and attach it to target DF<index>
+//
+// target_index as -1 means (unspecified), so it will be source_index
+func dfEjectFromSourceIndex(sourceIndex string) {
+	if sourceIndex == "N" {
+		dfEjectFromSourceIndexAll(sourceIndex)
+		return
+	}
+
+	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
+
+	if sourceIndexInt > shared.MAX_ADFS-1 {
+		return
+	}
+
+	sourceIndexAdf := emulator.GetAdf(sourceIndexInt)
+
+	if sourceIndexAdf == "" {
+		// ADF not attached at index
+		return
+	}
+
+	targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(sourceIndexInt)
+	emulator.SetFloppySoundVolumeDisk(sourceIndexInt, 0)
+
+	if !detachAdf(sourceIndexInt, sourceIndexAdf) {
+		emulator.SetFloppySoundVolumeDisk(sourceIndexInt, targetIndexOldVolume)
+		return
+	}
+}
+
+func dfEjectFromSourceIndexAll(sourceIndex string) {
 	// TODO
+	panic("unimplemented")
+}
+
+func isAdfAttached(adfPathname string) bool {
+	for i := 0; i < shared.MAX_ADFS; i++ {
+		if emulator.GetAdf(i) == adfPathname {
+			return true
+		}
+	}
+
+	return false
+}
+
+func findSimilarROMFile(mountpoint string, filenamePattern string) string {
+	filenamePattern = utils.StringUtilsInstance.StringUnify(filenamePattern)
+	filenamePattern = strings.ReplaceAll(filenamePattern, " ", ".*")
+	filenamePattern = ".*" + filenamePattern + ".*"
+	filenamePattern = strings.ToUpper(filenamePattern)
+
+	filenamePatternRegEx := regexp.MustCompile(filenamePattern)
+
+	for _, iRomPathname := range mountpointFiles[mountpoint] {
+		iRomBasename := path.Base(iRomPathname)
+		iRomBasename = adfBasenameCleanDiskOf(iRomBasename)
+
+		iRomBasenameUnified := utils.StringUtilsInstance.StringUnify(iRomBasename)
+		iRomBasenameUnified = strings.ToUpper(iRomBasenameUnified)
+
+		if filenamePatternRegEx.MatchString(iRomBasenameUnified) {
+			return iRomPathname
+		}
+	}
+
+	return ""
+}
+
+func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
+	// TODO
+	panic("unimplemented")
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
@@ -493,7 +664,7 @@ func parseMediumLabel(label string, re *regexp.Regexp) (int, int, error) {
 
 	// index
 	if strIndex == "X" {
-		index = -1
+		index = shared.DRIVE_INDEX_UNSPECIFIED
 	} else {
 		index, err = strconv.ParseInt(strIndex, 10, 32)
 
@@ -514,7 +685,17 @@ func parseMediumLabel(label string, re *regexp.Regexp) (int, int, error) {
 	return int(index), int(bootPriority), nil
 }
 
-func fixMountMedium(devicePathname, label, fsType string) (string, error) {
+func mountpointIsMounted(mountpoint string) bool {
+	for _, iMountpoint := range mounted {
+		if iMountpoint == mountpoint {
+			return true
+		}
+	}
+
+	return false
+}
+
+func fixMountMedium(devicePathname, label, fsType string, dfIndex int, hdIndex int, cdIndex int) (string, error) {
 	log.Println(devicePathname, label, "running Fsck")
 
 	output, err := utils.UnixUtilsInstance.RunFsck(devicePathname)
@@ -531,6 +712,10 @@ func fixMountMedium(devicePathname, label, fsType string) (string, error) {
 
 	log.Println(devicePathname, label, "mounting as", target)
 
+	if mountpointIsMounted(target) {
+		return "", fmt.Errorf("%v already mounted, unmount first", target)
+	}
+
 	if err := os.MkdirAll(target, 0777); err != nil {
 		return "", err
 	}
@@ -546,14 +731,38 @@ func fixMountMedium(devicePathname, label, fsType string) (string, error) {
 
 	mounted[devicePathname] = target
 
+	if dfIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		dfIndexMountpoint[dfIndex] = target
+	}
+
+	if hdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		hdIndexMountpoint[hdIndex] = target
+	}
+
+	if cdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		cdIndexMountpoint[cdIndex] = target
+	}
+
 	return target, nil
 }
 
-func unmountMedium(devicePathname string, mountpoint string, flags int) {
+func unmountMedium(devicePathname string, mountpoint string, flags int, dfIndex int, hdIndex int, cdIndex int) {
 	log.Println("Unmount", mountpoint)
 
 	syscall.Unmount(mountpoint, flags)
 	delete(mounted, devicePathname)
+
+	if dfIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		delete(dfIndexMountpoint, dfIndex)
+	}
+
+	if hdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		delete(hdIndexMountpoint, hdIndex)
+	}
+
+	if cdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		delete(cdIndexMountpoint, cdIndex)
+	}
 }
 
 func loadMediumConfig(devicePathname string, mountpoint string) error {
@@ -612,7 +821,7 @@ func attachDFMediumDiskImage(
 
 	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_REG_EX)
 
-	if err != nil || index == -1 {
+	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
 
 		return
@@ -625,11 +834,23 @@ func attachDFMediumDiskImage(
 	}
 
 	if mountpoint != "" {
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			index,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			shared.DRIVE_INDEX_UNSPECIFIED)
 		mountpoint = ""
 	}
 
-	mountpoint, err = fixMountMedium(path, label, fsType)
+	mountpoint, err = fixMountMedium(
+		path,
+		label,
+		fsType,
+		index,
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		shared.DRIVE_INDEX_UNSPECIFIED)
 
 	if err != nil {
 		log.Println(path, label, err)
@@ -650,7 +871,13 @@ func attachDFMediumDiskImage(
 	if firstAdfPathname == "" {
 		log.Println(path, label, "contains no", shared.FLOPPY_ADF_EXTENSION, "files")
 
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			index,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			shared.DRIVE_INDEX_UNSPECIFIED)
 
 		return
 	}
@@ -662,7 +889,13 @@ func attachDFMediumDiskImage(
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
 	if !attachAdf(index, firstAdfPathname) {
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			index,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			shared.DRIVE_INDEX_UNSPECIFIED)
 
 		emulator.SetFloppySoundVolumeDisk(index, oldVolume)
 	}
@@ -685,7 +918,7 @@ func attachDHMediumDiskImage(
 
 	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_REG_EX)
 
-	if err != nil || index == -1 {
+	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
 
 		return
@@ -699,11 +932,23 @@ func attachDHMediumDiskImage(
 
 	// TODO unmount all
 	if mountpoint != "" {
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			index,
+			shared.DRIVE_INDEX_UNSPECIFIED)
 		mountpoint = ""
 	}
 
-	mountpoint, err = fixMountMedium(path, label, fsType)
+	mountpoint, err = fixMountMedium(
+		path,
+		label,
+		fsType,
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		index,
+		shared.DRIVE_INDEX_UNSPECIFIED)
 
 	if err != nil {
 		log.Println(path, label, err)
@@ -715,7 +960,13 @@ func attachDHMediumDiskImage(
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
 	if !attachHdDir(index, bootPriority, mountpoint) {
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			index,
+			shared.DRIVE_INDEX_UNSPECIFIED)
 	}
 }
 
@@ -729,7 +980,7 @@ func attachHFMediumDiskImage(
 
 	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_HF_REG_EX)
 
-	if err != nil || index == -1 {
+	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
 
 		return
@@ -743,11 +994,23 @@ func attachHFMediumDiskImage(
 
 	// TODO unmount all
 	if mountpoint != "" {
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			index,
+			shared.DRIVE_INDEX_UNSPECIFIED)
 		mountpoint = ""
 	}
 
-	mountpoint, err = fixMountMedium(path, label, fsType)
+	mountpoint, err = fixMountMedium(
+		path,
+		label,
+		fsType,
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		index,
+		shared.DRIVE_INDEX_UNSPECIFIED)
 
 	if err != nil {
 		log.Println(path, label, err)
@@ -768,7 +1031,13 @@ func attachHFMediumDiskImage(
 	if firstHdfPathname == "" {
 		log.Println(path, label, "contains no", shared.HD_HDF_EXTENSION, "files")
 
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			index,
+			shared.DRIVE_INDEX_UNSPECIFIED)
 
 		return
 	}
@@ -777,7 +1046,13 @@ func attachHFMediumDiskImage(
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
 	if !attachHdf(index, bootPriority, firstHdfPathname) {
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			index,
+			shared.DRIVE_INDEX_UNSPECIFIED)
 	}
 }
 
@@ -791,7 +1066,7 @@ func attachCDMediumDiskImage(
 
 	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_REG_EX)
 
-	if err != nil || index == -1 {
+	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
 
 		return
@@ -804,11 +1079,23 @@ func attachCDMediumDiskImage(
 	}
 
 	if mountpoint != "" {
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			index)
 		mountpoint = ""
 	}
 
-	mountpoint, err = fixMountMedium(path, label, fsType)
+	mountpoint, err = fixMountMedium(
+		path,
+		label,
+		fsType,
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		index)
 
 	if err != nil {
 		log.Println(path, label, err)
@@ -829,7 +1116,13 @@ func attachCDMediumDiskImage(
 	if firstIsoPathname == "" {
 		log.Println(path, label, "contains no", shared.CD_ISO_EXTENSION, "files")
 
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			index)
 
 		return
 	}
@@ -838,7 +1131,13 @@ func attachCDMediumDiskImage(
 	// was not mounted prevoiusly mountpoint == "", so it means
 	// the file was not attached
 	if !attachIso(index, firstIsoPathname) {
-		unmountMedium(path, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			path,
+			mountpoint,
+			syscall.MNT_DETACH,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			index)
 	}
 }
 
@@ -871,6 +1170,14 @@ func detachDFMediumDiskImage(
 		return
 	}
 
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_REG_EX)
+
+	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
+		log.Println(path, label, "cannot get index for medium: ", err)
+
+		return
+	}
+
 	for i := 0; i < shared.MAX_ADFS; i++ {
 		adfPathname := emulator.GetAdf(i)
 
@@ -891,7 +1198,13 @@ func detachDFMediumDiskImage(
 		}
 	}
 
-	unmountMedium(path, _mountpoint, syscall.MNT_DETACH)
+	unmountMedium(
+		path,
+		_mountpoint,
+		syscall.MNT_DETACH,
+		index,
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		shared.DRIVE_INDEX_UNSPECIFIED)
 }
 
 // One function for both HDF files and directories
@@ -906,6 +1219,18 @@ func detachHDMediumDiskImage(
 		log.Println(path, label, "not mounted")
 
 		return
+	}
+
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_REG_EX)
+
+	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
+		index, _, err = parseMediumLabel(label, shared.AP4_MEDIUM_HF_REG_EX)
+
+		if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
+			log.Println(path, label, "cannot get index for medium: ", err)
+
+			return
+		}
 	}
 
 	for i := 0; i < shared.MAX_HDFS; i++ {
@@ -923,7 +1248,13 @@ func detachHDMediumDiskImage(
 		detachHd(i, hdfPathname)
 	}
 
-	unmountMedium(path, _mountpoint, syscall.MNT_DETACH)
+	unmountMedium(
+		path,
+		_mountpoint,
+		syscall.MNT_DETACH,
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		index,
+		shared.DRIVE_INDEX_UNSPECIFIED)
 }
 
 func detachCDMediumDiskImage(
@@ -935,6 +1266,14 @@ func detachCDMediumDiskImage(
 
 	if !exists || _mountpoint == "" {
 		log.Println(path, label, "not mounted")
+
+		return
+	}
+
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_REG_EX)
+
+	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
+		log.Println(path, label, "cannot get index for medium: ", err)
 
 		return
 	}
@@ -954,7 +1293,13 @@ func detachCDMediumDiskImage(
 		detachIso(i, hdfPathname)
 	}
 
-	unmountMedium(path, _mountpoint, syscall.MNT_DETACH)
+	unmountMedium(
+		path,
+		_mountpoint,
+		syscall.MNT_DETACH,
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		index)
 }
 
 func detachMediumDiskImage(
@@ -1050,8 +1395,18 @@ func unmountAll() {
 	utils.UnixUtilsInstance.Sync()
 
 	for devicePathname, mountpoint := range mounted {
-		unmountMedium(devicePathname, mountpoint, syscall.MNT_DETACH)
+		unmountMedium(
+			devicePathname,
+			mountpoint,
+			syscall.MNT_DETACH,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			shared.DRIVE_INDEX_UNSPECIFIED,
+			shared.DRIVE_INDEX_UNSPECIFIED)
 	}
+
+	dfIndexMountpoint = make(map[int]string)
+	hdIndexMountpoint = make(map[int]string)
+	cdIndexMountpoint = make(map[int]string)
 }
 
 func stopServices() {
@@ -1071,6 +1426,10 @@ func gracefulShutdown() {
 
 	unmountAll()
 	stopServices()
+}
+
+func adfBasenameCleanDiskOf(basename string) string {
+	return shared.ADF_REMOVE_OF_NO_REGEX.ReplaceAllString(basename, "($1)")
 }
 
 func main() {

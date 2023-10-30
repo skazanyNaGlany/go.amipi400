@@ -32,6 +32,10 @@ var AP4_MEDIUM_DF_REG_EX = regexp.MustCompile(`^AP4_DF(?P<index>[0-9]?|X)$`)
 var AP4_MEDIUM_DH_REG_EX = regexp.MustCompile(`^AP4_DH(?P<index>[0-9]?|X)(_(?P<boot_priority>[0-9]))?$`)
 var AP4_MEDIUM_HF_REG_EX = regexp.MustCompile(`^AP4_HF(?P<index>[0-9]?|X)(_(?P<boot_priority>[0-9]))?$`)
 var AP4_MEDIUM_CD_REG_EX = regexp.MustCompile(`^AP4_CD(?P<index>[0-9]?|X)$`)
+var DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX = regexp.MustCompile(`^DF(?P<source_index>[0-9])(?P<filename_part>.*)DF(?P<target_index>[0-9]|N)$`)
+var DF_INSERT_FROM_SOURCE_INDEX = regexp.MustCompile(`^DF(?P<source_index>[0-9])(?P<filename_part>.*)$`)
+var DF_EJECT_FROM_SOURCE_INDEX = regexp.MustCompile(`^DF(?P<source_index>[0-9]|N)$`)
+var ADF_REMOVE_OF_NO_REGEX = regexp.MustCompile(`\((Disk\ \d)\ (of\ \d)\)`)
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
@@ -106,6 +110,9 @@ var AMIBERRY_EMULATOR_TMP_INI_PATHNAME = filepath.Join(
 	filepath.Dir(AMIBERRY_EXE_PATHNAME),
 	AMIBERRY_EMULATOR_TMP_INI_FILENAME)
 
+const DRIVE_INDEX_UNSPECIFIED = -1
+const DRIVE_INDEX_UNSPECIFIED_STR = "-1"
+
 // amipi400.go, AmiberryEmulator
 const MAX_ADFS = 4
 const FLOPPY_ADF_FULL_EXTENSION = "." + FLOPPY_ADF_EXTENSION
@@ -125,3 +132,4 @@ const AMIBERRY_DEFAULT_WINDOW_HEIGHT = 568
 const MAX_KEYS_SEQUENCE = 128
 const KEY_ESC = "ESC"
 const KEY_TAB = "TAB"
+const KEY_SPACE = "SPACE"

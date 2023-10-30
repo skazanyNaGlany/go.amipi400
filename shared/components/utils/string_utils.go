@@ -2,6 +2,7 @@ package utils
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -64,4 +65,14 @@ func (st *StringUtils) StringUnify(strToUnify string, exclude ...string) string 
 
 func (st *StringUtils) IsAlNum(s string) bool {
 	return ISALNUM.MatchString(s)
+}
+
+func (st *StringUtils) StringToInt(s string, base int, bitSize int) (int, error) {
+	i, err := strconv.ParseInt(s, base, bitSize)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return int(i), nil
 }
