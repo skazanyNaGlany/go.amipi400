@@ -472,9 +472,9 @@ func processKeyboardCommand(keyboardCommand string) {
 		keyboardCommand); len(dfSourceTargetByDiskRule) > 0 {
 		// example: df02df1
 		dfInsertFromSourceIndexToTargetIndexByDiskNo(
-			dfSourceByDiskRule["disk_no"],
-			dfSourceByDiskRule["source_index"],
-			dfSourceByDiskRule["target_index"])
+			dfSourceTargetByDiskRule["disk_no"],
+			dfSourceTargetByDiskRule["source_index"],
+			dfSourceTargetByDiskRule["target_index"])
 	} else if dfSourceTargetRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_RE,
 		keyboardCommand); len(dfSourceTargetRule) > 0 {
@@ -704,7 +704,7 @@ func findSimilarROMFiles(mountpoint string, pathname string) []string {
 		}
 
 		if !funk.ContainsString(similar, iPathnameBasename) {
-			similar = append(similar, iPathnameBasename)
+			similar = append(similar, iPathname)
 		}
 	}
 
