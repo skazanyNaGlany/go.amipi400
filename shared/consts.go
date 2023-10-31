@@ -26,8 +26,6 @@ const MEDIUM_CONFIG_DEFAULT_FILE = "default_file"
 
 const AUTORUN_EMULATOR = true
 
-// const AUTORUN_EMULATOR = false
-
 var SOFT_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
 var HARD_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
 var AP4_MEDIUM_DF_RE = regexp.MustCompile(`^AP4_DF(?P<index>[0-9]?|X)$`)
