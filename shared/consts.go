@@ -24,18 +24,21 @@ const HARD_RESET_KEYS_MIN_MS = 4000 // min 4 seconds
 const MEDIUM_CONFIG_INI_NAME = "amipi400.ini"
 const MEDIUM_CONFIG_DEFAULT_SECTION = "amipi400"
 const MEDIUM_CONFIG_DEFAULT_FILE = "default_file"
+
 const AUTORUN_EMULATOR = true
+
+// const AUTORUN_EMULATOR = false
 
 var SOFT_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
 var HARD_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
-var AP4_MEDIUM_DF_REG_EX = regexp.MustCompile(`^AP4_DF(?P<index>[0-9]?|X)$`)
-var AP4_MEDIUM_DH_REG_EX = regexp.MustCompile(`^AP4_DH(?P<index>[0-9]?|X)(_(?P<boot_priority>[0-9]))?$`)
-var AP4_MEDIUM_HF_REG_EX = regexp.MustCompile(`^AP4_HF(?P<index>[0-9]?|X)(_(?P<boot_priority>[0-9]))?$`)
-var AP4_MEDIUM_CD_REG_EX = regexp.MustCompile(`^AP4_CD(?P<index>[0-9]?|X)$`)
-var DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX = regexp.MustCompile(`^DF(?P<source_index>[0-9])(?P<filename_part>.*)DF(?P<target_index>[0-9]|N)$`)
-var DF_INSERT_FROM_SOURCE_INDEX = regexp.MustCompile(`^DF(?P<source_index>[0-9])(?P<filename_part>.*)$`)
-var DF_EJECT_FROM_SOURCE_INDEX = regexp.MustCompile(`^DF(?P<source_index>[0-9]|N)$`)
-var ADF_REMOVE_OF_NO_REGEX = regexp.MustCompile(`\((Disk\ \d)\ (of\ \d)\)`)
+var AP4_MEDIUM_DF_RE = regexp.MustCompile(`^AP4_DF(?P<index>[0-9]?|X)$`)
+var AP4_MEDIUM_DH_RE = regexp.MustCompile(`^AP4_DH(?P<index>[0-9]?|X)(_(?P<boot_priority>[0-9]))?$`)
+var AP4_MEDIUM_HF_RE = regexp.MustCompile(`^AP4_HF(?P<index>[0-9]?|X)(_(?P<boot_priority>[0-9]))?$`)
+var AP4_MEDIUM_CD_RE = regexp.MustCompile(`^AP4_CD(?P<index>[0-9]?|X)$`)
+var DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_RE = regexp.MustCompile(`^DF(?P<source_index>[0-9])(?P<filename_part>.*)DF(?P<target_index>[0-9]|N)$`)
+var DF_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^DF(?P<source_index>[0-9])(?P<filename_part>.*)$`)
+var DF_EJECT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^DF(?P<source_index>[0-9]|N)$`)
+var ADF_REMOVE_OF_NO_RE = regexp.MustCompile(`\((Disk\ \d)\ (of\ \d)\)`)
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"

@@ -12,7 +12,7 @@ import (
 type StringUtils struct{}
 
 var StringUtilsInstance StringUtils
-var ISALNUM = regexp.MustCompile(`^[a-zA-Z0-9]*$`)
+var ISALNUM_REG_EX = regexp.MustCompile(`^[a-zA-Z0-9]*$`)
 
 func (st *StringUtils) IsASCII(s string) bool {
 	for i := 0; i < len(s); i++ {
@@ -64,7 +64,7 @@ func (st *StringUtils) StringUnify(strToUnify string, exclude ...string) string 
 }
 
 func (st *StringUtils) IsAlNum(s string) bool {
-	return ISALNUM.MatchString(s)
+	return ISALNUM_REG_EX.MatchString(s)
 }
 
 func (st *StringUtils) StringToInt(s string, base int, bitSize int) (int, error) {

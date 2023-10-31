@@ -453,12 +453,12 @@ func clearAllKeyboardsControl() {
 
 func processKeyboardCommand(keyboardCommand string) {
 	if dfEjectRule := utils.RegExInstance.FindNamedMatches(
-		shared.DF_EJECT_FROM_SOURCE_INDEX,
+		shared.DF_EJECT_FROM_SOURCE_INDEX_RE,
 		keyboardCommand); len(dfEjectRule) > 0 {
 		// example: df0
 		dfEjectFromSourceIndex(dfEjectRule["source_index"])
 	} else if dfSourceTargetRule := utils.RegExInstance.FindNamedMatches(
-		shared.DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX,
+		shared.DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_RE,
 		keyboardCommand); len(dfSourceTargetRule) > 0 {
 		// example: df0kwater disk 2df1
 		dfInsertFromSourceIndexToTargetIndex(
@@ -466,7 +466,7 @@ func processKeyboardCommand(keyboardCommand string) {
 			dfSourceTargetRule["source_index"],
 			dfSourceTargetRule["target_index"])
 	} else if dfSourceRule := utils.RegExInstance.FindNamedMatches(
-		shared.DF_INSERT_FROM_SOURCE_INDEX,
+		shared.DF_INSERT_FROM_SOURCE_INDEX_RE,
 		keyboardCommand); len(dfSourceRule) > 0 {
 		// example: df0traps
 		dfInsertFromSourceIndexToTargetIndex(
@@ -819,7 +819,7 @@ func attachDFMediumDiskImage(
 	var err error
 	var firstAdfPathname string
 
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_REG_EX)
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -916,7 +916,7 @@ func attachDHMediumDiskImage(
 	readOnly bool) {
 	var err error
 
-	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_REG_EX)
+	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -978,7 +978,7 @@ func attachHFMediumDiskImage(
 	var err error
 	var firstHdfPathname string
 
-	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_HF_REG_EX)
+	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_HF_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -1064,7 +1064,7 @@ func attachCDMediumDiskImage(
 	var err error
 	var firstIsoPathname string
 
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_REG_EX)
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -1146,13 +1146,13 @@ func attachMediumDiskImage(
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
-	if shared.AP4_MEDIUM_DF_REG_EX.MatchString(label) {
+	if shared.AP4_MEDIUM_DF_RE.MatchString(label) {
 		attachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
-	} else if shared.AP4_MEDIUM_DH_REG_EX.MatchString(label) {
+	} else if shared.AP4_MEDIUM_DH_RE.MatchString(label) {
 		attachDHMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
-	} else if shared.AP4_MEDIUM_HF_REG_EX.MatchString(label) {
+	} else if shared.AP4_MEDIUM_HF_RE.MatchString(label) {
 		attachHFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
-	} else if shared.AP4_MEDIUM_CD_REG_EX.MatchString(label) {
+	} else if shared.AP4_MEDIUM_CD_RE.MatchString(label) {
 		attachCDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	}
 }
@@ -1170,7 +1170,7 @@ func detachDFMediumDiskImage(
 		return
 	}
 
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_REG_EX)
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -1221,10 +1221,10 @@ func detachHDMediumDiskImage(
 		return
 	}
 
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_REG_EX)
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
-		index, _, err = parseMediumLabel(label, shared.AP4_MEDIUM_HF_REG_EX)
+		index, _, err = parseMediumLabel(label, shared.AP4_MEDIUM_HF_RE)
 
 		if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 			log.Println(path, label, "cannot get index for medium: ", err)
@@ -1270,7 +1270,7 @@ func detachCDMediumDiskImage(
 		return
 	}
 
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_REG_EX)
+	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -1307,13 +1307,13 @@ func detachMediumDiskImage(
 	size uint64,
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
-	if shared.AP4_MEDIUM_DF_REG_EX.MatchString(label) {
+	if shared.AP4_MEDIUM_DF_RE.MatchString(label) {
 		detachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
-	} else if shared.AP4_MEDIUM_DH_REG_EX.MatchString(label) {
+	} else if shared.AP4_MEDIUM_DH_RE.MatchString(label) {
 		detachHDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
-	} else if shared.AP4_MEDIUM_HF_REG_EX.MatchString(label) {
+	} else if shared.AP4_MEDIUM_HF_RE.MatchString(label) {
 		detachHDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
-	} else if shared.AP4_MEDIUM_CD_REG_EX.MatchString(label) {
+	} else if shared.AP4_MEDIUM_CD_RE.MatchString(label) {
 		detachCDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	}
 }
@@ -1429,7 +1429,7 @@ func gracefulShutdown() {
 }
 
 func adfBasenameCleanDiskOf(basename string) string {
-	return shared.ADF_REMOVE_OF_NO_REGEX.ReplaceAllString(basename, "($1)")
+	return shared.ADF_REMOVE_OF_NO_RE.ReplaceAllString(basename, "($1)")
 }
 
 func main() {
