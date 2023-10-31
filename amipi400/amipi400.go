@@ -459,6 +459,22 @@ func processKeyboardCommand(keyboardCommand string) {
 		keyboardCommand); len(dfEjectRule) > 0 {
 		// example: df0
 		dfEjectFromSourceIndex(dfEjectRule["source_index"])
+	} else if dfSourceByDiskRule := utils.RegExInstance.FindNamedMatches(
+		shared.DF_INSERT_FROM_SOURCE_INDEX_BY_DISK_NO_RE,
+		keyboardCommand); len(dfSourceByDiskRule) > 0 {
+		// example: df02
+		dfInsertFromSourceIndexToTargetIndexByDiskNo(
+			dfSourceByDiskRule["disk_no"],
+			dfSourceByDiskRule["source_index"],
+			shared.DRIVE_INDEX_UNSPECIFIED_STR)
+	} else if dfSourceTargetByDiskRule := utils.RegExInstance.FindNamedMatches(
+		shared.DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_BY_DISK_NO_RE,
+		keyboardCommand); len(dfSourceTargetByDiskRule) > 0 {
+		// example: df02df1
+		dfInsertFromSourceIndexToTargetIndexByDiskNo(
+			dfSourceByDiskRule["disk_no"],
+			dfSourceByDiskRule["source_index"],
+			dfSourceByDiskRule["target_index"])
 	} else if dfSourceTargetRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_RE,
 		keyboardCommand); len(dfSourceTargetRule) > 0 {
@@ -475,6 +491,75 @@ func processKeyboardCommand(keyboardCommand string) {
 			dfSourceRule["filename_part"],
 			dfSourceRule["source_index"],
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
+	}
+}
+
+func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetIndex string) {
+	diskNoInt, _ := utils.StringUtilsInstance.StringToInt(diskNo, 10, 16)
+	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
+	targetIndexInt, _ := utils.StringUtilsInstance.StringToInt(targetIndex, 10, 16)
+
+	if targetIndexInt == shared.DRIVE_INDEX_UNSPECIFIED {
+		targetIndexInt = sourceIndexInt
+	}
+
+	if sourceIndexInt > shared.MAX_ADFS-1 || targetIndexInt > shared.MAX_ADFS-1 {
+		return
+	}
+
+	mountpoint, mountpointExists := dfIndexMountpoint[sourceIndexInt]
+
+	if !mountpointExists {
+		return
+	}
+
+	sourceIndexAdf := emulator.GetAdf(sourceIndexInt)
+	targetIndexAdf := emulator.GetAdf(targetIndexInt)
+
+	if targetIndexAdf != "" {
+		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
+		emulator.SetFloppySoundVolumeDisk(targetIndexInt, 0)
+
+		if !detachAdf(targetIndexInt, targetIndexAdf) {
+			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume)
+			return
+		}
+	}
+
+	if sourceIndexAdf == "" {
+		return
+	}
+
+	foundAdfPathnames := findSimilarROMFiles(mountpoint, sourceIndexAdf)
+	lenFoundAdfPathnames := len(foundAdfPathnames)
+	toInsertPathname := ""
+
+	if lenFoundAdfPathnames == 0 {
+		return
+	}
+
+	requiredDiskNoOfMax := fmt.Sprintf(shared.ADF_DISK_NO_OF_MAX, diskNoInt, lenFoundAdfPathnames)
+
+	for _, pathname := range foundAdfPathnames {
+		if strings.Contains(pathname, requiredDiskNoOfMax) {
+			toInsertPathname = pathname
+			break
+		}
+	}
+
+	if toInsertPathname == "" {
+		return
+	}
+
+	if isAdfAttached(toInsertPathname) {
+		return
+	}
+
+	targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
+	emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
+
+	if !attachAdf(targetIndexInt, toInsertPathname) {
+		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume)
 	}
 }
 
@@ -585,6 +670,45 @@ func isAdfAttached(adfPathname string) bool {
 	}
 
 	return false
+}
+
+func findSimilarROMFiles(mountpoint string, pathname string) []string {
+	basename := path.Base(pathname)
+	extension := path.Ext(basename)
+
+	diskNoStrPart := utils.RegExInstance.FindNamedMatches(shared.ADF_DISK_NO_OF_MAX_RE, basename)
+
+	if len(diskNoStrPart) == 0 {
+		// there is no (Disk NO of MAX) in the ADF name
+		return []string{pathname}
+	}
+
+	noDiskSignFilename := strings.Replace(basename, diskNoStrPart["disk_no_of_max"], "", 1)
+	noExtFilename := strings.TrimSuffix(noDiskSignFilename, extension)
+
+	similar := make([]string, 0)
+
+	for _, iPathname := range mountpointFiles[mountpoint] {
+		iPathnameBasename := path.Base(iPathname)
+
+		if !strings.HasPrefix(iPathnameBasename, noExtFilename) {
+			continue
+		}
+
+		if !shared.ADF_DISK_NO_OF_MAX_RE.MatchString(iPathnameBasename) {
+			continue
+		}
+
+		if !strings.HasSuffix(iPathnameBasename, extension) {
+			continue
+		}
+
+		if !funk.ContainsString(similar, iPathnameBasename) {
+			similar = append(similar, iPathnameBasename)
+		}
+	}
+
+	return similar
 }
 
 func findSimilarROMFile(mountpoint string, filenamePattern string) string {
@@ -1431,7 +1555,7 @@ func gracefulShutdown() {
 }
 
 func adfBasenameCleanDiskOf(basename string) string {
-	return shared.ADF_REMOVE_OF_NO_RE.ReplaceAllString(basename, "($1)")
+	return shared.ADF_DISK_NO_OF_MAX_RE.ReplaceAllString(basename, "($1)")
 }
 
 func main() {

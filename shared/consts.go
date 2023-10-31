@@ -35,9 +35,13 @@ var AP4_MEDIUM_DH_RE = regexp.MustCompile(`^AP4_DH(?P<index>[0-9]?|X)(_(?P<boot_
 var AP4_MEDIUM_HF_RE = regexp.MustCompile(`^AP4_HF(?P<index>[0-9]?|X)(_(?P<boot_priority>[0-9]))?$`)
 var AP4_MEDIUM_CD_RE = regexp.MustCompile(`^AP4_CD(?P<index>[0-9]?|X)$`)
 var DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_RE = regexp.MustCompile(`^DF(?P<source_index>[0-9])(?P<filename_part>.*)DF(?P<target_index>[0-9]|N)$`)
+var DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_BY_DISK_NO_RE = regexp.MustCompile(`^DF(?P<source_index>[0-9])(?P<disk_no>\d\d?)DF(?P<target_index>[0-9]|N)$`)
 var DF_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^DF(?P<source_index>[0-9])(?P<filename_part>.*)$`)
+var DF_INSERT_FROM_SOURCE_INDEX_BY_DISK_NO_RE = regexp.MustCompile(`^DF(?P<source_index>[0-9])(?P<disk_no>\d\d?)$`)
 var DF_EJECT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^DF(?P<source_index>[0-9]|N)$`)
-var ADF_REMOVE_OF_NO_RE = regexp.MustCompile(`\((Disk\ \d)\ (of\ \d)\)`)
+var ADF_DISK_NO_OF_MAX_RE = regexp.MustCompile(`(?P<disk_no_of_max>\((Disk\ \d)\ (of\ \d)\))`)
+
+const ADF_DISK_NO_OF_MAX = "(Disk %d of %d)"
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
