@@ -362,7 +362,9 @@ func isSoftResetKeys() bool {
 
 	for key, pressedTimestamp := range releasedKeys {
 		if funk.ContainsString(shared.SOFT_RESET_KEYS, key) {
-			if currentTimestamp-pressedTimestamp < shared.SOFT_RESET_KEYS_MAX_MS {
+			// this is not a mistake, the user must hold CTRL-ALT-ALTGR less seconds
+			// than shared.HARD_RESET_KEYS_MIN_MS
+			if currentTimestamp-pressedTimestamp < shared.HARD_RESET_KEYS_MIN_MS {
 				goodCount++
 			}
 		}
