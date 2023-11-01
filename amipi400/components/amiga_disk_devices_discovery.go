@@ -14,6 +14,7 @@ type AmigaDiskDevicesDiscovery struct {
 	attachedAmigaDiskDeviceCallback interfaces.AttachedAmigaDiskDeviceCallback
 	detachedAmigaDiskDeviceCallback interfaces.DetachedAmigaDiskDeviceCallback
 	mountpoint                      string
+	currentFiles                    []string
 }
 
 func (addd *AmigaDiskDevicesDiscovery) loop() {
@@ -22,14 +23,18 @@ func (addd *AmigaDiskDevicesDiscovery) loop() {
 	for addd.IsRunning() {
 		time.Sleep(time.Millisecond * 10)
 
-		files := utils.FileUtilsInstance.GetDirFiles(addd.mountpoint, false)
+		addd.currentFiles = utils.FileUtilsInstance.GetDirFiles(addd.mountpoint, false)
 
-		addd.callCallbacks(files, oldFiles)
+		addd.callCallbacks(addd.currentFiles, oldFiles)
 
-		oldFiles = files
+		oldFiles = addd.currentFiles
 	}
 
 	addd.SetRunning(false)
+}
+
+func (addd *AmigaDiskDevicesDiscovery) HasFile(pathname string) bool {
+	return funk.ContainsString(addd.currentFiles, pathname)
 }
 
 func (addd *AmigaDiskDevicesDiscovery) callCallbacks(files []string, oldFiles []string) {
@@ -55,6 +60,8 @@ func (addd *AmigaDiskDevicesDiscovery) SetDetachedAmigaDiskDeviceCallback(callba
 }
 
 func (addd *AmigaDiskDevicesDiscovery) Run() {
+	addd.currentFiles = make([]string, 0)
+
 	addd.loop()
 }
 

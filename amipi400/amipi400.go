@@ -521,6 +521,11 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 	targetIndexAdf := emulator.GetAdf(targetIndexInt)
 
 	if targetIndexAdf != "" {
+		if amigaDiskDevicesDiscovery.HasFile(targetIndexAdf) {
+			// ADF attached by amiga_disk_devices.go
+			return
+		}
+
 		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
 		emulator.SetFloppySoundVolumeDisk(targetIndexInt, 0)
 
@@ -602,6 +607,11 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	targetIndexAdf := emulator.GetAdf(targetIndexInt)
 
 	if targetIndexAdf != "" {
+		if amigaDiskDevicesDiscovery.HasFile(targetIndexAdf) {
+			// ADF attached by amiga_disk_devices.go
+			return
+		}
+
 		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
 		emulator.SetFloppySoundVolumeDisk(targetIndexInt, 0)
 
@@ -650,6 +660,11 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 		return
 	}
 
+	if amigaDiskDevicesDiscovery.HasFile(sourceIndexAdf) {
+		// ADF attached by amiga_disk_devices.go
+		return
+	}
+
 	sourceIndexOldVolume := emulator.GetFloppySoundVolumeDisk(sourceIndexInt)
 	emulator.SetFloppySoundVolumeDisk(sourceIndexInt, 0)
 
@@ -664,6 +679,11 @@ func dfEjectFromSourceIndexAll() {
 		adfPathname := emulator.GetAdf(index)
 
 		if adfPathname == "" {
+			continue
+		}
+
+		if amigaDiskDevicesDiscovery.HasFile(adfPathname) {
+			// ADF attached by amiga_disk_devices.go
 			continue
 		}
 
@@ -791,6 +811,11 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 		targetIndexAdf := emulator.GetAdf(targetIndexInt)
 
 		if targetIndexAdf != "" {
+			if amigaDiskDevicesDiscovery.HasFile(targetIndexAdf) {
+				// ADF attached by amiga_disk_devices.go
+				continue
+			}
+
 			if !detachAdf(targetIndexInt, targetIndexAdf) {
 				return
 			}

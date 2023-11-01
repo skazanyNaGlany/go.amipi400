@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/shirou/gopsutil/v3/process"
@@ -205,4 +206,16 @@ func (gu *GoUtils) LogPrintLines(lines string) {
 
 		log.Println(iline)
 	}
+}
+
+func (gu *GoUtils) FindAndDeleteString(strSlice []string, value string) ([]string, bool) {
+	for i, iStr := range strSlice {
+		if iStr == value {
+			strSlice = slices.Delete(strSlice, i, i+1)
+
+			return strSlice, true
+		}
+	}
+
+	return strSlice, false
 }
