@@ -512,6 +512,8 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 	mountpoint, mountpointExists := dfIndexMountpoint[sourceIndexInt]
 
 	if !mountpointExists {
+		// allow to manage only these drives mounted by amipi400.go
+		// so skip these from amiga_disk_devices.go
 		return
 	}
 
@@ -592,6 +594,8 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	mountpoint, mountpointExists := dfIndexMountpoint[sourceIndexInt]
 
 	if !mountpointExists {
+		// allow to manage only these drives mounted by amipi400.go
+		// so skip these from amiga_disk_devices.go
 		return
 	}
 
@@ -646,11 +650,11 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 		return
 	}
 
-	targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(sourceIndexInt)
+	sourceIndexOldVolume := emulator.GetFloppySoundVolumeDisk(sourceIndexInt)
 	emulator.SetFloppySoundVolumeDisk(sourceIndexInt, 0)
 
 	if !detachAdf(sourceIndexInt, sourceIndexAdf) {
-		emulator.SetFloppySoundVolumeDisk(sourceIndexInt, targetIndexOldVolume)
+		emulator.SetFloppySoundVolumeDisk(sourceIndexInt, sourceIndexOldVolume)
 		return
 	}
 }
