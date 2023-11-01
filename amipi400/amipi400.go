@@ -846,7 +846,7 @@ func keyEventCallback(sender any, key string, pressed bool) {
 	} else if isToggleAutoHeightKeys() {
 		clearAllKeyboardsControl()
 
-		emulator.ToggleAutoHeight()
+		emulator.ToggleZoom()
 	} else if isReleasedKey(shared.KEY_ESC) {
 		clearAllKeyboardsControl()
 	} else {

@@ -131,6 +131,7 @@ const HDF_TYPE_HDFRDB = 8
 const HDF_TYPE_DISKIMAGE = 2
 const HDF_TYPE_HDF = 5
 const AMIBERRY_DEFAULT_WINDOW_HEIGHT = 568
+const AMIBERRY_ZOOM_WINDOW_HEIGHT = 512
 
 // AllKeyboardsControl / KeyboardControl
 const MAX_KEYS_SEQUENCE = 128

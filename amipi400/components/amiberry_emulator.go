@@ -29,6 +29,7 @@ type AmiberryEmulator struct {
 	commander             *AmiberryCommander
 	floppySoundVolumeDisk [shared.MAX_ADFS]int // volume per disk
 	isAutoHeight          bool
+	isZoom                bool
 }
 
 func (ae *AmiberryEmulator) SetAmiberryCommander(commander *AmiberryCommander) {
@@ -411,9 +412,10 @@ func (ae *AmiberryEmulator) SoftReset() error {
 }
 
 func (ae *AmiberryEmulator) HardReset() error {
-	// isAutoHeight is temporary so it must be reset when hard
+	// isAutoHeight and isZoom are temporary so they must be reset when hard
 	// resetting the emulator
 	ae.isAutoHeight = false
+	ae.isZoom = false
 
 	if ae.emulatorCommand == nil {
 		return nil
@@ -513,6 +515,33 @@ func (ae *AmiberryEmulator) SetAutoHeight(autoHeight bool) {
 	ae.isAutoHeight = autoHeight
 }
 
+func (ae *AmiberryEmulator) SetZoom(zoom bool) {
+	// WARNING these settings are temporary and will not be
+	// synced with the config at getEmulatorProcessedConfig
+	if zoom {
+		ae.commander.PutGfxCenterHorizontalCO(true)
+		ae.commander.PutGfxCenterVerticalCO(true)
+		ae.commander.PutGfxHeightCO(shared.AMIBERRY_ZOOM_WINDOW_HEIGHT)
+		ae.commander.PutGfxHeightWindowedCO(shared.AMIBERRY_ZOOM_WINDOW_HEIGHT)
+	} else {
+		ae.commander.PutGfxCenterHorizontalCO(false)
+		ae.commander.PutGfxCenterVerticalCO(false)
+		ae.commander.PutGfxHeightCO(shared.AMIBERRY_DEFAULT_WINDOW_HEIGHT)
+		ae.commander.PutGfxHeightWindowedCO(shared.AMIBERRY_DEFAULT_WINDOW_HEIGHT)
+	}
+
+	ae.commander.PutConfigChangedCommand()
+	ae.commander.PutLocalCommitCommand()
+
+	ae.commander.Execute()
+
+	ae.isZoom = zoom
+}
+
 func (ae *AmiberryEmulator) ToggleAutoHeight() {
 	ae.SetAutoHeight(!ae.isAutoHeight)
+}
+
+func (ae *AmiberryEmulator) ToggleZoom() {
+	ae.SetZoom(!ae.isZoom)
 }
