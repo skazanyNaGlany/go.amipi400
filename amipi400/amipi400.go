@@ -567,10 +567,6 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 	}
 }
 
-// DF medium - detach rom from source DF<index>, find other rom by name pattern (filename part)
-// and attach it to target DF<index>
-//
-// target_index as -1 means (unspecified), so it will be source_index
 func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
 	if targetIndex == "N" {
 		dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex)
@@ -631,10 +627,6 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	}
 }
 
-// DF medium - detach rom from source DF<index>, find other rom by name pattern (filename part)
-// and attach it to target DF<index>
-//
-// target_index as -1 means (unspecified), so it will be source_index
 func dfEjectFromSourceIndex(sourceIndex string) {
 	if sourceIndex == "N" {
 		dfEjectFromSourceIndexAll()
