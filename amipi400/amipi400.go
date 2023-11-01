@@ -458,6 +458,7 @@ func processKeyboardCommand(keyboardCommand string) {
 		shared.DF_EJECT_FROM_SOURCE_INDEX_RE,
 		keyboardCommand); len(dfEjectRule) > 0 {
 		// example: df0
+		// example: dfn
 		dfEjectFromSourceIndex(dfEjectRule["source_index"])
 	} else if dfSourceByDiskRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_INSERT_FROM_SOURCE_INDEX_BY_DISK_NO_RE,
@@ -479,6 +480,7 @@ func processKeyboardCommand(keyboardCommand string) {
 		shared.DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_RE,
 		keyboardCommand); len(dfSourceTargetRule) > 0 {
 		// example: df0kwater disk 2df1
+		// example: df0kwaterdfn
 		dfInsertFromSourceIndexToTargetIndex(
 			dfSourceTargetRule["filename_part"],
 			dfSourceTargetRule["source_index"],
@@ -551,8 +553,10 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 		return
 	}
 
-	if isAdfAttached(toInsertPathname) {
-		return
+	if attachedIndex := isAdfAttached(toInsertPathname); attachedIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		if !detachAdf(attachedIndex, toInsertPathname) {
+			return
+		}
 	}
 
 	targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
@@ -613,8 +617,10 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 		return
 	}
 
-	if isAdfAttached(foundAdfPathname) {
-		return
+	if attachedIndex := isAdfAttached(foundAdfPathname); attachedIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		if !detachAdf(attachedIndex, foundAdfPathname) {
+			return
+		}
 	}
 
 	targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
@@ -631,7 +637,7 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 // target_index as -1 means (unspecified), so it will be source_index
 func dfEjectFromSourceIndex(sourceIndex string) {
 	if sourceIndex == "N" {
-		dfEjectFromSourceIndexAll(sourceIndex)
+		dfEjectFromSourceIndexAll()
 		return
 	}
 
@@ -657,19 +663,32 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 	}
 }
 
-func dfEjectFromSourceIndexAll(sourceIndex string) {
-	// TODO
-	panic("unimplemented")
+func dfEjectFromSourceIndexAll() {
+	for index := 0; index < shared.MAX_ADFS; index++ {
+		adfPathname := emulator.GetAdf(index)
+
+		if adfPathname == "" {
+			continue
+		}
+
+		oldVolume := emulator.GetFloppySoundVolumeDisk(index)
+		emulator.SetFloppySoundVolumeDisk(index, 0)
+
+		if !detachAdf(index, adfPathname) {
+			emulator.SetFloppySoundVolumeDisk(index, oldVolume)
+			return
+		}
+	}
 }
 
-func isAdfAttached(adfPathname string) bool {
+func isAdfAttached(adfPathname string) int {
 	for i := 0; i < shared.MAX_ADFS; i++ {
 		if emulator.GetAdf(i) == adfPathname {
-			return true
+			return i
 		}
 	}
 
-	return false
+	return shared.DRIVE_INDEX_UNSPECIFIED
 }
 
 func findSimilarROMFiles(mountpoint string, pathname string) []string {
@@ -735,8 +754,60 @@ func findSimilarROMFile(mountpoint string, filenamePattern string) string {
 }
 
 func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
-	// TODO
-	panic("unimplemented")
+	filenamePart = strings.TrimSpace(filenamePart)
+	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
+
+	if filenamePart == "" {
+		return
+	}
+
+	if sourceIndexInt > shared.MAX_ADFS-1 {
+		return
+	}
+
+	mountpoint, mountpointExists := dfIndexMountpoint[sourceIndexInt]
+
+	if !mountpointExists {
+		return
+	}
+
+	// find first ADF by pattern typed by the user
+	foundAdfPathname := findSimilarROMFile(mountpoint, filenamePart)
+
+	if foundAdfPathname == "" {
+		return
+	}
+
+	// find similar ADFs by the first ADF and attach
+	// them to the emulator
+	foundAdfPathnames := findSimilarROMFiles(mountpoint, foundAdfPathname)
+	lenFoundAdfPathnames := len(foundAdfPathnames)
+
+	if lenFoundAdfPathnames == 0 {
+		return
+	}
+
+	for targetIndexInt, pathname := range foundAdfPathnames {
+		if targetIndexInt+1 > shared.MAX_ADFS {
+			return
+		}
+
+		targetIndexAdf := emulator.GetAdf(targetIndexInt)
+
+		if targetIndexAdf != "" {
+			if !detachAdf(targetIndexInt, targetIndexAdf) {
+				return
+			}
+		}
+
+		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
+		emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
+
+		if !attachAdf(targetIndexInt, pathname) {
+			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume)
+			return
+		}
+	}
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
@@ -926,6 +997,10 @@ func getMediumDefaultFile(devicePathname string) string {
 	filename := cfg.Section(shared.MEDIUM_CONFIG_DEFAULT_SECTION).Key(
 		shared.MEDIUM_CONFIG_DEFAULT_FILE).String()
 
+	if filename == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+		return shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE
+	}
+
 	fullPathname := filepath.Join(mounted[devicePathname], filename)
 
 	stat, err := os.Stat(fullPathname)
@@ -988,6 +1063,10 @@ func attachDFMediumDiskImage(
 	loadMediumConfig(path, mountpoint)
 
 	firstAdfPathname = getMediumDefaultFile(path)
+
+	if firstAdfPathname == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+		return
+	}
 
 	if firstAdfPathname == "" {
 		// find first .adf file and attach it to the emulator
@@ -1149,6 +1228,10 @@ func attachHFMediumDiskImage(
 
 	firstHdfPathname = getMediumDefaultFile(path)
 
+	if firstHdfPathname == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+		return
+	}
+
 	if firstHdfPathname == "" {
 		// find first .hdf file and attach it to the emulator
 		firstHdfPathname = getMountpointFirstFile(mountpoint, shared.HD_HDF_FULL_EXTENSION)
@@ -1233,6 +1316,10 @@ func attachCDMediumDiskImage(
 	loadMediumConfig(path, mountpoint)
 
 	firstIsoPathname = getMediumDefaultFile(path)
+
+	if firstIsoPathname == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+		return
+	}
 
 	if firstIsoPathname == "" {
 		// find first .iso file and attach it to the emulator

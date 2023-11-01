@@ -132,3 +132,15 @@ gfx_height_windowed=568					      |	gfx_height_windowed=512
 
 
 
+640x512
+720x512 center horizontal and vertical
+
+
+
+
+
+
+
+
+
+
