@@ -311,8 +311,6 @@ func onFloppyRead(_medium interfaces_amiga_disk_devices.Medium, ofst int64) {
 
 		// reading from cached floppy medium
 		// read from real device to move the motor
-		// TODO use one handle, do not open a new one
-		// in each read
 		async.FileReadBytesDirect(
 			devicePathname,
 			ofst,

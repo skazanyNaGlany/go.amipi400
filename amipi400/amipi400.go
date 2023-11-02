@@ -840,7 +840,6 @@ func keyEventCallback(sender any, key string, pressed bool) {
 	} else if isHardResetKeys() {
 		clearAllKeyboardsControl()
 
-		// TODO detach and unmount all mediums
 		utils.UnixUtilsInstance.Sync()
 		emulator.HardReset()
 	} else if isToggleAutoHeightKeys() {
@@ -1111,9 +1110,6 @@ func attachDFMediumDiskImage(
 	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
 	emulator.SetFloppySoundVolumeDisk(index, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
 
-	// TODO unmount when attachAdf return false and the medium
-	// was not mounted prevoiusly mountpoint == "", so it means
-	// the file was not attached
 	if !attachAdf(index, firstAdfPathname) {
 		unmountMedium(
 			path,
@@ -1156,7 +1152,6 @@ func attachDHMediumDiskImage(
 		return
 	}
 
-	// TODO unmount all
 	if mountpoint != "" {
 		unmountMedium(
 			path,
@@ -1182,9 +1177,6 @@ func attachDHMediumDiskImage(
 		return
 	}
 
-	// TODO unmount when attachHdf return false and the medium
-	// was not mounted prevoiusly mountpoint == "", so it means
-	// the file was not attached
 	if !attachHdDir(index, bootPriority, mountpoint) {
 		unmountMedium(
 			path,
@@ -1218,7 +1210,6 @@ func attachHFMediumDiskImage(
 		return
 	}
 
-	// TODO unmount all
 	if mountpoint != "" {
 		unmountMedium(
 			path,
@@ -1272,9 +1263,6 @@ func attachHFMediumDiskImage(
 		return
 	}
 
-	// TODO unmount when attachHdf return false and the medium
-	// was not mounted prevoiusly mountpoint == "", so it means
-	// the file was not attached
 	if !attachHdf(index, bootPriority, firstHdfPathname) {
 		unmountMedium(
 			path,
@@ -1361,9 +1349,6 @@ func attachCDMediumDiskImage(
 		return
 	}
 
-	// TODO unmount when attachIso return false and the medium
-	// was not mounted prevoiusly mountpoint == "", so it means
-	// the file was not attached
 	if !attachIso(index, firstIsoPathname) {
 		unmountMedium(
 			path,
