@@ -18,18 +18,19 @@ import (
 type AmiberryEmulator struct {
 	components.RunnerBase
 
-	emulatorCommand       *exec.Cmd
-	executablePathname    string
-	configPathname        string
-	adfs                  [shared.MAX_ADFS]string
-	hdfs                  [shared.MAX_HDFS]string
-	hdfsBootPriority      [shared.MAX_HDFS]int
-	hdfsLabel             [shared.MAX_HDFS]string
-	cds                   [shared.MAX_CDS]string
-	commander             *AmiberryCommander
-	floppySoundVolumeDisk [shared.MAX_ADFS]int // volume per disk
-	isAutoHeight          bool
-	isZoom                bool
+	emulatorCommand         *exec.Cmd
+	executablePathname      string
+	configPathname          string
+	adfs                    [shared.MAX_ADFS]string
+	hdfs                    [shared.MAX_HDFS]string
+	hdfsBootPriority        [shared.MAX_HDFS]int
+	hdfsLabel               [shared.MAX_HDFS]string
+	cds                     [shared.MAX_CDS]string
+	commander               *AmiberryCommander
+	floppySoundVolumeDisk   [shared.MAX_ADFS]int // volume per disk
+	floppySoundVolumeNoDisk [shared.MAX_ADFS]int // volume per disk (when drive is empty)
+	isAutoHeight            bool
+	isZoom                  bool
 }
 
 func (ae *AmiberryEmulator) SetAmiberryCommander(commander *AmiberryCommander) {
@@ -172,6 +173,9 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 
 		key, value = ae.commander.FormatFloppySoundVolumeDiskCO(i, volume)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+
+		key, value = ae.commander.FormatFloppySoundVolumeEmptyCO(i, volume)
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 	}
 
@@ -473,11 +477,15 @@ func (ae *AmiberryEmulator) DetachCd(index int) error {
 }
 
 // This will enable/disable sound for a floppy and set its volume
-func (ae *AmiberryEmulator) SetFloppySoundVolumeDisk(index int, volume int) error {
+func (ae *AmiberryEmulator) SetFloppySoundVolumeDisk(index int, volume int, volumeNoDisk int) error {
 	ae.floppySoundVolumeDisk[index] = volume
+	ae.floppySoundVolumeNoDisk[index] = volume
 
-	ae.commander.PutFloppySoundCO(index, volume > 0)
+	enable := volume > 0 || volumeNoDisk > 0
+
+	ae.commander.PutFloppySoundCO(index, enable)
 	ae.commander.PutFloppySoundVolumeDiskCO(index, volume)
+	ae.commander.PutFloppySoundVolumeEmptyCO(index, volumeNoDisk)
 
 	ae.commander.PutLocalCommitCommand()
 
@@ -488,6 +496,10 @@ func (ae *AmiberryEmulator) SetFloppySoundVolumeDisk(index int, volume int) erro
 
 func (ae *AmiberryEmulator) GetFloppySoundVolumeDisk(index int) int {
 	return ae.floppySoundVolumeDisk[index]
+}
+
+func (ae *AmiberryEmulator) GetFloppySoundVolumeNoDisk(index int) int {
+	return ae.floppySoundVolumeNoDisk[index]
 }
 
 func (ae *AmiberryEmulator) SetAutoHeight(autoHeight bool) {

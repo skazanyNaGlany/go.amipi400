@@ -382,6 +382,13 @@ func (ac *AmiberryCommander) FormatFloppySoundVolumeDiskCO(index, volume int) (s
 	return key, value
 }
 
+func (ac *AmiberryCommander) FormatFloppySoundVolumeEmptyCO(index, volume int) (string, string) {
+	key := fmt.Sprintf("floppy%vsoundvolume_empty", index)
+	value := fmt.Sprintf("%v", 100-volume)
+
+	return key, value
+}
+
 func (ac *AmiberryCommander) FormatAmiberryGfxAutoCropCO(enable bool) (string, string) {
 	value := "false"
 
@@ -448,6 +455,12 @@ func (ac *AmiberryCommander) FormatGfxHeightWindowedCO(height int) (string, stri
 
 func (ac *AmiberryCommander) PutFloppySoundVolumeDiskCO(index, volume int) {
 	key, value := ac.FormatFloppySoundVolumeDiskCO(index, volume)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
+func (ac *AmiberryCommander) PutFloppySoundVolumeEmptyCO(index, volume int) {
+	key, value := ac.FormatFloppySoundVolumeEmptyCO(index, volume)
 
 	ac.PutSetConfigOptionCommand(key, value)
 }

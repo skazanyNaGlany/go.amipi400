@@ -245,10 +245,10 @@ func attachAmigaDiskDeviceAdf(pathname string) {
 	index := adfPathnameToDFIndex(pathname)
 
 	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
-	emulator.SetFloppySoundVolumeDisk(index, 0)
+	emulator.SetFloppySoundVolumeDisk(index, 0, 0)
 
 	if !attachAdf(index, pathname) {
-		emulator.SetFloppySoundVolumeDisk(index, oldVolume)
+		emulator.SetFloppySoundVolumeDisk(index, oldVolume, 0)
 	}
 }
 
@@ -262,10 +262,10 @@ func detachAmigaDiskDeviceAdf(pathname string) {
 	index := adfPathnameToDFIndex(pathname)
 
 	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
-	emulator.SetFloppySoundVolumeDisk(index, 0)
+	emulator.SetFloppySoundVolumeDisk(index, 0, 0)
 
 	if !detachAdf(index, pathname) {
-		emulator.SetFloppySoundVolumeDisk(index, oldVolume)
+		emulator.SetFloppySoundVolumeDisk(index, oldVolume, 0)
 	}
 }
 
@@ -527,10 +527,10 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 		}
 
 		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
-		emulator.SetFloppySoundVolumeDisk(targetIndexInt, 0)
+		emulator.SetFloppySoundVolumeDisk(targetIndexInt, 0, 0)
 
 		if !detachAdf(targetIndexInt, targetIndexAdf) {
-			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume)
+			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
 			return
 		}
 	}
@@ -567,10 +567,10 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 	}
 
 	targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
-	emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
+	emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME, 0)
 
 	if !attachAdf(targetIndexInt, toInsertPathname) {
-		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume)
+		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
 	}
 }
 
@@ -613,10 +613,10 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 		}
 
 		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
-		emulator.SetFloppySoundVolumeDisk(targetIndexInt, 0)
+		emulator.SetFloppySoundVolumeDisk(targetIndexInt, 0, 0)
 
 		if !detachAdf(targetIndexInt, targetIndexAdf) {
-			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume)
+			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
 			return
 		}
 	}
@@ -634,10 +634,10 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	}
 
 	targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
-	emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
+	emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME, 0)
 
 	if !attachAdf(targetIndexInt, foundAdfPathname) {
-		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume)
+		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
 	}
 }
 
@@ -666,10 +666,10 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 	}
 
 	sourceIndexOldVolume := emulator.GetFloppySoundVolumeDisk(sourceIndexInt)
-	emulator.SetFloppySoundVolumeDisk(sourceIndexInt, 0)
+	emulator.SetFloppySoundVolumeDisk(sourceIndexInt, 0, 0)
 
 	if !detachAdf(sourceIndexInt, sourceIndexAdf) {
-		emulator.SetFloppySoundVolumeDisk(sourceIndexInt, sourceIndexOldVolume)
+		emulator.SetFloppySoundVolumeDisk(sourceIndexInt, sourceIndexOldVolume, 0)
 		return
 	}
 }
@@ -688,10 +688,10 @@ func dfEjectFromSourceIndexAll() {
 		}
 
 		oldVolume := emulator.GetFloppySoundVolumeDisk(index)
-		emulator.SetFloppySoundVolumeDisk(index, 0)
+		emulator.SetFloppySoundVolumeDisk(index, 0, 0)
 
 		if !detachAdf(index, adfPathname) {
-			emulator.SetFloppySoundVolumeDisk(index, oldVolume)
+			emulator.SetFloppySoundVolumeDisk(index, oldVolume, 0)
 			return
 		}
 	}
@@ -822,10 +822,10 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 		}
 
 		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
-		emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
+		emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME, 0)
 
 		if !attachAdf(targetIndexInt, pathname) {
-			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume)
+			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
 			return
 		}
 	}
@@ -1108,7 +1108,7 @@ func attachDFMediumDiskImage(
 	}
 
 	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
-	emulator.SetFloppySoundVolumeDisk(index, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME)
+	emulator.SetFloppySoundVolumeDisk(index, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME, 0)
 
 	if !attachAdf(index, firstAdfPathname) {
 		unmountMedium(
@@ -1119,7 +1119,7 @@ func attachDFMediumDiskImage(
 			shared.DRIVE_INDEX_UNSPECIFIED,
 			shared.DRIVE_INDEX_UNSPECIFIED)
 
-		emulator.SetFloppySoundVolumeDisk(index, oldVolume)
+		emulator.SetFloppySoundVolumeDisk(index, oldVolume, 0)
 	}
 }
 
@@ -1410,10 +1410,10 @@ func detachDFMediumDiskImage(
 		}
 
 		oldVolume := emulator.GetFloppySoundVolumeDisk(i)
-		emulator.SetFloppySoundVolumeDisk(i, 0)
+		emulator.SetFloppySoundVolumeDisk(i, 0, 0)
 
 		if !detachAdf(i, adfPathname) {
-			emulator.SetFloppySoundVolumeDisk(i, oldVolume)
+			emulator.SetFloppySoundVolumeDisk(i, oldVolume, 0)
 		}
 	}
 
