@@ -493,6 +493,14 @@ func processKeyboardCommand(keyboardCommand string) {
 			dfSourceRule["filename_part"],
 			dfSourceRule["source_index"],
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
+	} else if cdSourceRule := utils.RegExInstance.FindNamedMatches(
+		shared.CD_INSERT_FROM_SOURCE_INDEX_RE,
+		keyboardCommand); len(cdSourceRule) > 0 {
+		// example: cd0workbench iso
+		cdInsertFromSourceIndexToTargetIndex(
+			cdSourceRule["filename_part"],
+			cdSourceRule["source_index"],
+			shared.DRIVE_INDEX_UNSPECIFIED_STR)
 	}
 }
 
@@ -641,6 +649,61 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	}
 }
 
+func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
+	// TODO test me - check if ISO attached by this method works in the emulator
+	// eg. by using emulating CD32 (use cd32.uae.template config)
+	filenamePart = strings.TrimSpace(filenamePart)
+	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
+	targetIndexInt, _ := utils.StringUtilsInstance.StringToInt(targetIndex, 10, 16)
+
+	if filenamePart == "" {
+		return
+	}
+
+	if targetIndexInt == shared.DRIVE_INDEX_UNSPECIFIED {
+		targetIndexInt = sourceIndexInt
+	}
+
+	if sourceIndexInt > shared.MAX_CDS-1 || targetIndexInt > shared.MAX_CDS-1 {
+		return
+	}
+
+	mountpoint, mountpointExists := cdIndexMountpoint[sourceIndexInt]
+
+	if !mountpointExists {
+		// allow to manage only these drives mounted by amipi400.go
+		// so skip these from amiga_disk_devices.go
+		return
+	}
+
+	targetIndexIso := emulator.GetIso(targetIndexInt)
+
+	if targetIndexIso != "" {
+		if amigaDiskDevicesDiscovery.HasFile(targetIndexIso) {
+			// ISO attached by amiga_disk_devices.go
+			return
+		}
+
+		if !detachIso(targetIndexInt, targetIndexIso) {
+			return
+		}
+	}
+
+	foundIsoPathname := findSimilarROMFile(mountpoint, filenamePart)
+
+	if foundIsoPathname == "" {
+		return
+	}
+
+	if attachedIndex := isIsoAttached(foundIsoPathname); attachedIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		if !detachIso(attachedIndex, foundIsoPathname) {
+			return
+		}
+	}
+
+	attachIso(targetIndexInt, foundIsoPathname)
+}
+
 func dfEjectFromSourceIndex(sourceIndex string) {
 	if sourceIndex == "N" {
 		dfEjectFromSourceIndexAll()
@@ -700,6 +763,16 @@ func dfEjectFromSourceIndexAll() {
 func isAdfAttached(adfPathname string) int {
 	for i := 0; i < shared.MAX_ADFS; i++ {
 		if emulator.GetAdf(i) == adfPathname {
+			return i
+		}
+	}
+
+	return shared.DRIVE_INDEX_UNSPECIFIED
+}
+
+func isIsoAttached(isoPathname string) int {
+	for i := 0; i < shared.MAX_CDS; i++ {
+		if emulator.GetIso(i) == isoPathname {
 			return i
 		}
 	}
