@@ -77,6 +77,10 @@ func (gu *GoUtils) DuplicateLog(parentDir string) (string, error) {
 		return "", err
 	}
 
+	if err = logFile.Truncate(0); err != nil {
+		return "", err
+	}
+
 	mw := io.MultiWriter(os.Stdout, logFile)
 
 	log.SetOutput(mw)
