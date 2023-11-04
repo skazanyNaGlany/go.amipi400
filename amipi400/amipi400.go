@@ -117,6 +117,7 @@ func attachAdf(index int, pathname string) bool {
 }
 
 func attachIso(index int, pathname string) bool {
+	// TODO add support for CUE and NRG files
 	strIndex := fmt.Sprint(index)
 
 	if emulator.GetIso(index) != "" {
@@ -493,6 +494,11 @@ func processKeyboardCommand(keyboardCommand string) {
 			dfSourceRule["filename_part"],
 			dfSourceRule["source_index"],
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
+	} else if cdEjectRule := utils.RegExInstance.FindNamedMatches(
+		shared.CD_EJECT_FROM_SOURCE_INDEX_RE,
+		keyboardCommand); len(cdEjectRule) > 0 {
+		// example: cd0
+		cdEjectFromSourceIndex(cdEjectRule["source_index"])
 	} else if cdSourceRule := utils.RegExInstance.FindNamedMatches(
 		shared.CD_INSERT_FROM_SOURCE_INDEX_RE,
 		keyboardCommand); len(cdSourceRule) > 0 {
@@ -735,6 +741,28 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 		emulator.SetFloppySoundVolumeDisk(sourceIndexInt, sourceIndexOldVolume, 0)
 		return
 	}
+}
+
+func cdEjectFromSourceIndex(sourceIndex string) {
+	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
+
+	if sourceIndexInt > shared.MAX_CDS-1 {
+		return
+	}
+
+	sourceIndexIso := emulator.GetIso(sourceIndexInt)
+
+	if sourceIndexIso == "" {
+		// ISO not attached at index
+		return
+	}
+
+	if amigaDiskDevicesDiscovery.HasFile(sourceIndexIso) {
+		// ISO attached by amiga_disk_devices.go
+		return
+	}
+
+	detachIso(sourceIndexInt, sourceIndexIso)
 }
 
 func dfEjectFromSourceIndexAll() {
