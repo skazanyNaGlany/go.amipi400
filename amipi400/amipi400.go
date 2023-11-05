@@ -23,6 +23,7 @@ import (
 )
 
 var runnersBlocker components.RunnersBlocker
+var ledControl components.LEDControl
 var allKeyboardsControl components.AllKeyboardsControl
 var amigaDiskDevicesDiscovery components_amipi400.AmigaDiskDevicesDiscovery
 var emulator components_amipi400.AmiberryEmulator
@@ -602,7 +603,10 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 
 	if !attachAdf(targetIndexInt, toInsertPathname) {
 		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
+		return
 	}
+
+	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
@@ -669,7 +673,10 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 
 	if !attachAdf(targetIndexInt, foundAdfPathname) {
 		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
+		return
 	}
+
+	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
@@ -732,10 +739,14 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 		}
 	}
 
-	attachHdf(
+	if !attachHdf(
 		targetIndexInt,
 		hdIndexBootPriority[sourceIndexInt],
-		foundHdfPathname)
+		foundHdfPathname) {
+		return
+	}
+
+	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
@@ -790,7 +801,11 @@ func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 		}
 	}
 
-	attachIso(targetIndexInt, foundIsoPathname)
+	if !attachIso(targetIndexInt, foundIsoPathname) {
+		return
+	}
+
+	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func dfEjectFromSourceIndex(sourceIndex string) {
@@ -824,6 +839,8 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 		emulator.SetFloppySoundVolumeDisk(sourceIndexInt, sourceIndexOldVolume, 0)
 		return
 	}
+
+	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func cdEjectFromSourceIndex(sourceIndex string) {
@@ -845,7 +862,11 @@ func cdEjectFromSourceIndex(sourceIndex string) {
 		return
 	}
 
-	detachIso(sourceIndexInt, sourceIndexIso)
+	if !detachIso(sourceIndexInt, sourceIndexIso) {
+		return
+	}
+
+	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func hfEjectFromSourceIndex(sourceIndex string) {
@@ -872,7 +893,11 @@ func hfEjectFromSourceIndex(sourceIndex string) {
 		return
 	}
 
-	detachHd(sourceIndexInt, sourceIndexHdf)
+	if !detachHd(sourceIndexInt, sourceIndexHdf) {
+		return
+	}
+
+	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func dfEjectFromSourceIndexAll() {
@@ -896,6 +921,8 @@ func dfEjectFromSourceIndexAll() {
 			return
 		}
 	}
+
+	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func isAdfAttached(adfPathname string) int {
@@ -1050,6 +1077,8 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 			return
 		}
 	}
+
+	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
@@ -1884,6 +1913,7 @@ func stopServices() {
 	emulator.Stop(&emulator)
 	commander.Stop(&commander)
 	blockDevices.Stop(&blockDevices)
+	blockDevices.Stop(&ledControl)
 }
 
 func gracefulShutdown() {
@@ -1939,18 +1969,22 @@ func main() {
 	commander.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 	blockDevices.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
 	blockDevices.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	ledControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	ledControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 
 	amigaDiskDevicesDiscovery.Start(&amigaDiskDevicesDiscovery)
 	allKeyboardsControl.Start(&allKeyboardsControl)
 	emulator.Start(&emulator)
 	commander.Start(&commander)
 	blockDevices.Start(&blockDevices)
+	ledControl.Start(&ledControl)
 
 	runnersBlocker.AddRunner(&amigaDiskDevicesDiscovery)
 	runnersBlocker.AddRunner(&allKeyboardsControl)
 	runnersBlocker.AddRunner(&emulator)
 	runnersBlocker.AddRunner(&commander)
 	runnersBlocker.AddRunner(&blockDevices)
+	runnersBlocker.AddRunner(&ledControl)
 
 	go gracefulShutdown()
 

@@ -6,12 +6,13 @@ import (
 	"strings"
 )
 
-// global
-const HDD_SECTOR_SIZE = 512
-
 // consts.go
 const AMIPI400_UNIXNAME = "amipi400"
 const AMIPI400_VERSION = "0.1"
+
+// global
+const HDD_SECTOR_SIZE = 512
+const KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS = 2
 
 // amipi400.go
 const _AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
