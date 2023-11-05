@@ -484,6 +484,8 @@ func printCDROMDevices() {
 func main() {
 	utils.GoUtilsInstance.CheckPlatform()
 	utils.UnixUtilsInstance.CheckForRoot()
+	utils.SysUtilsInstance.CheckForExecutables(
+		shared.AMIGA_DISK_DEVICES_NEEDED_EXECUTABLES)
 
 	exeDir := utils.GoUtilsInstance.MustCwdToExeOrScript()
 	logFilename := utils.GoUtilsInstance.MustDuplicateLog(exeDir)

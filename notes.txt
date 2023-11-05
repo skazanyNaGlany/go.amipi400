@@ -144,3 +144,15 @@ gfx_height_windowed=568					      |	gfx_height_windowed=512
 
 
 
+amipi400:
+sync
+fsck
+ufiformat
+hwinfo
+lsblk
+
+add:
+ufiformat
+hwinfo
+lsblk
+

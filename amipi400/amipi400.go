@@ -1904,6 +1904,8 @@ func adfBasenameCleanDiskOf(basename string) string {
 func main() {
 	utils.GoUtilsInstance.CheckPlatform()
 	utils.UnixUtilsInstance.CheckForRoot()
+	utils.SysUtilsInstance.CheckForExecutables(
+		shared.AMIPI400_NEEDED_EXECUTABLES)
 
 	exeDir := utils.GoUtilsInstance.MustCwdToExeOrScript()
 	logFilename := utils.GoUtilsInstance.MustDuplicateLog(exeDir)
