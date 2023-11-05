@@ -24,6 +24,7 @@ const MEDIUM_CONFIG_INI_NAME = "amipi400.ini"
 const MEDIUM_CONFIG_DEFAULT_SECTION = "amipi400"
 const MEDIUM_CONFIG_DEFAULT_FILE = "default_file"
 const MEDIUM_CONFIG_DEFAULT_FILE_NONE = "none"
+const ADF_DISK_NO_OF_MAX = "(Disk %d of %d)"
 const AUTORUN_EMULATOR = true
 
 var SOFT_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
@@ -40,8 +41,8 @@ var DF_EJECT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^DF(?P<source_index>[0-9
 var CD_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^CD(?P<source_index>[0-9])(?P<filename_part>.*)$`)
 var CD_EJECT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^CD(?P<source_index>[0-9])$`)
 var ADF_DISK_NO_OF_MAX_RE = regexp.MustCompile(`(?P<disk_no_of_max>\((Disk\ \d)\ (of\ \d)\))`)
-
-const ADF_DISK_NO_OF_MAX = "(Disk %d of %d)"
+var HF_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^HF(?P<source_index>[0-9])(?P<filename_part>.*)$`)
+var HF_EJECT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^HF(?P<source_index>[0-9])$`)
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
@@ -118,6 +119,8 @@ var AMIBERRY_EMULATOR_TMP_INI_PATHNAME = filepath.Join(
 
 const DRIVE_INDEX_UNSPECIFIED = -1
 const DRIVE_INDEX_UNSPECIFIED_STR = "-1"
+const DH_BOOT_PRIORITY_DEFAULT = 0
+const DH_BOOT_PRIORITY_UNSPECIFIED = -1
 
 // amipi400.go, AmiberryEmulator
 const MAX_ADFS = 4

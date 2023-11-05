@@ -33,8 +33,12 @@ var mounted = make(map[string]string)           // [devicePathname]mountpoint
 var mediumConfig = make(map[string]*ini.File)   // [devicePathname]*ini.File
 var mountpointFiles = make(map[string][]string) // [mountpoint]romFiles
 var dfIndexMountpoint = make(map[int]string)    // [driveIndex]mountpoint
+var dfIndexLabel = make(map[int]string)         // [driveIndex]label
 var hdIndexMountpoint = make(map[int]string)    // [driveIndex]mountpoint
+var hdIndexLabel = make(map[int]string)         // [driveIndex]label
 var cdIndexMountpoint = make(map[int]string)    // [driveIndex]mountpoint
+var cdIndexLabel = make(map[int]string)         // [driveIndex]label
+var hdIndexBootPriority = make(map[int]int)     // [driveIndex]bootPriority
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()
@@ -285,7 +289,7 @@ func attachAmigaDiskDeviceHdf(pathname string) {
 		return
 	}
 
-	attachHdf(index, 0, pathname)
+	attachHdf(index, shared.DH_BOOT_PRIORITY_DEFAULT, pathname)
 }
 
 func detachAmigaDiskDeviceHdf(pathname string) {
@@ -507,6 +511,19 @@ func processKeyboardCommand(keyboardCommand string) {
 			cdSourceRule["filename_part"],
 			cdSourceRule["source_index"],
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
+	} else if hfEjectRule := utils.RegExInstance.FindNamedMatches(
+		shared.HF_EJECT_FROM_SOURCE_INDEX_RE,
+		keyboardCommand); len(hfEjectRule) > 0 {
+		// example: hf0
+		hfEjectFromSourceIndex(hfEjectRule["source_index"])
+	} else if hfSourceRule := utils.RegExInstance.FindNamedMatches(
+		shared.HF_INSERT_FROM_SOURCE_INDEX_RE,
+		keyboardCommand); len(hfSourceRule) > 0 {
+		// example: hf0workbench hdf
+		hfInsertFromSourceIndexToTargetIndex(
+			hfSourceRule["filename_part"],
+			hfSourceRule["source_index"],
+			shared.DRIVE_INDEX_UNSPECIFIED_STR)
 	}
 }
 
@@ -655,6 +672,72 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	}
 }
 
+func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
+	filenamePart = strings.TrimSpace(filenamePart)
+	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
+	targetIndexInt, _ := utils.StringUtilsInstance.StringToInt(targetIndex, 10, 16)
+
+	if filenamePart == "" {
+		return
+	}
+
+	if targetIndexInt == shared.DRIVE_INDEX_UNSPECIFIED {
+		targetIndexInt = sourceIndexInt
+	}
+
+	if sourceIndexInt > shared.MAX_HDFS-1 || targetIndexInt > shared.MAX_HDFS-1 {
+		return
+	}
+
+	mountpoint, mountpointExists := hdIndexMountpoint[sourceIndexInt]
+
+	if !mountpointExists {
+		// allow to manage only these drives mounted by amipi400.go
+		// so skip these from amiga_disk_devices.go
+		return
+	}
+
+	matched := utils.RegExInstance.FindNamedMatches(
+		shared.AP4_MEDIUM_HF_RE,
+		hdIndexLabel[sourceIndexInt])
+	isHdLabel := len(matched) != 0
+
+	if !isHdLabel {
+		// source medium is not HF (perhaps DH), cannot use it
+		return
+	}
+
+	targetIndexHdf := emulator.GetHd(targetIndexInt)
+
+	if targetIndexHdf != "" {
+		if amigaDiskDevicesDiscovery.HasFile(targetIndexHdf) {
+			// HDF attached by amiga_disk_devices.go
+			return
+		}
+
+		if !detachHd(targetIndexInt, targetIndexHdf) {
+			return
+		}
+	}
+
+	foundHdfPathname := findSimilarROMFile(mountpoint, filenamePart)
+
+	if foundHdfPathname == "" {
+		return
+	}
+
+	if attachedIndex := isHdfAttached(foundHdfPathname); attachedIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		if !detachHd(attachedIndex, foundHdfPathname) {
+			return
+		}
+	}
+
+	attachHdf(
+		targetIndexInt,
+		hdIndexBootPriority[sourceIndexInt],
+		foundHdfPathname)
+}
+
 func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
 	// TODO test me - check if ISO attached by this method works in the emulator
 	// eg. by using emulating CD32 (use cd32.uae.template config)
@@ -765,6 +848,33 @@ func cdEjectFromSourceIndex(sourceIndex string) {
 	detachIso(sourceIndexInt, sourceIndexIso)
 }
 
+func hfEjectFromSourceIndex(sourceIndex string) {
+	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
+
+	if sourceIndexInt > shared.MAX_HDFS-1 {
+		return
+	}
+
+	sourceIndexHdf := emulator.GetHd(sourceIndexInt)
+
+	if sourceIndexHdf == "" {
+		// HDF not attached at index
+		return
+	}
+
+	if amigaDiskDevicesDiscovery.HasFile(sourceIndexHdf) {
+		// HDF attached by amiga_disk_devices.go
+		return
+	}
+
+	if strings.HasSuffix(sourceIndexHdf, "/") {
+		// DH is not HDF file but directory, cannot detach
+		return
+	}
+
+	detachHd(sourceIndexInt, sourceIndexHdf)
+}
+
 func dfEjectFromSourceIndexAll() {
 	for index := 0; index < shared.MAX_ADFS; index++ {
 		adfPathname := emulator.GetAdf(index)
@@ -801,6 +911,16 @@ func isAdfAttached(adfPathname string) int {
 func isIsoAttached(isoPathname string) int {
 	for i := 0; i < shared.MAX_CDS; i++ {
 		if emulator.GetIso(i) == isoPathname {
+			return i
+		}
+	}
+
+	return shared.DRIVE_INDEX_UNSPECIFIED
+}
+
+func isHdfAttached(hdfPathname string) int {
+	for i := 0; i < shared.MAX_CDS; i++ {
+		if emulator.GetHd(i) == hdfPathname {
 			return i
 		}
 	}
@@ -1013,7 +1133,14 @@ func mountpointIsMounted(mountpoint string) bool {
 	return false
 }
 
-func fixMountMedium(devicePathname, label, fsType string, dfIndex int, hdIndex int, cdIndex int) (string, error) {
+func fixMountMedium(
+	devicePathname string,
+	label string,
+	fsType string,
+	dfIndex int,
+	hdIndex int,
+	cdIndex int,
+	hdBootPriority int) (string, error) {
 	log.Println(devicePathname, label, "running Fsck")
 
 	output, err := utils.UnixUtilsInstance.RunFsck(devicePathname)
@@ -1051,20 +1178,30 @@ func fixMountMedium(devicePathname, label, fsType string, dfIndex int, hdIndex i
 
 	if dfIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		dfIndexMountpoint[dfIndex] = target
+		dfIndexLabel[dfIndex] = label
 	}
 
 	if hdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		hdIndexMountpoint[hdIndex] = target
+		hdIndexBootPriority[hdIndex] = hdBootPriority
+		hdIndexLabel[hdIndex] = label
 	}
 
 	if cdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		cdIndexMountpoint[cdIndex] = target
+		cdIndexLabel[cdIndex] = label
 	}
 
 	return target, nil
 }
 
-func unmountMedium(devicePathname string, mountpoint string, flags int, dfIndex int, hdIndex int, cdIndex int) {
+func unmountMedium(
+	devicePathname string,
+	mountpoint string,
+	flags int,
+	dfIndex int,
+	hdIndex int,
+	cdIndex int) {
 	log.Println("Unmount", mountpoint)
 
 	syscall.Unmount(mountpoint, flags)
@@ -1072,14 +1209,18 @@ func unmountMedium(devicePathname string, mountpoint string, flags int, dfIndex 
 
 	if dfIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		delete(dfIndexMountpoint, dfIndex)
+		delete(dfIndexLabel, dfIndex)
 	}
 
 	if hdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		delete(hdIndexMountpoint, hdIndex)
+		delete(hdIndexBootPriority, hdIndex)
+		delete(hdIndexLabel, hdIndex)
 	}
 
 	if cdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		delete(cdIndexMountpoint, cdIndex)
+		delete(cdIndexLabel, cdIndex)
 	}
 }
 
@@ -1172,7 +1313,8 @@ func attachDFMediumDiskImage(
 		fsType,
 		index,
 		shared.DRIVE_INDEX_UNSPECIFIED,
-		shared.DRIVE_INDEX_UNSPECIFIED)
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		shared.DH_BOOT_PRIORITY_UNSPECIFIED)
 
 	if err != nil {
 		log.Println(path, label, err)
@@ -1270,7 +1412,8 @@ func attachDHMediumDiskImage(
 		fsType,
 		shared.DRIVE_INDEX_UNSPECIFIED,
 		index,
-		shared.DRIVE_INDEX_UNSPECIFIED)
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		bootPriority)
 
 	if err != nil {
 		log.Println(path, label, err)
@@ -1328,7 +1471,8 @@ func attachHFMediumDiskImage(
 		fsType,
 		shared.DRIVE_INDEX_UNSPECIFIED,
 		index,
-		shared.DRIVE_INDEX_UNSPECIFIED)
+		shared.DRIVE_INDEX_UNSPECIFIED,
+		bootPriority)
 
 	if err != nil {
 		log.Println(path, label, err)
@@ -1414,7 +1558,8 @@ func attachCDMediumDiskImage(
 		fsType,
 		shared.DRIVE_INDEX_UNSPECIFIED,
 		shared.DRIVE_INDEX_UNSPECIFIED,
-		index)
+		index,
+		shared.DH_BOOT_PRIORITY_UNSPECIFIED)
 
 	if err != nil {
 		log.Println(path, label, err)
@@ -1727,6 +1872,10 @@ func unmountAll() {
 	dfIndexMountpoint = make(map[int]string)
 	hdIndexMountpoint = make(map[int]string)
 	cdIndexMountpoint = make(map[int]string)
+	hdIndexBootPriority = make(map[int]int)
+	dfIndexLabel = make(map[int]string)
+	hdIndexLabel = make(map[int]string)
+	cdIndexLabel = make(map[int]string)
 }
 
 func stopServices() {
