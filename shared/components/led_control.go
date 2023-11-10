@@ -29,16 +29,19 @@ func (lc *LEDControl) loop() {
 }
 
 func (lc *LEDControl) blinkPowerLed() {
+	step := 0
+
 	for lc.blinkPowerLedSecs > 0 {
-		lc.disablePowerLed()
-
-		time.Sleep(time.Second * 1)
-
-		lc.enablePowerLed()
+		if step%2 == 0 {
+			lc.disablePowerLed()
+		} else {
+			lc.enablePowerLed()
+		}
 
 		time.Sleep(time.Second * 1)
 
 		lc.blinkPowerLedSecs--
+		step++
 	}
 }
 
