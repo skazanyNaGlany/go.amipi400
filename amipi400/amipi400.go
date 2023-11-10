@@ -525,7 +525,59 @@ func processKeyboardCommand(keyboardCommand string) {
 			hfSourceRule["filename_part"],
 			hfSourceRule["source_index"],
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
+	} else if shared.UNMOUNT_ALL_RE.MatchString(keyboardCommand) {
+		// example: u
+		unmountAllKeyboardCommand()
+	} else if dfUnmountRule := utils.RegExInstance.FindNamedMatches(
+		shared.DF_UNMOUNT_FROM_SOURCE_INDEX_RE,
+		keyboardCommand); len(dfUnmountRule) > 0 {
+		// example: udf0
+		// example: udfn
+		dfUnmountFromSourceIndex(dfUnmountRule["source_index"])
+	} else if cdUnmountRule := utils.RegExInstance.FindNamedMatches(
+		shared.CD_UNMOUNT_FROM_SOURCE_INDEX_RE,
+		keyboardCommand); len(cdUnmountRule) > 0 {
+		// example: ucd0
+		// example: ucdn
+		cdUnmountFromSourceIndex(cdUnmountRule["source_index"])
+	} else if hfUnmountRule := utils.RegExInstance.FindNamedMatches(
+		shared.HF_UNMOUNT_FROM_SOURCE_INDEX_RE,
+		keyboardCommand); len(hfUnmountRule) > 0 {
+		// example: uhf0
+		// example: uhfn
+		hfUnmountFromSourceIndex(hfUnmountRule["source_index"])
+	} else if dhUnmountRule := utils.RegExInstance.FindNamedMatches(
+		shared.DH_UNMOUNT_FROM_SOURCE_INDEX_RE,
+		keyboardCommand); len(dhUnmountRule) > 0 {
+		// example: udh0
+		// example: udhn
+		dhUnmountFromSourceIndex(dhUnmountRule["source_index"])
 	}
+}
+
+func unmountAllKeyboardCommand() {
+	// TODO
+	panic("unimplemented")
+}
+
+func dfUnmountFromSourceIndex(sourceIndex string) {
+	// TODO
+	panic("unimplemented")
+}
+
+func cdUnmountFromSourceIndex(sourceIndex string) {
+	// TODO
+	panic("unimplemented")
+}
+
+func hfUnmountFromSourceIndex(sourceIndex string) {
+	// TODO
+	panic("unimplemented")
+}
+
+func dhUnmountFromSourceIndex(sourceIndex string) {
+	// TODO
+	panic("unimplemented")
 }
 
 func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetIndex string) {

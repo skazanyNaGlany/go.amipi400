@@ -28,6 +28,7 @@ const MEDIUM_CONFIG_DEFAULT_FILE_NONE = "none"
 const ADF_DISK_NO_OF_MAX = "(Disk %d of %d)"
 const AUTORUN_EMULATOR = true
 
+// TODO replace [0-9] with \d
 var SOFT_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
 var HARD_RESET_KEYS []string = []string{"L_CTRL", "L_ALT", "R_ALT"}
 var AP4_MEDIUM_DF_RE = regexp.MustCompile(`^AP4_DF(?P<index>[0-9]?|X)$`)
@@ -44,6 +45,11 @@ var CD_EJECT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^CD(?P<source_index>[0-9
 var ADF_DISK_NO_OF_MAX_RE = regexp.MustCompile(`(?P<disk_no_of_max>\((Disk\ \d)\ (of\ \d)\))`)
 var HF_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^HF(?P<source_index>[0-9])(?P<filename_part>.*)$`)
 var HF_EJECT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^HF(?P<source_index>[0-9])$`)
+var DF_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UDF(?P<source_index>\d|N)$`)
+var CD_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UCD(?P<source_index>\d|N)$`)
+var HF_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UHF(?P<source_index>\d|N)$`)
+var DH_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UDH(?P<source_index>\d|N)$`)
+var UNMOUNT_ALL_RE = regexp.MustCompile(`^U$`)
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
