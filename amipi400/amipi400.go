@@ -8,7 +8,6 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -19,7 +18,6 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/shared/components"
 	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 	"github.com/thoas/go-funk"
-	"gopkg.in/ini.v1"
 )
 
 var runnersBlocker components.RunnersBlocker
@@ -30,16 +28,7 @@ var emulator components_amipi400.AmiberryEmulator
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var commander components_amipi400.AmiberryCommander
 var blockDevices components.BlockDevices
-var mounted = make(map[string]string)           // [devicePathname]mountpoint
-var mediumConfig = make(map[string]*ini.File)   // [devicePathname]*ini.File
-var mountpointFiles = make(map[string][]string) // [mountpoint]romFiles
-var dfIndexMountpoint = make(map[int]string)    // [driveIndex]mountpoint
-var dfIndexLabel = make(map[int]string)         // [driveIndex]label
-var hdIndexMountpoint = make(map[int]string)    // [driveIndex]mountpoint
-var hdIndexLabel = make(map[int]string)         // [driveIndex]label
-var cdIndexMountpoint = make(map[int]string)    // [driveIndex]mountpoint
-var cdIndexLabel = make(map[int]string)         // [driveIndex]label
-var hdIndexBootPriority = make(map[int]int)     // [driveIndex]bootPriority
+var mountpoints = components_amipi400.NewMountpointList()
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()
@@ -267,12 +256,7 @@ func attachAmigaDiskDeviceIso(pathname string) {
 func detachAmigaDiskDeviceAdf(pathname string) {
 	index := adfPathnameToDFIndex(pathname)
 
-	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
-	emulator.SetFloppySoundVolumeDisk(index, 0, 0)
-
-	if !detachAdf(index, pathname) {
-		emulator.SetFloppySoundVolumeDisk(index, oldVolume, 0)
-	}
+	detachAdf(index, pathname)
 }
 
 func detachAmigaDiskDeviceIso(pathname string) {
@@ -527,7 +511,7 @@ func processKeyboardCommand(keyboardCommand string) {
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
 	} else if shared.UNMOUNT_ALL_RE.MatchString(keyboardCommand) {
 		// example: u
-		unmountAllKeyboardCommand()
+		unmountAll()
 	} else if dfUnmountRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_UNMOUNT_FROM_SOURCE_INDEX_RE,
 		keyboardCommand); len(dfUnmountRule) > 0 {
@@ -553,11 +537,6 @@ func processKeyboardCommand(keyboardCommand string) {
 		// example: udhn
 		dhUnmountFromSourceIndex(dhUnmountRule["source_index"])
 	}
-}
-
-func unmountAllKeyboardCommand() {
-	// TODO
-	panic("unimplemented")
 }
 
 func dfUnmountFromSourceIndex(sourceIndex string) {
@@ -593,9 +572,9 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 		return
 	}
 
-	mountpoint, mountpointExists := dfIndexMountpoint[sourceIndexInt]
+	mountpoint := mountpoints.GetMountpointByDFIndex(sourceIndexInt)
 
-	if !mountpointExists {
+	if mountpoint == nil {
 		// allow to manage only these drives mounted by amipi400.go
 		// so skip these from amiga_disk_devices.go
 		return
@@ -610,11 +589,7 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 			return
 		}
 
-		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
-		emulator.SetFloppySoundVolumeDisk(targetIndexInt, 0, 0)
-
 		if !detachAdf(targetIndexInt, targetIndexAdf) {
-			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
 			return
 		}
 	}
@@ -683,9 +658,9 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 		return
 	}
 
-	mountpoint, mountpointExists := dfIndexMountpoint[sourceIndexInt]
+	mountpoint := mountpoints.GetMountpointByDFIndex(sourceIndexInt)
 
-	if !mountpointExists {
+	if mountpoint == nil {
 		// allow to manage only these drives mounted by amipi400.go
 		// so skip these from amiga_disk_devices.go
 		return
@@ -699,11 +674,7 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 			return
 		}
 
-		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
-		emulator.SetFloppySoundVolumeDisk(targetIndexInt, 0, 0)
-
 		if !detachAdf(targetIndexInt, targetIndexAdf) {
-			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
 			return
 		}
 	}
@@ -748,9 +719,9 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 		return
 	}
 
-	mountpoint, mountpointExists := hdIndexMountpoint[sourceIndexInt]
+	mountpoint := mountpoints.GetMountpointByDHIndex(sourceIndexInt)
 
-	if !mountpointExists {
+	if mountpoint == nil {
 		// allow to manage only these drives mounted by amipi400.go
 		// so skip these from amiga_disk_devices.go
 		return
@@ -758,7 +729,7 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 
 	matched := utils.RegExInstance.FindNamedMatches(
 		shared.AP4_MEDIUM_HF_RE,
-		hdIndexLabel[sourceIndexInt])
+		mountpoint.Label)
 	isHdLabel := len(matched) != 0
 
 	if !isHdLabel {
@@ -793,7 +764,7 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 
 	if !attachHdf(
 		targetIndexInt,
-		hdIndexBootPriority[sourceIndexInt],
+		mountpoint.DHBootPriority,
 		foundHdfPathname) {
 		return
 	}
@@ -820,13 +791,7 @@ func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 		return
 	}
 
-	mountpoint, mountpointExists := cdIndexMountpoint[sourceIndexInt]
-
-	if !mountpointExists {
-		// allow to manage only these drives mounted by amipi400.go
-		// so skip these from amiga_disk_devices.go
-		return
-	}
+	mountpoint := mountpoints.GetMountpointByCDIndex(sourceIndexInt)
 
 	targetIndexIso := emulator.GetIso(targetIndexInt)
 
@@ -884,11 +849,7 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 		return
 	}
 
-	sourceIndexOldVolume := emulator.GetFloppySoundVolumeDisk(sourceIndexInt)
-	emulator.SetFloppySoundVolumeDisk(sourceIndexInt, 0, 0)
-
 	if !detachAdf(sourceIndexInt, sourceIndexAdf) {
-		emulator.SetFloppySoundVolumeDisk(sourceIndexInt, sourceIndexOldVolume, 0)
 		return
 	}
 
@@ -965,11 +926,7 @@ func dfEjectFromSourceIndexAll() {
 			continue
 		}
 
-		oldVolume := emulator.GetFloppySoundVolumeDisk(index)
-		emulator.SetFloppySoundVolumeDisk(index, 0, 0)
-
 		if !detachAdf(index, adfPathname) {
-			emulator.SetFloppySoundVolumeDisk(index, oldVolume, 0)
 			return
 		}
 	}
@@ -1007,7 +964,7 @@ func isHdfAttached(hdfPathname string) int {
 	return shared.DRIVE_INDEX_UNSPECIFIED
 }
 
-func findSimilarROMFiles(mountpoint string, pathname string) []string {
+func findSimilarROMFiles(mountpoint *components_amipi400.Mountpoint, pathname string) []string {
 	basename := path.Base(pathname)
 	extension := path.Ext(basename)
 
@@ -1023,7 +980,7 @@ func findSimilarROMFiles(mountpoint string, pathname string) []string {
 
 	similar := make([]string, 0)
 
-	for _, iPathname := range mountpointFiles[mountpoint] {
+	for _, iPathname := range mountpoint.Files {
 		iPathnameBasename := path.Base(iPathname)
 
 		if !strings.HasPrefix(iPathnameBasename, noExtFilename) {
@@ -1046,7 +1003,7 @@ func findSimilarROMFiles(mountpoint string, pathname string) []string {
 	return similar
 }
 
-func findSimilarROMFile(mountpoint string, filenamePattern string) string {
+func findSimilarROMFile(mountpoint *components_amipi400.Mountpoint, filenamePattern string) string {
 	filenamePattern = utils.StringUtilsInstance.StringUnify(filenamePattern)
 	filenamePattern = strings.ReplaceAll(filenamePattern, " ", ".*")
 	filenamePattern = ".*" + filenamePattern + ".*"
@@ -1054,7 +1011,7 @@ func findSimilarROMFile(mountpoint string, filenamePattern string) string {
 
 	filenamePatternRegEx := regexp.MustCompile(filenamePattern)
 
-	for _, iRomPathname := range mountpointFiles[mountpoint] {
+	for _, iRomPathname := range mountpoint.Files {
 		iRomBasename := path.Base(iRomPathname)
 		iRomBasename = adfBasenameCleanDiskOf(iRomBasename)
 
@@ -1081,9 +1038,11 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 		return
 	}
 
-	mountpoint, mountpointExists := dfIndexMountpoint[sourceIndexInt]
+	mountpoint := mountpoints.GetMountpointByDFIndex(sourceIndexInt)
 
-	if !mountpointExists {
+	if mountpoint == nil {
+		// allow to manage only these drives mounted by amipi400.go
+		// so skip these from amiga_disk_devices.go
 		return
 	}
 
@@ -1158,16 +1117,6 @@ func keyEventCallback(sender any, key string, pressed bool) {
 	}
 }
 
-func getMountpointFirstFile(mounpoint string, extension string) string {
-	for _, pathname := range mountpointFiles[mounpoint] {
-		if strings.HasSuffix(pathname, extension) {
-			return pathname
-		}
-	}
-
-	return ""
-}
-
 func parseMediumLabel(label string, re *regexp.Regexp) (int, int, error) {
 	var err error
 	var index int64
@@ -1204,487 +1153,256 @@ func parseMediumLabel(label string, re *regexp.Regexp) (int, int, error) {
 	return int(index), int(bootPriority), nil
 }
 
-func mountpointIsMounted(mountpoint string) bool {
-	for _, iMountpoint := range mounted {
-		if iMountpoint == mountpoint {
-			return true
-		}
-	}
-
-	return false
-}
-
-func fixMountMedium(
+func setupMountpoint(
 	devicePathname string,
 	label string,
 	fsType string,
 	dfIndex int,
-	hdIndex int,
+	dhIndex int,
 	cdIndex int,
-	hdBootPriority int) (string, error) {
-	log.Println(devicePathname, label, "running Fsck")
+	dhBootPriority int,
+	extensions []string) (*components_amipi400.Mountpoint, error) {
+	mountpointStr := filepath.Join(shared.AP4_ROOT_MOUNTPOINT, label)
 
-	output, err := utils.UnixUtilsInstance.RunFsck(devicePathname)
-
-	if err != nil {
-		// fail or not, try to mount it anyway
-		log.Println(err)
+	if mountpoints.HasMountpoint(mountpointStr) {
+		return nil, fmt.Errorf("%v already mounted, unmount first", mountpointStr)
 	}
 
-	log.Println("Fsck output:")
-	utils.GoUtilsInstance.LogPrintLines(output)
-
-	target := filepath.Join(shared.AP4_ROOT_MOUNTPOINT, label)
-
-	log.Println(devicePathname, label, "mounting as", target)
-
-	if mountpointIsMounted(target) {
-		return "", fmt.Errorf("%v already mounted, unmount first", target)
+	if err := os.MkdirAll(mountpointStr, 0777); err != nil {
+		return nil, fmt.Errorf("cannot create directory for mountpoint %v (%v, %v)", mountpointStr, devicePathname, err)
 	}
 
-	if err := os.MkdirAll(target, 0777); err != nil {
-		return "", err
+	mountpoint := components_amipi400.NewMountpoint(devicePathname, mountpointStr, label, fsType)
+	mountpoint.Fix()
+
+	if err := mountpoint.Mount(); err != nil {
+		return nil, fmt.Errorf("cannot mount mountpoint %v (%v, %v)", mountpointStr, devicePathname, err)
 	}
 
-	if err := syscall.Mount(
-		devicePathname,
-		target,
-		fsType,
-		syscall.MS_SYNCHRONOUS,
-		"flush"); err != nil {
-		return "", err
+	if extensions != nil {
+		mountpoint.LoadFiles(extensions)
 	}
 
-	mounted[devicePathname] = target
+	mountpoint.LoadConfig()
+	mountpoint.LoadDefaultFile()
+
+	if extensions != nil && !mountpoint.HasFiles() && mountpoint.DefaultFile != shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+		mountpoint.Unmount()
+
+		return nil, fmt.Errorf("%v contains no %v files", label, strings.Join(extensions, ","))
+	}
 
 	if dfIndex != shared.DRIVE_INDEX_UNSPECIFIED {
-		dfIndexMountpoint[dfIndex] = target
-		dfIndexLabel[dfIndex] = label
+		mountpoint.DFIndex = dfIndex
 	}
 
-	if hdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
-		hdIndexMountpoint[hdIndex] = target
-		hdIndexBootPriority[hdIndex] = hdBootPriority
-		hdIndexLabel[hdIndex] = label
+	if dhIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		mountpoint.DHIndex = dhIndex
+		mountpoint.DHBootPriority = dhBootPriority
 	}
 
 	if cdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
-		cdIndexMountpoint[cdIndex] = target
-		cdIndexLabel[cdIndex] = label
+		mountpoint.CDIndex = cdIndex
 	}
 
-	return target, nil
-}
-
-func unmountMedium(
-	devicePathname string,
-	mountpoint string,
-	flags int,
-	dfIndex int,
-	hdIndex int,
-	cdIndex int) {
-	log.Println("Unmount", mountpoint)
-
-	syscall.Unmount(mountpoint, flags)
-	delete(mounted, devicePathname)
-
-	if dfIndex != shared.DRIVE_INDEX_UNSPECIFIED {
-		delete(dfIndexMountpoint, dfIndex)
-		delete(dfIndexLabel, dfIndex)
-	}
-
-	if hdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
-		delete(hdIndexMountpoint, hdIndex)
-		delete(hdIndexBootPriority, hdIndex)
-		delete(hdIndexLabel, hdIndex)
-	}
-
-	if cdIndex != shared.DRIVE_INDEX_UNSPECIFIED {
-		delete(cdIndexMountpoint, cdIndex)
-		delete(cdIndexLabel, cdIndex)
-	}
-}
-
-func loadMediumConfig(devicePathname string, mountpoint string) error {
-	mediumConfig[devicePathname] = nil
-
-	cfg, err := ini.Load(
-		filepath.Join(mountpoint, shared.MEDIUM_CONFIG_INI_NAME))
-
-	if err != nil {
-		log.Println(devicePathname, mountpoint, "medium config does not exists")
-		return err
-	}
-
-	mediumConfig[devicePathname] = cfg
-
-	return nil
-}
-
-func getMediumDefaultFile(devicePathname string) string {
-	cfg, exists := mediumConfig[devicePathname]
-
-	if !exists || cfg == nil {
-		return ""
-	}
-
-	if !cfg.HasSection(shared.MEDIUM_CONFIG_DEFAULT_SECTION) {
-		return ""
-	}
-
-	if !cfg.Section(shared.MEDIUM_CONFIG_DEFAULT_SECTION).HasKey(
-		shared.MEDIUM_CONFIG_DEFAULT_FILE) {
-		return ""
-	}
-
-	filename := cfg.Section(shared.MEDIUM_CONFIG_DEFAULT_SECTION).Key(
-		shared.MEDIUM_CONFIG_DEFAULT_FILE).String()
-
-	if filename == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
-		return shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE
-	}
-
-	fullPathname := filepath.Join(mounted[devicePathname], filename)
-
-	stat, err := os.Stat(fullPathname)
-
-	if err != nil || stat.IsDir() {
-		return ""
-	}
-
-	return fullPathname
+	return mountpoint, nil
 }
 
 func attachDFMediumDiskImage(
 	name string,
 	size uint64,
-	_type, mountpoint, label, path, fsType, ptType string,
+	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
-	var err error
-	var firstAdfPathname string
 
 	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
-
 		return
 	}
 
 	if emulator.GetAdf(index) != "" {
 		log.Printf("ADF already attached at DF%v, eject it first\n", index)
-
 		return
 	}
 
-	if mountpoint != "" {
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			index,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			shared.DRIVE_INDEX_UNSPECIFIED)
-		mountpoint = ""
+	if mountpointStr != "" {
+		components_amipi400.NewMountpoint(path, mountpointStr, "", "").Unmount()
 	}
 
-	mountpoint, err = fixMountMedium(
+	mountpoint, err := setupMountpoint(
 		path,
 		label,
 		fsType,
 		index,
 		shared.DRIVE_INDEX_UNSPECIFIED,
 		shared.DRIVE_INDEX_UNSPECIFIED,
-		shared.DH_BOOT_PRIORITY_UNSPECIFIED)
+		0,
+		[]string{shared.FLOPPY_ADF_FULL_EXTENSION})
 
 	if err != nil {
-		log.Println(path, label, err)
-
+		log.Println(err)
 		return
 	}
 
-	loadMountpointFiles(mountpoint, []string{shared.FLOPPY_ADF_FULL_EXTENSION})
-	loadMediumConfig(path, mountpoint)
-
-	firstAdfPathname = getMediumDefaultFile(path)
-
-	if firstAdfPathname == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
-		return
-	}
-
-	if firstAdfPathname == "" {
-		// find first .adf file and attach it to the emulator
-		firstAdfPathname = getMountpointFirstFile(mountpoint, shared.FLOPPY_ADF_FULL_EXTENSION)
-	}
-
-	if firstAdfPathname == "" {
-		log.Println(path, label, "contains no", shared.FLOPPY_ADF_EXTENSION, "files")
-
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			index,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			shared.DRIVE_INDEX_UNSPECIFIED)
-
+	if mountpoint.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+		mountpoints.AddMountpoint(mountpoint)
 		return
 	}
 
 	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
 	emulator.SetFloppySoundVolumeDisk(index, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME, 0)
 
-	if !attachAdf(index, firstAdfPathname) {
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			index,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			shared.DRIVE_INDEX_UNSPECIFIED)
+	if !attachAdf(index, mountpoint.DefaultFile) {
+		mountpoint.Unmount()
 
 		emulator.SetFloppySoundVolumeDisk(index, oldVolume, 0)
+		return
 	}
-}
 
-func loadMountpointFiles(mountpoint string, extensions []string) {
-	files := utils.FileUtilsInstance.GetDirFiles(mountpoint, false, extensions...)
-
-	sort.Strings(files)
-
-	mountpointFiles[mountpoint] = files
+	mountpoints.AddMountpoint(mountpoint)
 }
 
 func attachDHMediumDiskImage(
 	name string,
 	size uint64,
-	_type, mountpoint, label, path, fsType, ptType string,
+	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
-	var err error
-
 	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
-
 		return
 	}
 
 	if emulator.GetHd(index) != "" {
 		log.Printf("HDF already attached at DH%v, eject it first\n", index)
-
 		return
 	}
 
-	if mountpoint != "" {
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			index,
-			shared.DRIVE_INDEX_UNSPECIFIED)
-		mountpoint = ""
+	if mountpointStr != "" {
+		components_amipi400.NewMountpoint(path, mountpointStr, "", "").Unmount()
 	}
 
-	mountpoint, err = fixMountMedium(
+	mountpoint, err := setupMountpoint(
 		path,
 		label,
 		fsType,
 		shared.DRIVE_INDEX_UNSPECIFIED,
 		index,
 		shared.DRIVE_INDEX_UNSPECIFIED,
-		bootPriority)
+		bootPriority,
+		nil)
 
 	if err != nil {
-		log.Println(path, label, err)
-
+		log.Println(err)
 		return
 	}
 
-	if !attachHdDir(index, bootPriority, mountpoint) {
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			index,
-			shared.DRIVE_INDEX_UNSPECIFIED)
+	if !attachHdDir(index, bootPriority, mountpoint.Mountpoint) {
+		mountpoint.Unmount()
+		return
 	}
+
+	mountpoints.AddMountpoint(mountpoint)
 }
 
 func attachHFMediumDiskImage(
 	name string,
 	size uint64,
-	_type, mountpoint, label, path, fsType, ptType string,
+	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
-	var err error
-	var firstHdfPathname string
-
 	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_HF_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
-
 		return
 	}
 
 	if emulator.GetHd(index) != "" {
 		log.Printf("HDF already attached at DH%v, eject it first\n", index)
-
 		return
 	}
 
-	if mountpoint != "" {
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			index,
-			shared.DRIVE_INDEX_UNSPECIFIED)
-		mountpoint = ""
+	if mountpointStr != "" {
+		components_amipi400.NewMountpoint(path, mountpointStr, "", "").Unmount()
 	}
 
-	mountpoint, err = fixMountMedium(
+	mountpoint, err := setupMountpoint(
 		path,
 		label,
 		fsType,
 		shared.DRIVE_INDEX_UNSPECIFIED,
 		index,
 		shared.DRIVE_INDEX_UNSPECIFIED,
-		bootPriority)
+		bootPriority,
+		[]string{shared.HD_HDF_FULL_EXTENSION})
 
 	if err != nil {
-		log.Println(path, label, err)
-
+		log.Println(err)
 		return
 	}
 
-	loadMountpointFiles(mountpoint, []string{shared.HD_HDF_FULL_EXTENSION})
-	loadMediumConfig(path, mountpoint)
-
-	firstHdfPathname = getMediumDefaultFile(path)
-
-	if firstHdfPathname == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+	if mountpoint.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+		mountpoints.AddMountpoint(mountpoint)
 		return
 	}
 
-	if firstHdfPathname == "" {
-		// find first .hdf file and attach it to the emulator
-		firstHdfPathname = getMountpointFirstFile(mountpoint, shared.HD_HDF_FULL_EXTENSION)
-	}
-
-	if firstHdfPathname == "" {
-		log.Println(path, label, "contains no", shared.HD_HDF_EXTENSION, "files")
-
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			index,
-			shared.DRIVE_INDEX_UNSPECIFIED)
-
+	if !attachHdf(index, bootPriority, mountpoint.DefaultFile) {
+		mountpoint.Unmount()
 		return
 	}
 
-	if !attachHdf(index, bootPriority, firstHdfPathname) {
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			index,
-			shared.DRIVE_INDEX_UNSPECIFIED)
-	}
+	mountpoints.AddMountpoint(mountpoint)
 }
 
 func attachCDMediumDiskImage(
 	name string,
 	size uint64,
-	_type, mountpoint, label, path, fsType, ptType string,
+	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
-	var err error
-	var firstIsoPathname string
-
 	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
-
 		return
 	}
 
 	if emulator.GetIso(index) != "" {
 		log.Printf("ISO already attached at CD%v, eject it first\n", index)
-
 		return
 	}
 
-	if mountpoint != "" {
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			index)
-		mountpoint = ""
+	if mountpointStr != "" {
+		components_amipi400.NewMountpoint(path, mountpointStr, "", "").Unmount()
 	}
 
-	mountpoint, err = fixMountMedium(
+	mountpoint, err := setupMountpoint(
 		path,
 		label,
 		fsType,
 		shared.DRIVE_INDEX_UNSPECIFIED,
 		shared.DRIVE_INDEX_UNSPECIFIED,
 		index,
-		shared.DH_BOOT_PRIORITY_UNSPECIFIED)
+		shared.DH_BOOT_PRIORITY_UNSPECIFIED,
+		[]string{shared.CD_ISO_FULL_EXTENSION})
 
 	if err != nil {
-		log.Println(path, label, err)
-
+		log.Println(err)
 		return
 	}
 
-	loadMountpointFiles(mountpoint, []string{shared.CD_ISO_FULL_EXTENSION})
-	loadMediumConfig(path, mountpoint)
-
-	firstIsoPathname = getMediumDefaultFile(path)
-
-	if firstIsoPathname == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+	if mountpoint.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+		mountpoints.AddMountpoint(mountpoint)
 		return
 	}
 
-	if firstIsoPathname == "" {
-		// find first .iso file and attach it to the emulator
-		firstIsoPathname = getMountpointFirstFile(mountpoint, shared.CD_ISO_FULL_EXTENSION)
-	}
-
-	if firstIsoPathname == "" {
-		log.Println(path, label, "contains no", shared.CD_ISO_EXTENSION, "files")
-
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			index)
-
+	if !attachIso(index, mountpoint.DefaultFile) {
+		mountpoint.Unmount()
 		return
 	}
 
-	if !attachIso(index, firstIsoPathname) {
-		unmountMedium(
-			path,
-			mountpoint,
-			syscall.MNT_DETACH,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			index)
-	}
+	mountpoints.AddMountpoint(mountpoint)
 }
 
 func attachMediumDiskImage(
@@ -1706,146 +1424,74 @@ func attachMediumDiskImage(
 func detachDFMediumDiskImage(
 	name string,
 	size uint64,
-	_type, mountpoint, label, path, fsType, ptType string,
+	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
-	_mountpoint, exists := mounted[path]
+	mountpoint := mountpoints.GetMountpointByDevicePathname(path)
 
-	if !exists || _mountpoint == "" {
+	if mountpoint == nil {
 		log.Println(path, label, "not mounted")
-
 		return
 	}
 
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_RE)
+	if mountpoint.DFIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		adfPathname := emulator.GetAdf(mountpoint.DFIndex)
 
-	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
-		log.Println(path, label, "cannot get index for medium: ", err)
-
-		return
-	}
-
-	for i := 0; i < shared.MAX_ADFS; i++ {
-		adfPathname := emulator.GetAdf(i)
-
-		if adfPathname == "" {
-			continue
-		}
-
-		// TODO check with _mountpoint + '/'
-		if !strings.HasPrefix(adfPathname, _mountpoint) {
-			continue
-		}
-
-		oldVolume := emulator.GetFloppySoundVolumeDisk(i)
-		emulator.SetFloppySoundVolumeDisk(i, 0, 0)
-
-		if !detachAdf(i, adfPathname) {
-			emulator.SetFloppySoundVolumeDisk(i, oldVolume, 0)
+		if adfPathname != "" {
+			detachAdf(mountpoint.DFIndex, adfPathname)
 		}
 	}
 
-	unmountMedium(
-		path,
-		_mountpoint,
-		syscall.MNT_DETACH,
-		index,
-		shared.DRIVE_INDEX_UNSPECIFIED,
-		shared.DRIVE_INDEX_UNSPECIFIED)
+	mountpoint.Unmount()
+	mountpoints.RemoveMountpoint(mountpoint)
 }
 
 // One function for both HDF files and directories
 func detachHDMediumDiskImage(
 	name string,
 	size uint64,
-	_type, mountpoint, label, path, fsType, ptType string,
+	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
-	_mountpoint, exists := mounted[path]
+	mountpoint := mountpoints.GetMountpointByDevicePathname(path)
 
-	if !exists || _mountpoint == "" {
+	if mountpoint == nil {
 		log.Println(path, label, "not mounted")
-
 		return
 	}
 
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_RE)
+	if mountpoint.DHIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		hdfPathname := emulator.GetHd(mountpoint.DHIndex)
 
-	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
-		index, _, err = parseMediumLabel(label, shared.AP4_MEDIUM_HF_RE)
-
-		if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
-			log.Println(path, label, "cannot get index for medium: ", err)
-
-			return
+		if hdfPathname != "" {
+			detachHd(mountpoint.DHIndex, hdfPathname)
 		}
 	}
 
-	for i := 0; i < shared.MAX_HDFS; i++ {
-		hdfPathname := emulator.GetHd(i)
-
-		if hdfPathname == "" {
-			continue
-		}
-
-		// TODO check with _mountpoint + '/'
-		if !strings.HasPrefix(hdfPathname, _mountpoint) {
-			continue
-		}
-
-		detachHd(i, hdfPathname)
-	}
-
-	unmountMedium(
-		path,
-		_mountpoint,
-		syscall.MNT_DETACH,
-		shared.DRIVE_INDEX_UNSPECIFIED,
-		index,
-		shared.DRIVE_INDEX_UNSPECIFIED)
+	mountpoint.Unmount()
+	mountpoints.RemoveMountpoint(mountpoint)
 }
 
 func detachCDMediumDiskImage(
 	name string,
 	size uint64,
-	_type, mountpoint, label, path, fsType, ptType string,
+	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
-	_mountpoint, exists := mounted[path]
+	mountpoint := mountpoints.GetMountpointByDevicePathname(path)
 
-	if !exists || _mountpoint == "" {
+	if mountpoint == nil {
 		log.Println(path, label, "not mounted")
-
 		return
 	}
 
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_RE)
+	if mountpoint.CDIndex != shared.DRIVE_INDEX_UNSPECIFIED {
+		hdfPathname := emulator.GetIso(mountpoint.CDIndex)
 
-	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
-		log.Println(path, label, "cannot get index for medium: ", err)
-
-		return
+		if hdfPathname != "" {
+			detachIso(mountpoint.CDIndex, hdfPathname)
+		}
 	}
 
-	for i := 0; i < shared.MAX_CDS; i++ {
-		hdfPathname := emulator.GetIso(i)
-
-		if hdfPathname == "" {
-			continue
-		}
-
-		// TODO check with _mountpoint + '/'
-		if !strings.HasPrefix(hdfPathname, _mountpoint) {
-			continue
-		}
-
-		detachIso(i, hdfPathname)
-	}
-
-	unmountMedium(
-		path,
-		_mountpoint,
-		syscall.MNT_DETACH,
-		shared.DRIVE_INDEX_UNSPECIFIED,
-		shared.DRIVE_INDEX_UNSPECIFIED,
-		index)
+	mountpoint.Unmount()
+	mountpoints.RemoveMountpoint(mountpoint)
 }
 
 func detachMediumDiskImage(
@@ -1937,26 +1583,70 @@ func printCDROMDevices() {
 	}
 }
 
+func detachDFMountpointROMs(mountpoint *components_amipi400.Mountpoint) {
+	for index := 0; index < shared.MAX_ADFS; index++ {
+		pathname := emulator.GetAdf(index)
+
+		if pathname == "" {
+			continue
+		}
+
+		if funk.ContainsString(mountpoint.Files, pathname) {
+			detachAdf(index, pathname)
+		}
+	}
+}
+
+func detachDHMountpointROMs(mountpoint *components_amipi400.Mountpoint) {
+	for index := 0; index < shared.MAX_HDFS; index++ {
+		pathname := emulator.GetHd(index)
+
+		if pathname == "" {
+			continue
+		}
+
+		// can be a file
+		if funk.ContainsString(mountpoint.Files, pathname) {
+			detachHd(index, pathname)
+		}
+
+		// or a directory
+		if mountpoint.Mountpoint == pathname {
+			detachHd(index, pathname)
+		}
+	}
+}
+
+func detachCDMountpointROMs(mountpoint *components_amipi400.Mountpoint) {
+	for index := 0; index < shared.MAX_CDS; index++ {
+		pathname := emulator.GetIso(index)
+
+		if pathname == "" {
+			continue
+		}
+
+		if funk.ContainsString(mountpoint.Files, pathname) {
+			detachIso(index, pathname)
+		}
+	}
+}
+
+func detachMountpointROMs(mountpoint *components_amipi400.Mountpoint) {
+	detachDFMountpointROMs(mountpoint)
+	detachDHMountpointROMs(mountpoint)
+	detachCDMountpointROMs(mountpoint)
+}
+
 func unmountAll() {
 	utils.UnixUtilsInstance.Sync()
 
-	for devicePathname, mountpoint := range mounted {
-		unmountMedium(
-			devicePathname,
-			mountpoint,
-			syscall.MNT_DETACH,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			shared.DRIVE_INDEX_UNSPECIFIED,
-			shared.DRIVE_INDEX_UNSPECIFIED)
+	for _, mountpoint := range mountpoints.Mountpoints {
+		detachMountpointROMs(mountpoint)
+
+		mountpoint.Unmount()
 	}
 
-	dfIndexMountpoint = make(map[int]string)
-	hdIndexMountpoint = make(map[int]string)
-	cdIndexMountpoint = make(map[int]string)
-	hdIndexBootPriority = make(map[int]int)
-	dfIndexLabel = make(map[int]string)
-	hdIndexLabel = make(map[int]string)
-	cdIndexLabel = make(map[int]string)
+	mountpoints.Clear()
 }
 
 func stopServices() {
