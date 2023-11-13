@@ -539,24 +539,100 @@ func processKeyboardCommand(keyboardCommand string) {
 	}
 }
 
+func fillIndexes(indexStr string, maxIndex int) []int {
+	indexes := make([]int, 0)
+
+	if indexStr == "N" {
+		for index := 0; index < maxIndex; index++ {
+			indexes = append(indexes, index)
+		}
+	} else {
+		indexInt, _ := utils.StringUtilsInstance.StringToInt(indexStr, 10, 16)
+
+		if indexInt > shared.MAX_ADFS-1 {
+			return indexes
+		}
+
+		indexes = append(indexes, indexInt)
+	}
+
+	return indexes
+}
+
 func dfUnmountFromSourceIndex(sourceIndex string) {
-	// TODO
-	panic("unimplemented")
+	sourceIndexes := fillIndexes(sourceIndex, shared.MAX_ADFS)
+	countUnmounted := 0
+
+	for _, index := range sourceIndexes {
+		mountpoint := mountpoints.GetMountpointByDFIndex(index)
+
+		if mountpoint == nil {
+			continue
+		}
+
+		detachDFMountpointROMs(mountpoint)
+
+		mountpoint.Unmount()
+		mountpoints.RemoveMountpoint(mountpoint)
+
+		countUnmounted++
+	}
+
+	if countUnmounted > 0 {
+		ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
+	}
 }
 
 func cdUnmountFromSourceIndex(sourceIndex string) {
-	// TODO
-	panic("unimplemented")
+	sourceIndexes := fillIndexes(sourceIndex, shared.MAX_CDS)
+	countUnmounted := 0
+
+	for _, index := range sourceIndexes {
+		mountpoint := mountpoints.GetMountpointByCDIndex(index)
+
+		if mountpoint == nil {
+			continue
+		}
+
+		detachCDMountpointROMs(mountpoint)
+
+		mountpoint.Unmount()
+		mountpoints.RemoveMountpoint(mountpoint)
+
+		countUnmounted++
+	}
+
+	if countUnmounted > 0 {
+		ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
+	}
 }
 
 func hfUnmountFromSourceIndex(sourceIndex string) {
-	// TODO
-	panic("unimplemented")
+	dhUnmountFromSourceIndex(sourceIndex)
 }
 
 func dhUnmountFromSourceIndex(sourceIndex string) {
-	// TODO
-	panic("unimplemented")
+	sourceIndexes := fillIndexes(sourceIndex, shared.MAX_HDFS)
+	countUnmounted := 0
+
+	for _, index := range sourceIndexes {
+		mountpoint := mountpoints.GetMountpointByDHIndex(index)
+
+		if mountpoint == nil {
+			continue
+		}
+
+		detachDHMountpointROMs(mountpoint)
+
+		mountpoint.Unmount()
+		mountpoints.RemoveMountpoint(mountpoint)
+
+		countUnmounted++
+	}
+
+	if countUnmounted > 0 {
+		ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
+	}
 }
 
 func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetIndex string) {
