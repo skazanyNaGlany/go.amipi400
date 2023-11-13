@@ -27,8 +27,7 @@ func (ml *MountpointList) AddMountpoint(mountpoint *Mountpoint) {
 func (ml *MountpointList) RemoveMountpoint(mountpoint *Mountpoint) {
 	i := ml.FindMountpoint(mountpoint)
 
-	// TODO check if it is working properly
-	slices.Delete(ml.Mountpoints, i, i+1)
+	ml.Mountpoints = slices.Delete(ml.Mountpoints, i, i+1)
 }
 
 func (ml *MountpointList) GetMountpointByDevicePathname(devicePathname string) *Mountpoint {
