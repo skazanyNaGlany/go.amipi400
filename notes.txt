@@ -156,3 +156,23 @@ ufiformat
 hwinfo
 lsblk
 
+
+
+// TODO fix
+2023/11/16 00:04:01 Found new block device /dev/sdc3
+2023/11/16 00:04:01 	Name:          sdc3
+2023/11/16 00:04:01 	Size:          4294967296
+2023/11/16 00:04:01 	Type:          part
+2023/11/16 00:04:01 	Mountpoint:    /media/AP4_HF1_0
+2023/11/16 00:04:01 	Label:         AP4_HF1_0
+2023/11/16 00:04:01 	Pathname:      /dev/sdc3
+2023/11/16 00:04:01 	FsType:        vfat
+2023/11/16 00:04:01 	PtType:        dos
+2023/11/16 00:04:01 	Read-only:     false
+2023/11/16 00:04:01 Unmount /dev/sdc3 from /media/AP4_HF1_0 ()
+2023/11/16 00:04:01 Fix /dev/sdc3
+2023/11/16 00:04:02 Mount /dev/sdc3 as /media/AP4_HF1_0 (vfat)
+2023/11/16 00:04:02 /dev/sdc3 /media/AP4_HF1_0 medium config does not exists
+2023/11/16 00:04:02 Unmount /dev/sdc3 from /media/AP4_HF1_0 (vfat)
+2023/11/16 00:04:02 Cannot unmount /dev/sdc3 from /media/AP4_HF1_0 (vfat): device or resource busy
+2023/11/16 00:04:02 AP4_HF1_0 contains no .hdf files
