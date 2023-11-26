@@ -176,3 +176,32 @@ lsblk
 2023/11/16 00:04:02 Unmount /dev/sdc3 from /media/AP4_HF1_0 (vfat)
 2023/11/16 00:04:02 Cannot unmount /dev/sdc3 from /media/AP4_HF1_0 (vfat): device or resource busy
 2023/11/16 00:04:02 AP4_HF1_0 contains no .hdf files
+
+
+
+
+
+
+// TODO fix
+^[^[		u		2023/11/26 23:46:25 Unmount /dev/sdc1 from /media/AP4_DF0 (vfat)
+2023/11/26 23:46:25 mountpoints.Mountpoints [0x1b520a0 0x1b52190 0x18660f0 0x1ab6230]
+2023/11/26 23:46:25 Detaching /media/AP4_HF0_1/System.hdf from DH0
+2023/11/26 23:46:25 Unmount /dev/sdc2 from /media/AP4_HF0_1 (vfat)
+2023/11/26 23:46:25 mountpoints.Mountpoints [0x1b520a0 0x18660f0 0x1ab6230]
+2023/11/26 23:46:25 Detaching /media/AP4_CD0/Alien Breed 3D (1995)(Ocean - Team 17)(Track 1 of 6)[!][cp code].iso from CD0
+2023/11/26 23:46:25 Unmount /dev/sdc7 from /media/AP4_CD0 (vfat)
+2023/11/26 23:46:25 Commiting
+2023/11/26 23:46:25 Sending commands to the emulator
+2023/11/26 23:46:25 cmd0=cfgfile_parse_line_type_all cdimage0=,image
+2023/11/26 23:46:25 cmd1=config_changed 1
+2023/11/26 23:46:25 Writing /home/pi/projects.local/amiberry/amiberry.tmp.ini
+2023/11/26 23:46:25 Sending USR1 signal to the emulator
+2023/11/26 23:46:25 emulator not running
+2023/11/26 23:46:25 Sleeping for 1 seconds
+2023/11/26 23:46:25 mountpoints.Mountpoints [0x1b520a0 0x18660f0]
+2023/11/26 23:46:25 Unmount /dev/sdc7 from /media/AP4_CD0 (vfat)
+2023/11/26 23:46:25 Cannot unmount /media/AP4_CD0: invalid argument
+2023/11/26 23:46:25 mountpoints.Mountpoints [0x1b520a0 0x18660f0]
+2023/11/26 23:46:25 Unmount /dev/sdc7 from /media/AP4_CD0 (vfat)
+2023/11/26 23:46:25 Cannot unmount /media/AP4_CD0: invalid argument
+2023/11/26 23:46:25 mountpoints.Mountpoints [0x1b520a0 0x18660f0]
