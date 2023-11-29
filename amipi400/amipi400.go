@@ -1827,6 +1827,8 @@ func unmountAll() {
 	emulator.SetRerunEmulator(false)
 	defer emulator.SetRerunEmulator(true)
 
+	emulator.HardReset()
+
 	log.Println("Unmounting all mountpoints...")
 
 	utils.UnixUtilsInstance.Sync()
