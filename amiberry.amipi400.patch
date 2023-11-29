@@ -87,10 +87,10 @@ index 00000000..1b8d83e3
 +#endif  // AMIPI400_EXTERNALS_H_
 diff --git a/src/amipi400/handler.cpp b/src/amipi400/handler.cpp
 new file mode 100644
-index 00000000..d48ffd52
+index 00000000..6110706a
 --- /dev/null
 +++ b/src/amipi400/handler.cpp
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,43 @@
 +#include "consts.h"
 +#include "handler.h"
 +#include "ini-exec.h"
@@ -120,6 +120,8 @@ index 00000000..d48ffd52
 +    if (signal(SIGUSR1, SIGUSR1_handler) == SIG_ERR) {
 +        my_printf("failed to set signal handler (SIGUSR1)\n");
 +    }
++
++    remove(TMP_INI_FILE);
 +}
 +
 +

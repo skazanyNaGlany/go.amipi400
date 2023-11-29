@@ -302,3 +302,9 @@ numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 2023/11/29 21:09:42 Stopping *components.BlockDevices 0x1246438
 2023/11/29 21:09:42 Stopping *components.PowerLEDControl 0x1246440
 
+# git reset --hard origin/master
+# git clean --force
+# git checkout 1d9f108b9f92997cc140a13d5d5a6ed81e2d2b88
+# patch -p1 < ../go.amipi400/amiberry.amipi400.patch
+# make clean
+# make -j2 PLATFORM=rpi4
