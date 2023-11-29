@@ -31,10 +31,15 @@ type AmiberryEmulator struct {
 	floppySoundVolumeNoDisk [shared.MAX_ADFS]int // volume per disk (when drive is empty)
 	isAutoHeight            bool
 	isZoom                  bool
+	rerunEmulator           bool
 }
 
 func (ae *AmiberryEmulator) SetAmiberryCommander(commander *AmiberryCommander) {
 	ae.commander = commander
+}
+
+func (ae *AmiberryEmulator) SetRerunEmulator(rerun bool) {
+	ae.rerunEmulator = rerun
 }
 
 func (ae *AmiberryEmulator) Run() {
@@ -55,6 +60,8 @@ func (ae *AmiberryEmulator) Run() {
 		ae.SetRunning(false)
 		return
 	}
+
+	ae.rerunEmulator = true
 
 	ae.loop()
 }
@@ -207,6 +214,10 @@ func (ae *AmiberryEmulator) loop() {
 		time.Sleep(time.Second * 3)
 
 		if !shared.AUTORUN_EMULATOR {
+			continue
+		}
+
+		if !ae.rerunEmulator {
 			continue
 		}
 

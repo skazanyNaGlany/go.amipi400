@@ -21,7 +21,8 @@ import (
 )
 
 var runnersBlocker components.RunnersBlocker
-var ledControl components.LEDControl
+var powerLEDControl components.PowerLEDControl
+var numLockLEDControl components.NumLockLEDControl
 var allKeyboardsControl components.AllKeyboardsControl
 var amigaDiskDevicesDiscovery components_amipi400.AmigaDiskDevicesDiscovery
 var emulator components_amipi400.AmiberryEmulator
@@ -185,6 +186,7 @@ func detachIso(index int, pathname string) bool {
 	return true
 }
 
+// TODO set empty floppy drive sound volume to 0
 func detachAdf(index int, pathname string) bool {
 	strIndex := fmt.Sprint(index)
 
@@ -560,8 +562,11 @@ func fillIndexes(indexStr string, maxIndex int) []int {
 }
 
 func dfUnmountFromSourceIndex(sourceIndex string) {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	sourceIndexes := fillIndexes(sourceIndex, shared.MAX_ADFS)
-	countUnmounted := 0
+	countFailed := 0
 
 	for _, index := range sourceIndexes {
 		mountpoint := mountpoints.GetMountpointByDFIndex(index)
@@ -572,20 +577,22 @@ func dfUnmountFromSourceIndex(sourceIndex string) {
 
 		detachDFMountpointROMs(mountpoint)
 
-		mountpoint.Unmount()
-		mountpoints.RemoveMountpoint(mountpoint)
-
-		countUnmounted++
+		if !unmountMountpoint(mountpoint, true) {
+			countFailed++
+		}
 	}
 
-	if countUnmounted > 0 {
-		ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
+	if countFailed > 0 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 	}
 }
 
 func cdUnmountFromSourceIndex(sourceIndex string) {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	sourceIndexes := fillIndexes(sourceIndex, shared.MAX_CDS)
-	countUnmounted := 0
+	countFailed := 0
 
 	for _, index := range sourceIndexes {
 		mountpoint := mountpoints.GetMountpointByCDIndex(index)
@@ -596,14 +603,13 @@ func cdUnmountFromSourceIndex(sourceIndex string) {
 
 		detachCDMountpointROMs(mountpoint)
 
-		mountpoint.Unmount()
-		mountpoints.RemoveMountpoint(mountpoint)
-
-		countUnmounted++
+		if !unmountMountpoint(mountpoint, true) {
+			countFailed++
+		}
 	}
 
-	if countUnmounted > 0 {
-		ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
+	if countFailed > 0 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 	}
 }
 
@@ -612,8 +618,11 @@ func hfUnmountFromSourceIndex(sourceIndex string) {
 }
 
 func dhUnmountFromSourceIndex(sourceIndex string) {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	sourceIndexes := fillIndexes(sourceIndex, shared.MAX_HDFS)
-	countUnmounted := 0
+	countFailed := 0
 
 	for _, index := range sourceIndexes {
 		mountpoint := mountpoints.GetMountpointByDHIndex(index)
@@ -624,18 +633,20 @@ func dhUnmountFromSourceIndex(sourceIndex string) {
 
 		detachDHMountpointROMs(mountpoint)
 
-		mountpoint.Unmount()
-		mountpoints.RemoveMountpoint(mountpoint)
-
-		countUnmounted++
+		if !unmountMountpoint(mountpoint, true) {
+			countFailed++
+		}
 	}
 
-	if countUnmounted > 0 {
-		ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
+	if countFailed > 0 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 	}
 }
 
 func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetIndex string) {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	diskNoInt, _ := utils.StringUtilsInstance.StringToInt(diskNo, 10, 16)
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 	targetIndexInt, _ := utils.StringUtilsInstance.StringToInt(targetIndex, 10, 16)
@@ -645,6 +656,7 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 	}
 
 	if sourceIndexInt > shared.MAX_ADFS-1 || targetIndexInt > shared.MAX_ADFS-1 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -653,6 +665,7 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 	if mountpoint == nil {
 		// allow to manage only these drives mounted by amipi400.go
 		// so skip these from amiga_disk_devices.go
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -662,15 +675,18 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 	if targetIndexAdf != "" {
 		if amigaDiskDevicesDiscovery.HasFile(targetIndexAdf) {
 			// ADF attached by amiga_disk_devices.go
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 
 		if !detachAdf(targetIndexInt, targetIndexAdf) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 	}
 
 	if sourceIndexAdf == "" {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -679,6 +695,7 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 	toInsertPathname := ""
 
 	if lenFoundAdfPathnames == 0 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -692,11 +709,13 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 	}
 
 	if toInsertPathname == "" {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if attachedIndex := isAdfAttached(toInsertPathname); attachedIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		if !detachAdf(attachedIndex, toInsertPathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 	}
@@ -706,23 +725,27 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 
 	if !attachAdf(targetIndexInt, toInsertPathname) {
 		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
-
-	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
+	log.Println("dfInsertFromSourceIndexToTargetIndex", filenamePart, sourceIndex, targetIndex)
 	if targetIndex == "N" {
 		dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex)
 		return
 	}
+
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
 
 	filenamePart = strings.TrimSpace(filenamePart)
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 	targetIndexInt, _ := utils.StringUtilsInstance.StringToInt(targetIndex, 10, 16)
 
 	if filenamePart == "" {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -731,6 +754,7 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	}
 
 	if sourceIndexInt > shared.MAX_ADFS-1 || targetIndexInt > shared.MAX_ADFS-1 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -739,6 +763,7 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	if mountpoint == nil {
 		// allow to manage only these drives mounted by amipi400.go
 		// so skip these from amiga_disk_devices.go
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -747,10 +772,12 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	if targetIndexAdf != "" {
 		if amigaDiskDevicesDiscovery.HasFile(targetIndexAdf) {
 			// ADF attached by amiga_disk_devices.go
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 
 		if !detachAdf(targetIndexInt, targetIndexAdf) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 	}
@@ -758,11 +785,13 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	foundAdfPathname := findSimilarROMFile(mountpoint, filenamePart)
 
 	if foundAdfPathname == "" {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if attachedIndex := isAdfAttached(foundAdfPathname); attachedIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		if !detachAdf(attachedIndex, foundAdfPathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 	}
@@ -772,18 +801,21 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 
 	if !attachAdf(targetIndexInt, foundAdfPathname) {
 		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
-
-	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	filenamePart = strings.TrimSpace(filenamePart)
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 	targetIndexInt, _ := utils.StringUtilsInstance.StringToInt(targetIndex, 10, 16)
 
 	if filenamePart == "" {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -792,6 +824,7 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	}
 
 	if sourceIndexInt > shared.MAX_HDFS-1 || targetIndexInt > shared.MAX_HDFS-1 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -810,6 +843,7 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 
 	if !isHdLabel {
 		// source medium is not HF (perhaps DH), cannot use it
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -818,10 +852,12 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	if targetIndexHdf != "" {
 		if amigaDiskDevicesDiscovery.HasFile(targetIndexHdf) {
 			// HDF attached by amiga_disk_devices.go
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 
 		if !detachHd(targetIndexInt, targetIndexHdf) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 	}
@@ -829,11 +865,13 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	foundHdfPathname := findSimilarROMFile(mountpoint, filenamePart)
 
 	if foundHdfPathname == "" {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if attachedIndex := isHdfAttached(foundHdfPathname); attachedIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		if !detachHd(attachedIndex, foundHdfPathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 	}
@@ -842,13 +880,15 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 		targetIndexInt,
 		mountpoint.DHBootPriority,
 		foundHdfPathname) {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
-
-	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	// TODO test me - check if ISO attached by this method works in the emulator
 	// eg. by using emulating CD32 (use cd32.uae.template config)
 	filenamePart = strings.TrimSpace(filenamePart)
@@ -856,6 +896,7 @@ func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	targetIndexInt, _ := utils.StringUtilsInstance.StringToInt(targetIndex, 10, 16)
 
 	if filenamePart == "" {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -864,6 +905,7 @@ func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	}
 
 	if sourceIndexInt > shared.MAX_CDS-1 || targetIndexInt > shared.MAX_CDS-1 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -874,10 +916,12 @@ func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	if targetIndexIso != "" {
 		if amigaDiskDevicesDiscovery.HasFile(targetIndexIso) {
 			// ISO attached by amiga_disk_devices.go
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 
 		if !detachIso(targetIndexInt, targetIndexIso) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 	}
@@ -885,20 +929,21 @@ func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	foundIsoPathname := findSimilarROMFile(mountpoint, filenamePart)
 
 	if foundIsoPathname == "" {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if attachedIndex := isIsoAttached(foundIsoPathname); attachedIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		if !detachIso(attachedIndex, foundIsoPathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 	}
 
 	if !attachIso(targetIndexInt, foundIsoPathname) {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
-
-	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func dfEjectFromSourceIndex(sourceIndex string) {
@@ -907,9 +952,13 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 		return
 	}
 
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 
 	if sourceIndexInt > shared.MAX_ADFS-1 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -917,25 +966,30 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 
 	if sourceIndexAdf == "" {
 		// ADF not attached at index
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if amigaDiskDevicesDiscovery.HasFile(sourceIndexAdf) {
 		// ADF attached by amiga_disk_devices.go
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if !detachAdf(sourceIndexInt, sourceIndexAdf) {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
-
-	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func cdEjectFromSourceIndex(sourceIndex string) {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 
 	if sourceIndexInt > shared.MAX_CDS-1 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -943,25 +997,30 @@ func cdEjectFromSourceIndex(sourceIndex string) {
 
 	if sourceIndexIso == "" {
 		// ISO not attached at index
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if amigaDiskDevicesDiscovery.HasFile(sourceIndexIso) {
 		// ISO attached by amiga_disk_devices.go
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if !detachIso(sourceIndexInt, sourceIndexIso) {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
-
-	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func hfEjectFromSourceIndex(sourceIndex string) {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 
 	if sourceIndexInt > shared.MAX_HDFS-1 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -969,27 +1028,32 @@ func hfEjectFromSourceIndex(sourceIndex string) {
 
 	if sourceIndexHdf == "" {
 		// HDF not attached at index
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if amigaDiskDevicesDiscovery.HasFile(sourceIndexHdf) {
 		// HDF attached by amiga_disk_devices.go
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if strings.HasSuffix(sourceIndexHdf, "/") {
 		// DH is not HDF file but directory, cannot detach
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if !detachHd(sourceIndexInt, sourceIndexHdf) {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
-
-	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func dfEjectFromSourceIndexAll() {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	for index := 0; index < shared.MAX_ADFS; index++ {
 		adfPathname := emulator.GetAdf(index)
 
@@ -1003,11 +1067,10 @@ func dfEjectFromSourceIndexAll() {
 		}
 
 		if !detachAdf(index, adfPathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 	}
-
-	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func isAdfAttached(adfPathname string) int {
@@ -1103,14 +1166,19 @@ func findSimilarROMFile(mountpoint *components_amipi400.Mountpoint, filenamePatt
 }
 
 func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
 	filenamePart = strings.TrimSpace(filenamePart)
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 
 	if filenamePart == "" {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	if sourceIndexInt > shared.MAX_ADFS-1 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -1119,6 +1187,7 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 	if mountpoint == nil {
 		// allow to manage only these drives mounted by amipi400.go
 		// so skip these from amiga_disk_devices.go
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -1126,6 +1195,7 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 	foundAdfPathname := findSimilarROMFile(mountpoint, filenamePart)
 
 	if foundAdfPathname == "" {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
@@ -1135,11 +1205,13 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 	lenFoundAdfPathnames := len(foundAdfPathnames)
 
 	if lenFoundAdfPathnames == 0 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
 
 	for targetIndexInt, pathname := range foundAdfPathnames {
 		if targetIndexInt+1 > shared.MAX_ADFS {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 
@@ -1152,6 +1224,7 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 			}
 
 			if !detachAdf(targetIndexInt, targetIndexAdf) {
+				numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 				return
 			}
 		}
@@ -1161,11 +1234,10 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 
 		if !attachAdf(targetIndexInt, pathname) {
 			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
 	}
-
-	ledControl.BlinkPowerLEDSecs(shared.KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
@@ -1229,7 +1301,7 @@ func parseMediumLabel(label string, re *regexp.Regexp) (int, int, error) {
 	return int(index), int(bootPriority), nil
 }
 
-func setupMountpoint(
+func setupAddMountpoint(
 	devicePathname string,
 	label string,
 	fsType string,
@@ -1249,7 +1321,13 @@ func setupMountpoint(
 	}
 
 	mountpoint := components_amipi400.NewMountpoint(devicePathname, mountpointStr, label, fsType)
+
+	log.Printf("Fix %v\n", mountpoint.DevicePathname)
 	mountpoint.Fix()
+
+	utils.UnixUtilsInstance.Sync()
+
+	log.Printf("Mount %v as %v (%v)\n", mountpoint.DevicePathname, mountpoint.Mountpoint, mountpoint.FsType)
 
 	if err := mountpoint.Mount(); err != nil {
 		return nil, fmt.Errorf("cannot mount mountpoint %v (%v, %v)", mountpointStr, devicePathname, err)
@@ -1259,11 +1337,14 @@ func setupMountpoint(
 		mountpoint.LoadFiles(extensions)
 	}
 
-	mountpoint.LoadConfig()
+	if err := mountpoint.LoadConfig(); err != nil {
+		log.Printf("Cannot load medium config for %v: %v\n", mountpoint.Mountpoint, err)
+	}
+
 	mountpoint.LoadDefaultFile()
 
 	if extensions != nil && !mountpoint.HasFiles() && mountpoint.DefaultFile != shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
-		mountpoint.Unmount()
+		unmountMountpoint(mountpoint, false)
 
 		return nil, fmt.Errorf("%v contains no %v files", label, strings.Join(extensions, ","))
 	}
@@ -1281,7 +1362,40 @@ func setupMountpoint(
 		mountpoint.CDIndex = cdIndex
 	}
 
+	mountpoints.AddMountpoint(mountpoint)
+
 	return mountpoint, nil
+}
+
+func unmountMountpoint(mountpoint *components_amipi400.Mountpoint, remove bool) bool {
+	var err error
+
+	log.Printf("Unmount %v from %v (%v)\n", mountpoint.DevicePathname, mountpoint.Mountpoint, mountpoint.FsType)
+
+	// try to unmount a mountpoint for 16 times
+	for i := 0; i < 8; i++ {
+		utils.UnixUtilsInstance.Sync()
+
+		err = mountpoint.Unmount()
+
+		if err == nil {
+			break
+		}
+
+		time.Sleep(time.Second * 1)
+	}
+
+	if err != nil {
+		log.Printf("Cannot unmount %v: %v\n", mountpoint.Mountpoint, err)
+
+		return false
+	}
+
+	if remove {
+		mountpoints.RemoveMountpoint(mountpoint)
+	}
+
+	return true
 }
 
 func attachDFMediumDiskImage(
@@ -1303,10 +1417,12 @@ func attachDFMediumDiskImage(
 	}
 
 	if mountpointStr != "" {
-		components_amipi400.NewMountpoint(path, mountpointStr, "", "").Unmount()
+		unmountMountpoint(
+			components_amipi400.NewMountpoint(path, mountpointStr, "", ""),
+			false)
 	}
 
-	mountpoint, err := setupMountpoint(
+	mountpoint, err := setupAddMountpoint(
 		path,
 		label,
 		fsType,
@@ -1322,7 +1438,6 @@ func attachDFMediumDiskImage(
 	}
 
 	if mountpoint.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
-		mountpoints.AddMountpoint(mountpoint)
 		return
 	}
 
@@ -1330,13 +1445,11 @@ func attachDFMediumDiskImage(
 	emulator.SetFloppySoundVolumeDisk(index, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME, 0)
 
 	if !attachAdf(index, mountpoint.DefaultFile) {
-		mountpoint.Unmount()
+		unmountMountpoint(mountpoint, true)
 
 		emulator.SetFloppySoundVolumeDisk(index, oldVolume, 0)
 		return
 	}
-
-	mountpoints.AddMountpoint(mountpoint)
 }
 
 func attachDHMediumDiskImage(
@@ -1357,10 +1470,12 @@ func attachDHMediumDiskImage(
 	}
 
 	if mountpointStr != "" {
-		components_amipi400.NewMountpoint(path, mountpointStr, "", "").Unmount()
+		unmountMountpoint(
+			components_amipi400.NewMountpoint(path, mountpointStr, "", ""),
+			false)
 	}
 
-	mountpoint, err := setupMountpoint(
+	mountpoint, err := setupAddMountpoint(
 		path,
 		label,
 		fsType,
@@ -1376,11 +1491,9 @@ func attachDHMediumDiskImage(
 	}
 
 	if !attachHdDir(index, bootPriority, mountpoint.Mountpoint) {
-		mountpoint.Unmount()
+		unmountMountpoint(mountpoint, true)
 		return
 	}
-
-	mountpoints.AddMountpoint(mountpoint)
 }
 
 func attachHFMediumDiskImage(
@@ -1401,10 +1514,11 @@ func attachHFMediumDiskImage(
 	}
 
 	if mountpointStr != "" {
-		components_amipi400.NewMountpoint(path, mountpointStr, "", "").Unmount()
+		unmountMountpoint(
+			components_amipi400.NewMountpoint(path, mountpointStr, "", ""), false)
 	}
 
-	mountpoint, err := setupMountpoint(
+	mountpoint, err := setupAddMountpoint(
 		path,
 		label,
 		fsType,
@@ -1420,16 +1534,13 @@ func attachHFMediumDiskImage(
 	}
 
 	if mountpoint.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
-		mountpoints.AddMountpoint(mountpoint)
 		return
 	}
 
 	if !attachHdf(index, bootPriority, mountpoint.DefaultFile) {
-		mountpoint.Unmount()
+		unmountMountpoint(mountpoint, true)
 		return
 	}
-
-	mountpoints.AddMountpoint(mountpoint)
 }
 
 func attachCDMediumDiskImage(
@@ -1450,10 +1561,12 @@ func attachCDMediumDiskImage(
 	}
 
 	if mountpointStr != "" {
-		components_amipi400.NewMountpoint(path, mountpointStr, "", "").Unmount()
+		unmountMountpoint(
+			components_amipi400.NewMountpoint(path, mountpointStr, "", ""),
+			false)
 	}
 
-	mountpoint, err := setupMountpoint(
+	mountpoint, err := setupAddMountpoint(
 		path,
 		label,
 		fsType,
@@ -1469,16 +1582,13 @@ func attachCDMediumDiskImage(
 	}
 
 	if mountpoint.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
-		mountpoints.AddMountpoint(mountpoint)
 		return
 	}
 
 	if !attachIso(index, mountpoint.DefaultFile) {
-		mountpoint.Unmount()
+		unmountMountpoint(mountpoint, true)
 		return
 	}
-
-	mountpoints.AddMountpoint(mountpoint)
 }
 
 func attachMediumDiskImage(
@@ -1517,8 +1627,7 @@ func detachDFMediumDiskImage(
 		}
 	}
 
-	mountpoint.Unmount()
-	mountpoints.RemoveMountpoint(mountpoint)
+	unmountMountpoint(mountpoint, true)
 }
 
 // One function for both HDF files and directories
@@ -1542,8 +1651,7 @@ func detachHDMediumDiskImage(
 		}
 	}
 
-	mountpoint.Unmount()
-	mountpoints.RemoveMountpoint(mountpoint)
+	unmountMountpoint(mountpoint, true)
 }
 
 func detachCDMediumDiskImage(
@@ -1566,8 +1674,7 @@ func detachCDMediumDiskImage(
 		}
 	}
 
-	mountpoint.Unmount()
-	mountpoints.RemoveMountpoint(mountpoint)
+	unmountMountpoint(mountpoint, true)
 }
 
 func detachMediumDiskImage(
@@ -1714,15 +1821,37 @@ func detachMountpointROMs(mountpoint *components_amipi400.Mountpoint) {
 }
 
 func unmountAll() {
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
+	emulator.SetRerunEmulator(false)
+	defer emulator.SetRerunEmulator(true)
+
+	log.Println("Unmounting all mountpoints...")
+
 	utils.UnixUtilsInstance.Sync()
 
-	for _, mountpoint := range mountpoints.Mountpoints {
-		detachMountpointROMs(mountpoint)
+	// try to unmount all mountpoints for 8 times
+	for i := 0; i < 8; i++ {
+		for _, mountpoint := range mountpoints.Mountpoints {
+			detachMountpointROMs(mountpoint)
+			unmountMountpoint(mountpoint, true)
+		}
 
-		mountpoint.Unmount()
+		if len(mountpoints.Mountpoints) == 0 {
+			break
+		}
+
+		log.Println("Retrying...")
+
+		time.Sleep(time.Second * 1)
 	}
 
-	mountpoints.Clear()
+	if len(mountpoints.Mountpoints) > 0 {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+	}
+
+	log.Println("Done unmounting mountpoints")
 }
 
 func stopServices() {
@@ -1731,7 +1860,7 @@ func stopServices() {
 	emulator.Stop(&emulator)
 	commander.Stop(&commander)
 	blockDevices.Stop(&blockDevices)
-	blockDevices.Stop(&ledControl)
+	blockDevices.Stop(&powerLEDControl)
 }
 
 func gracefulShutdown() {
@@ -1787,22 +1916,26 @@ func main() {
 	commander.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 	blockDevices.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
 	blockDevices.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
-	ledControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
-	ledControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	powerLEDControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	powerLEDControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	numLockLEDControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	numLockLEDControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 
 	amigaDiskDevicesDiscovery.Start(&amigaDiskDevicesDiscovery)
 	allKeyboardsControl.Start(&allKeyboardsControl)
 	emulator.Start(&emulator)
 	commander.Start(&commander)
 	blockDevices.Start(&blockDevices)
-	ledControl.Start(&ledControl)
+	powerLEDControl.Start(&powerLEDControl)
+	numLockLEDControl.Start(&numLockLEDControl)
 
 	runnersBlocker.AddRunner(&amigaDiskDevicesDiscovery)
 	runnersBlocker.AddRunner(&allKeyboardsControl)
 	runnersBlocker.AddRunner(&emulator)
 	runnersBlocker.AddRunner(&commander)
 	runnersBlocker.AddRunner(&blockDevices)
-	runnersBlocker.AddRunner(&ledControl)
+	runnersBlocker.AddRunner(&powerLEDControl)
+	runnersBlocker.AddRunner(&numLockLEDControl)
 
 	go gracefulShutdown()
 

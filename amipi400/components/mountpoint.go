@@ -1,7 +1,6 @@
 package components
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -27,8 +26,6 @@ type Mountpoint struct {
 }
 
 func (m *Mountpoint) Mount() error {
-	log.Printf("Mount %v as %v (%v)\n", m.DevicePathname, m.Mountpoint, m.FsType)
-
 	return syscall.Mount(
 		m.DevicePathname,
 		m.Mountpoint,
@@ -38,14 +35,10 @@ func (m *Mountpoint) Mount() error {
 }
 
 func (m *Mountpoint) Unmount() error {
-	log.Printf("Unmount %v from %v (%v)\n", m.DevicePathname, m.Mountpoint, m.FsType)
-
-	return syscall.Unmount(m.Mountpoint, syscall.MNT_DETACH)
+	return syscall.Unmount(m.Mountpoint, syscall.MNT_FORCE)
 }
 
 func (m *Mountpoint) Fix() (string, error) {
-	log.Printf("Fix %v\n", m.DevicePathname)
-
 	return utils.UnixUtilsInstance.RunFsck(m.DevicePathname)
 }
 
@@ -68,7 +61,6 @@ func (m *Mountpoint) LoadConfig() error {
 		filepath.Join(m.Mountpoint, shared.MEDIUM_CONFIG_INI_NAME))
 
 	if err != nil {
-		log.Println(m.DevicePathname, m.Mountpoint, "medium config does not exists")
 		return err
 	}
 

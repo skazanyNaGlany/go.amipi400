@@ -21,13 +21,17 @@ func (ml *MountpointList) FindMountpoint(mountpoint *Mountpoint) int {
 }
 
 func (ml *MountpointList) AddMountpoint(mountpoint *Mountpoint) {
+	if ml.FindMountpoint(mountpoint) != -1 {
+		return
+	}
+
 	ml.Mountpoints = append(ml.Mountpoints, mountpoint)
 }
 
 func (ml *MountpointList) RemoveMountpoint(mountpoint *Mountpoint) {
-	i := ml.FindMountpoint(mountpoint)
-
-	ml.Mountpoints = slices.Delete(ml.Mountpoints, i, i+1)
+	if index := ml.FindMountpoint(mountpoint); index != -1 {
+		ml.Mountpoints = slices.Delete(ml.Mountpoints, index, index+1)
+	}
 }
 
 func (ml *MountpointList) GetMountpointByDevicePathname(devicePathname string) *Mountpoint {

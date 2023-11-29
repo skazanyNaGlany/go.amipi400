@@ -205,3 +205,100 @@ lsblk
 2023/11/26 23:46:25 Unmount /dev/sdc7 from /media/AP4_CD0 (vfat)
 2023/11/26 23:46:25 Cannot unmount /media/AP4_CD0: invalid argument
 2023/11/26 23:46:25 mountpoints.Mountpoints [0x1b520a0 0x18660f0]
+
+
+
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(0)
+
+
+numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+
+
+
+
+
+
+2023/11/29 21:08:08 Mount /dev/sdc8 as /media/AP4_DF1 (vfat)
+2023/11/29 21:08:08 Cannot load medium config for /media/AP4_DF1: open /media/AP4_DF1/amipi400.ini: no such file or directory
+2023/11/29 21:08:08 Unmount /dev/sdc8 from /media/AP4_DF1 (vfat)
+2023/11/29 21:08:09 AP4_DF1 contains no .adf files
+2023/11/29 21:08:11 Running emulator /home/pi/projects.local/amiberry/amiberry --config /tmp/amipi400.uae
+2023/11/29 21:08:19 Unmounting all mountpoints...
+2023/11/29 21:08:19 Detaching /media/AP4_DH2 from DH2
+2023/11/29 21:08:19 Unmount /dev/sdc5 from /media/AP4_DH2 (vfat)
+2023/11/29 21:08:19 Detaching /media/AP4_CD0/Alien Breed 3D (1995)(Ocean - Team 17)(Track 1 of 6)[!][cp code].iso from CD0
+2023/11/29 21:08:19 ac.executeLoops 1
+2023/11/29 21:08:19 Unmount /dev/sdc7 from /media/AP4_CD0 (vfat)
+2023/11/29 21:08:19 Commiting
+2023/11/29 21:08:19 Sending commands to the emulator
+2023/11/29 21:08:19 cmd0=cfgfile_parse_line_type_all cdimage0=,image
+2023/11/29 21:08:19 cmd1=config_changed 1
+2023/11/29 21:08:19 Writing /home/pi/projects.local/amiberry/amiberry.tmp.ini
+2023/11/29 21:08:19 Sending USR1 signal to the emulator
+2023/11/29 21:08:19 Emulator output
+2023/11/29 21:08:20 Detaching /media/AP4_DH3 from DH3
+2023/11/29 21:08:20 os: process already finished
+2023/11/29 21:08:20 Unmount /dev/sdc6 from /media/AP4_DH3 (vfat)
+2023/11/29 21:08:20 Unmount /dev/sdc6 from /media/AP4_DH3 (vfat)
+2023/11/29 21:08:23 Running emulator /home/pi/projects.local/amiberry/amiberry --config /tmp/amipi400.uae
+2023/11/29 21:08:28 Cannot unmount /media/AP4_DH3: invalid argument
+2023/11/29 21:08:28 Unmount /dev/sdc6 from /media/AP4_DH3 (vfat)
+2023/11/29 21:08:37 Cannot unmount /media/AP4_DH3: invalid argument
+2023/11/29 21:08:37 Retrying...
+2023/11/29 21:08:38 Detaching /media/AP4_HF0_1/System.hdf from DH0
+2023/11/29 21:08:38 Unmount /dev/sdc2 from /media/AP4_HF0_1 (vfat)
+2023/11/29 21:08:38 Emulator output
+2023/11/29 21:08:39 Unmount /dev/sdc1 from /media/AP4_DF0 (vfat)
+2023/11/29 21:08:39 Done unmounting mountpoints
+2023/11/29 21:08:41 Running emulator /home/pi/projects.local/amiberry/amiberry --config /tmp/amipi400.uae
+2023/11/29 21:08:48 isSoftResetKeys
+2023/11/29 21:08:48 isSoftResetKeys 2
+2023/11/29 21:08:48 isSoftResetKeys 3
+2023/11/29 21:08:48 ac.executeLoops 1
+2023/11/29 21:08:52 isSoftResetKeys
+2023/11/29 21:08:52 isSoftResetKeys 2
+2023/11/29 21:08:52 isSoftResetKeys 3
+2023/11/29 21:08:52 ac.executeLoops 2
+2023/11/29 21:08:57 isSoftResetKeys
+2023/11/29 21:08:57 isSoftResetKeys 2
+2023/11/29 21:08:57 isSoftResetKeys 3
+2023/11/29 21:08:57 ac.executeLoops 3
+2023/11/29 21:09:04 isSoftResetKeys
+2023/11/29 21:09:04 isSoftResetKeys 2
+2023/11/29 21:09:04 isSoftResetKeys 3
+2023/11/29 21:09:04 ac.executeLoops 4
+2023/11/29 21:09:12 isSoftResetKeys
+2023/11/29 21:09:12 isSoftResetKeys 2
+2023/11/29 21:09:12 isSoftResetKeys 3
+2023/11/29 21:09:12 ac.executeLoops 5
+2023/11/29 21:09:19 isSoftResetKeys
+2023/11/29 21:09:19 isSoftResetKeys 2
+2023/11/29 21:09:19 isSoftResetKeys 3
+2023/11/29 21:09:19 ac.executeLoops 6
+2023/11/29 21:09:28 isSoftResetKeys
+2023/11/29 21:09:28 isSoftResetKeys 2
+2023/11/29 21:09:28 isSoftResetKeys 3
+2023/11/29 21:09:28 ac.executeLoops 7
+2023/11/29 21:09:33 isSoftResetKeys
+2023/11/29 21:09:33 isSoftResetKeys 2
+2023/11/29 21:09:33 isSoftResetKeys 3
+2023/11/29 21:09:33 ac.executeLoops 8
+2023/11/29 21:09:36 isSoftResetKeys
+2023/11/29 21:09:36 isSoftResetKeys 2
+2023/11/29 21:09:36 isSoftResetKeys 3
+2023/11/29 21:09:36 ac.executeLoops 9
+2023/11/29 21:09:41 Emulator output
+^C2023/11/29 21:09:41 Unmounting all mountpoints...
+2023/11/29 21:09:41 lsblk: signal: interrupt
+2023/11/29 21:09:42 Done unmounting mountpoints
+2023/11/29 21:09:42 Stopping *components.AmigaDiskDevicesDiscovery 0x12463b8
+2023/11/29 21:09:42 Stopping *components.AllKeyboardsControl 0x12463c0
+2023/11/29 21:09:42 Stopping *components.KeyboardControl 0x12463c8
+2023/11/29 21:09:42 Stopping *components.KeyboardControl 0x12463d0
+2023/11/29 21:09:42 Stopping *components.KeyboardControl 0x1246408
+2023/11/29 21:09:42 Stopping *components.AmiberryEmulator 0x1246428
+2023/11/29 21:09:42 Stopping *components.AmiberryCommander 0x1246430
+2023/11/29 21:09:42 Stopping *components.BlockDevices 0x1246438
+2023/11/29 21:09:42 Stopping *components.PowerLEDControl 0x1246440
+

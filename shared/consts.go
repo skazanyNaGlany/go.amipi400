@@ -1,6 +1,7 @@
 package shared
 
 import (
+	"math"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -12,7 +13,8 @@ const AMIPI400_VERSION = "0.1"
 
 // global
 const HDD_SECTOR_SIZE = 512
-const KEYBOARD_CMD_SUCCESS_BLINK_POWER_SECS = 4
+const CMD_PENDING_BLINK_POWER_SECS = math.MaxInt
+const CMD_FAILURE_BLINK_NUM_LOCK_SECS = 4
 
 // amipi400.go
 const _AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
@@ -76,8 +78,11 @@ var EMPTY_DEVICE_HEADER [2048]byte = [2048]byte{'D', 'O', 'S'}
 var TOGGLE_AUTO_HEIGHT_KEYS []string = []string{"KEY_LEFTMETA", "H"}
 var AMIGA_DISK_DEVICES_NEEDED_EXECUTABLES = []string{"sync", "fsck", "ufiformat", "hwinfo", "lsblk"}
 
-// LEDControl
-const LED0_BRIGHTNESS_PATHNAME = "/sys/class/leds/led0/brightness"
+// PowerLEDControl
+const POWER_LED0_BRIGHTNESS_PATHNAME = "/sys/class/leds/led0/brightness"
+
+// NumLockLEDControl
+const NUM_LOCK_LED0_BRIGHTNESS_PATHNAME = "/sys/class/leds/input0::numlock/brightness"
 
 // CDMediumDriver
 const CD_ISO_EXTENSION = "iso"

@@ -1,59 +1,460 @@
 # git reset --hard origin/master
 # git clean --force
-# git checkout e65b56344964e10f756db78b8a44fd751ea164ed
+# git checkout 1d9f108b9f92997cc140a13d5d5a6ed81e2d2b88
 # patch -p1 < ../go.amipi400/amiberry.amipi400.patch
 # make clean
 # make -j2 PLATFORM=rpi4
-# or
-# make PLATFORM=x86-64
 
 diff --git a/Android.mk b/Android.mk
-index 1d5f12af..22b3ec16 100644
+index 91bd20b3..4aa85fe8 100644
 --- a/Android.mk
 +++ b/Android.mk
 @@ -255,7 +255,9 @@ LOCAL_SRC_FILES := src/akiko.cpp \
-                     src/osdep/gui/PanelSavestate.cpp \
                      src/osdep/gui/main_window.cpp \
                      src/osdep/gui/Navigation.cpp \
--                    src/osdep/vkbd/vkbd.cpp
-+                    src/osdep/vkbd/vkbd.cpp \
+                     src/osdep/gui/androidsdl_event.cpp \
+-                    src/osdep/gui/PanelOnScreen.cpp
++                    src/osdep/gui/PanelOnScreen.cpp \
 +                    src/amipi400/utils.cpp \
 +                    src/amipi400/handler.cpp
  
  ifeq ($(TARGET_ARCH_ABI),arm64-v8a)
      LOCAL_SRC_FILES += src/osdep/aarch64_helper_min.s
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 1e403865..53d7f405 100644
+index dd8259aa..134087c1 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -245,6 +245,8 @@ add_executable(${PROJECT_NAME}
- 	src/osdep/amiberry_whdbooter.cpp
- 	src/osdep/sigsegv_handler.cpp
- 	src/osdep/retroarch.cpp
-+    src/amipi400/utils.cpp
-+    src/amipi400/handler.cpp
- 	src/sounddep/sound.cpp
- 	src/threaddep/threading.cpp
- 	src/osdep/gui/ControllerMap.cpp
+@@ -218,6 +218,8 @@ add_executable(${PROJECT_NAME}
+ 		src/osdep/amiberry_gui.cpp
+ 		src/osdep/amiberry_mem.cpp
+ 		src/osdep/amiberry_whdbooter.cpp
++	        src/amipi400/utils.cpp
++	        src/amipi400/handler.cpp
+ 		src/osdep/sigsegv_handler.cpp
+ 		src/osdep/retroarch.cpp
+ 		src/sounddep/sound.cpp
 diff --git a/Makefile b/Makefile
-index 8f51fc7a..46a94dd3 100644
+index cac7ec2c..d22cbc82 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -607,6 +607,9 @@ OBJS = \
- 	src/osdep/gui/PanelVirtualKeyboard.o \
+@@ -571,7 +571,10 @@ OBJS = \
+ 	src/osdep/gui/PanelPrio.o \
+ 	src/osdep/gui/PanelSavestate.o \
  	src/osdep/gui/main_window.o \
- 	src/osdep/gui/Navigation.o \
+-	src/osdep/gui/Navigation.o
++	src/osdep/gui/Navigation.o \
 +	src/amipi400/handler.o \
 +	src/amipi400/ini-exec.o \
-+	src/amipi400/utils.o \
- 	src/osdep/vkbd/vkbd.o
++	src/amipi400/utils.o
  
- USE_JIT=1
+ ifeq ($(ANDROID), 1)
+ OBJS += src/osdep/gui/androidsdl_event.o \
+diff --git a/src/amipi400/consts.h b/src/amipi400/consts.h
+new file mode 100644
+index 00000000..19143150
+--- /dev/null
++++ b/src/amipi400/consts.h
+@@ -0,0 +1,10 @@
++#ifndef AMIPI400_CONSTS_H_
++#define AMIPI400_CONSTS_H_
++
++#define TMP_INI_FILE "amiberry.tmp.ini"
++#define APP_NAME "AMIPI400"
++#define APP_VERSION "0.1"
++#define LINE_BUFFER_LEN 255
++#define CRC32_MAX_SIZE 4096
++
++#endif  // AMIPI400_CONSTS_H_
+diff --git a/src/amipi400/externals.h b/src/amipi400/externals.h
+new file mode 100644
+index 00000000..1b8d83e3
+--- /dev/null
++++ b/src/amipi400/externals.h
+@@ -0,0 +1,14 @@
++#ifndef AMIPI400_EXTERNALS_H_
++#define AMIPI400_EXTERNALS_H_
++
++extern struct uae_prefs currprefs, changed_prefs;
++extern int config_changed;
++extern int pause_emulation;
++
++void uae_quit(void);
++void uae_reset(int hardreset, int keyboardreset);
++void disk_eject (int num);
++void disk_insert_force(int num, const char *name, bool forcedwriteprotect);
++void cfgfile_parse_line(struct uae_prefs* p, char *line, int type);
++
++#endif  // AMIPI400_EXTERNALS_H_
+diff --git a/src/amipi400/handler.cpp b/src/amipi400/handler.cpp
+new file mode 100644
+index 00000000..d48ffd52
+--- /dev/null
++++ b/src/amipi400/handler.cpp
+@@ -0,0 +1,41 @@
++#include "consts.h"
++#include "handler.h"
++#include "ini-exec.h"
++#include "utils.h"
++
++#include <stdio.h>
++#include <signal.h>
++#include <unistd.h>
++
++
++bool _print_version = true;
++
++
++void SIGUSR1_handler(int signum)
++{
++    print_version();
++    my_printf("processing received SIGUSR1 signal\n");
++
++    execute_ini_file(TMP_INI_FILE);
++    remove(TMP_INI_FILE);
++
++    my_printf("done processing signal\n");
++}
++
++
++void amipi400_handler_init() {
++    if (signal(SIGUSR1, SIGUSR1_handler) == SIG_ERR) {
++        my_printf("failed to set signal handler (SIGUSR1)\n");
++    }
++}
++
++
++void print_version() {
++    if (!_print_version) {
++        return;
++    }
++
++    _print_version = false;
++
++    my_printf("v%s\n", APP_VERSION);
++}
+diff --git a/src/amipi400/handler.h b/src/amipi400/handler.h
+new file mode 100644
+index 00000000..3feefbf5
+--- /dev/null
++++ b/src/amipi400/handler.h
+@@ -0,0 +1,8 @@
++#ifndef AMIPI400_HANDLER_H_
++#define AMIPI400_HANDLER_H_
++
++void SIGUSR1_handler(int signum);
++void amipi400_handler_init();
++void print_version();
++
++#endif  // AMIPI400_HANDLER_H_
+diff --git a/src/amipi400/ini-exec.cpp b/src/amipi400/ini-exec.cpp
+new file mode 100644
+index 00000000..e89f5ea3
+--- /dev/null
++++ b/src/amipi400/ini-exec.cpp
+@@ -0,0 +1,150 @@
++#include <string>
++#include <cstring>
++#include <fstream>
++#include <iostream>
++#include <unistd.h>
++
++#include "ini-exec.h"
++#include "consts.h"
++#include "externals.h"
++#include "utils.h"
++
++
++char cfg_line_buffer[LINE_BUFFER_LEN];
++char disk_insert_force_buffer[LINE_BUFFER_LEN];
++
++
++int execute_ini_file(const std::string &pathname) {
++    std::ifstream file(pathname);
++    std::string line;
++    bool commands_mode = false;
++
++    my_printf("executing temporary INI file\n");
++
++    if (!file.is_open()) {
++        my_printf("cannot open INI file\n");
++        return 1;
++    }
++
++    while (std::getline(file, line)) {
++        line = string_cut_to_string(line, "#");
++        line = string_trim(line);
++
++        if (line == "") {
++            continue;
++        }
++
++        if (string_starts_with(line, "[") && string_ends_with(line, "]")) {
++            if (line == "[commands]") {
++                commands_mode = true;
++                continue;
++            }
++            else {
++                commands_mode = false;
++                continue;
++            }
++        }
++
++        if (commands_mode) {
++            _execute_command(line);
++        }
++    }
++
++    file.close();
++
++    return 0;
++}
++
++
++void _command_disk_insert_force(const std::string &command_data) {
++    std::vector<std::string> parts;
++
++    parts = string_split(command_data, ',');
++
++    if (parts.size() != 3) {
++        my_printf("skip wrong formatted command: %s\n", command_data.c_str());
++        return;
++    }
++
++    memset(disk_insert_force_buffer, 0, LINE_BUFFER_LEN);
++    strncpy(
++        disk_insert_force_buffer,
++        parts[1].c_str(),
++        LINE_BUFFER_LEN
++    );
++
++    disk_insert_force(
++        atoi(parts[0].c_str()),
++        disk_insert_force_buffer,
++        atoi(parts[2].c_str())
++    );
++}
++
++
++void _command_uae_reset(const std::string &command_data) {
++    std::vector<std::string> parts;
++
++    parts = string_split(command_data, ',');
++
++    if (parts.size() != 2) {
++        my_printf("skip wrong formatted command: %s\n", command_data.c_str());
++        return;
++    }
++
++    uae_reset(
++        atoi(parts[0].c_str()),
++        atoi(parts[1].c_str())
++    );
++}
++
++
++int _execute_command(const std::string &command) {
++    std::string raw_command;
++
++    if (!string_starts_with(command, "cmd")) {
++        return 1;
++    }
++
++    if (command.find("=") == std::string::npos) {
++        return 1;
++    }
++
++    raw_command = string_cut_from_string(command, "=");
++
++    my_printf("raw command: %s\n", raw_command.c_str());
++
++    if (string_starts_with(raw_command, "disk_eject ")) {
++        disk_eject(atoi(string_cut_from_string(raw_command, " ").c_str()));
++    }
++    else if (string_starts_with(raw_command, "disk_insert_force ")) {
++        _command_disk_insert_force(string_cut_from_string(raw_command, " "));
++    }
++    else if (string_starts_with(raw_command, "uae_reset ")) {
++        _command_uae_reset(string_cut_from_string(raw_command, " "));
++    }
++    else if (string_starts_with(raw_command, "uae_quit ")) {
++        uae_quit();
++    }
++    else if (string_starts_with(raw_command, "cfgfile_parse_line_type_all ")) {
++        memset(cfg_line_buffer, 0, LINE_BUFFER_LEN);
++        strncpy(
++            cfg_line_buffer,
++            string_cut_from_string(raw_command, " ").c_str(),
++            LINE_BUFFER_LEN
++        );
++
++        cfgfile_parse_line(
++            &changed_prefs,
++            cfg_line_buffer,
++            0
++        );
++    }
++    else if (string_starts_with(raw_command, "config_changed ")) {
++        config_changed = atoi(string_cut_from_string(raw_command, " ").c_str());
++    }
++    else if (string_starts_with(raw_command, "pause_emulation ")) {
++        pause_emulation = atoi(string_cut_from_string(raw_command, " ").c_str());
++    }
++
++    return 0;
++}
+diff --git a/src/amipi400/ini-exec.h b/src/amipi400/ini-exec.h
+new file mode 100644
+index 00000000..ad76b8bc
+--- /dev/null
++++ b/src/amipi400/ini-exec.h
+@@ -0,0 +1,12 @@
++#ifndef AMIPI400_INI_EXEC_H_
++#define AMIPI400_INI_EXEC_H_
++
++#include <string>
++
++int execute_ini_file(const std::string &pathname);
++int _execute_command(const std::string &command);
++
++void _command_disk_insert_force(const std::string &command_data);
++void _command_uae_reset(const std::string &command_data);
++
++#endif  // AMIPI400_INI_EXEC_H_
+diff --git a/src/amipi400/utils.cpp b/src/amipi400/utils.cpp
+new file mode 100644
+index 00000000..05eaf1f2
+--- /dev/null
++++ b/src/amipi400/utils.cpp
+@@ -0,0 +1,95 @@
++#include <iostream>
++#include <sstream>
++#include <vector>
++
++#include <stdio.h>
++#include <stdarg.h>
++
++#include "utils.h"
++#include "consts.h"
++
++
++std::string string_ltrim(const std::string& str, const std::string& chars)
++{
++    std::string str_copy = str;
++
++    str_copy.erase(0, str_copy.find_first_not_of(chars));
++    return str_copy;
++}
++
++
++std::string string_rtrim(const std::string& str, const std::string& chars)
++{
++    std::string str_copy = str;
++
++    str_copy.erase(str_copy.find_last_not_of(chars) + 1);
++    return str_copy;
++}
++
++
++std::string string_trim(const std::string& str, const std::string& chars)
++{
++    return string_ltrim(string_rtrim(str, chars), chars);
++}
++
++
++bool string_starts_with(const std::string& str, const std::string& needle) {
++    return str.find(needle) == 0;
++}
++
++
++bool string_ends_with(const std::string& str, const std::string& needle) {
++    return str.find(needle) == str.size() - 1;
++}
++
++
++std::string string_cut_to_string(const std::string& str, const std::string str2) {
++    std::size_t pos;
++
++    pos = str.find(str2);
++
++    if (pos == std::string::npos) {
++        return str;
++    }
++
++    return str.substr(0, pos);
++}
++
++
++std::string string_cut_from_string(const std::string& str, const std::string str2) {
++    std::size_t pos;
++
++    pos = str.find(str2);
++
++    if (pos == std::string::npos) {
++        return str;
++    }
++
++    return str.substr(pos + 1);
++}
++
++
++std::vector<std::string> string_split(const std::string &s, char delim) {
++    std::vector<std::string> result;
++    std::stringstream ss (s);
++    std::string item;
++
++    while (getline(ss, item, delim)) {
++        result.push_back (item);
++    }
++
++    return result;
++}
++
++
++void my_printf(const char *fmt, ...) {
++    char buffer[LINE_BUFFER_LEN];
++    va_list args;
++
++    va_start(args, fmt);
++
++    vsnprintf(buffer, LINE_BUFFER_LEN, fmt, args);
++    printf("[%s] %s", APP_NAME, buffer);
++
++    va_end(args);
++}
+diff --git a/src/amipi400/utils.h b/src/amipi400/utils.h
+new file mode 100644
+index 00000000..e6c46c26
+--- /dev/null
++++ b/src/amipi400/utils.h
+@@ -0,0 +1,23 @@
++#ifndef AMIPI400_UTILS_H_
++#define AMIPI400_UTILS_H_
++
++#include <string>
++#include <iostream>
++#include <sstream>
++#include <vector>
++
++std::string string_ltrim(const std::string& str, const std::string& chars = "\t\n\v\f\r ");
++std::string string_rtrim(const std::string& str, const std::string& chars = "\t\n\v\f\r ");
++std::string string_trim(const std::string& str, const std::string& chars = "\t\n\v\f\r ");
++
++bool string_starts_with(const std::string& str, const std::string& needle);
++bool string_ends_with(const std::string& str, const std::string& needle);
++
++std::string string_cut_to_string(const std::string& str, const std::string str2);
++std::string string_cut_from_string(const std::string& str, const std::string str2);
++
++std::vector<std::string> string_split(const std::string &s, char delim);
++
++void my_printf(const char *fmt, ...);
++
++#endif  // AMIPI400_UTILS_H_
 diff --git a/src/cfgfile.cpp b/src/cfgfile.cpp
-index 7d33dc78..a4179841 100644
+index 2ab2cc32..0fdb1b44 100644
 --- a/src/cfgfile.cpp
 +++ b/src/cfgfile.cpp
-@@ -3840,12 +3840,20 @@ static int cfgfile_parse_host (struct uae_prefs *p, TCHAR *option, TCHAR *value)
+@@ -3665,12 +3665,20 @@ static int cfgfile_parse_host (struct uae_prefs *p, TCHAR *option, TCHAR *value)
  		return 1;
  	}
  
@@ -81,10 +482,10 @@ index 7d33dc78..a4179841 100644
  
  #ifdef GFXFILTER
 diff --git a/src/inputdevice.cpp b/src/inputdevice.cpp
-index 86be4612..10a94ff9 100644
+index ec643fb4..88ac9182 100644
 --- a/src/inputdevice.cpp
 +++ b/src/inputdevice.cpp
-@@ -4797,7 +4797,8 @@ static bool inputdevice_handle_inputcode2(int monid, int code, int state, const
+@@ -4497,7 +4497,8 @@ static bool inputdevice_handle_inputcode2(int monid, int code, int state, const
  		//IRQ_forced(7, 0);
  		break;
  	case AKS_PAUSE:
@@ -95,10 +496,10 @@ index 86be4612..10a94ff9 100644
  	case AKS_SINGLESTEP:
  		if (pause_emulation)
 diff --git a/src/osdep/amiberry.cpp b/src/osdep/amiberry.cpp
-index f371325f..c914958e 100644
+index 5d271561..fcbc6976 100644
 --- a/src/osdep/amiberry.cpp
 +++ b/src/osdep/amiberry.cpp
-@@ -83,6 +83,8 @@ int log_scsi;
+@@ -81,6 +81,8 @@ int log_scsi;
  int uaelib_debug;
  int pissoff_value = 15000 * CYCLE_UNIT;
  
@@ -107,7 +508,7 @@ index f371325f..c914958e 100644
  extern FILE* debugfile;
  SDL_Cursor* normalcursor;
  
-@@ -183,12 +185,20 @@ amiberry_hotkey get_hotkey_from_config(std::string config_option)
+@@ -168,12 +170,20 @@ amiberry_hotkey get_hotkey_from_config(std::string config_option)
  
  void set_key_configs(struct uae_prefs* p)
  {
@@ -134,7 +535,7 @@ index f371325f..c914958e 100644
  	// if nothing was found in amiberry.conf either, we default back to F12
  	if (enter_gui_key.scancode == 0)
  		enter_gui_key.scancode = SDL_SCANCODE_F12;
-@@ -464,8 +474,17 @@ void releasecapture(struct AmigaMonitor* mon)
+@@ -427,8 +437,17 @@ void releasecapture(struct AmigaMonitor* mon)
  	if (!mon_cursorclipped)
  		return;
  	SDL_SetWindowGrab(mon->sdl_window, SDL_FALSE);
@@ -154,8 +555,18 @@ index f371325f..c914958e 100644
  	mon_cursorclipped = 0;
  }
  
+@@ -3489,6 +3508,9 @@ int main(int argc, char* argv[])
+ 		abort();
+ 	}
+ 
++	// amipi400: install SIGUSR1 signal handler
++	amipi400_handler_init();
++
+ 	alloc_AmigaMem();
+ 	RescanROMs();
+ 	uae_time_calibrate();
 diff --git a/src/zfile.cpp b/src/zfile.cpp
-index f37314e0..50f66452 100644
+index 88a77526..cd7693f5 100644
 --- a/src/zfile.cpp
 +++ b/src/zfile.cpp
 @@ -36,6 +36,8 @@
@@ -167,7 +578,7 @@ index f37314e0..50f66452 100644
  static struct zfile *zlist = 0;
  
  const TCHAR *uae_archive_extensions[] = { _T("zip"), _T("rar"), _T("7z"), _T("lha"), _T("lzh"), _T("lzx"), _T("tar"), NULL };
-@@ -2565,6 +2567,13 @@ uae_u32 zfile_crc32(struct zfile *f)
+@@ -2537,6 +2539,13 @@ uae_u32 zfile_crc32(struct zfile *f)
  	pos = zfile_ftell32(f);
  	zfile_fseek(f, 0, SEEK_END);
  	size = zfile_ftell32(f);

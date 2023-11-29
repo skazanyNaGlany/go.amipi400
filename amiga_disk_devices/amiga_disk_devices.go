@@ -22,7 +22,7 @@ var fileSystem components_amiga_disk_devices.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var volumeControl components_amiga_disk_devices.VolumeControl
-var ledControl components.LEDControl
+var ledControl components.PowerLEDControl
 var asyncFileOps components.AsyncFileOps
 var asyncFileOpsDf0 components.AsyncFileOps
 var asyncFileOpsDf1 components.AsyncFileOps
