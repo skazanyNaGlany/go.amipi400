@@ -282,7 +282,19 @@ func (ae *AmiberryEmulator) GetConfigPathname() string {
 	return ae.configPathname
 }
 
-func (ae *AmiberryEmulator) AttachAdf(index int, pathname string) error {
+func (ae *AmiberryEmulator) AttachAdf(index int, pathname string, volume int, volumeNoDisk int) error {
+	// set floppy sound volume
+	ae.floppySoundVolumeDisk[index] = volume
+	ae.floppySoundVolumeNoDisk[index] = volume
+
+	enableFloppySound := volume > 0 || volumeNoDisk > 0
+
+	ae.commander.PutFloppySoundCO(index, enableFloppySound)
+	ae.commander.PutFloppySoundVolumeDiskCO(index, volume)
+	ae.commander.PutFloppySoundVolumeEmptyCO(index, volumeNoDisk)
+
+	// set floppy at index
+
 	// TODO attach with read-write or read-only mode
 	if ae.adfs[index] != "" {
 		ae.commander.PutFloppyCO(index, "")
@@ -303,11 +315,22 @@ func (ae *AmiberryEmulator) AttachAdf(index int, pathname string) error {
 	return nil
 }
 
-func (ae *AmiberryEmulator) DetachAdf(index int) error {
+func (ae *AmiberryEmulator) DetachAdf(index int, volume int, volumeNoDisk int) error {
 	if ae.adfs[index] == "" {
 		return nil
 	}
 
+	// set floppy sound volume
+	ae.floppySoundVolumeDisk[index] = volume
+	ae.floppySoundVolumeNoDisk[index] = volume
+
+	enableFloppySound := volume > 0 || volumeNoDisk > 0
+
+	ae.commander.PutFloppySoundCO(index, enableFloppySound)
+	ae.commander.PutFloppySoundVolumeDiskCO(index, volume)
+	ae.commander.PutFloppySoundVolumeEmptyCO(index, volumeNoDisk)
+
+	// detach floppy at index
 	ae.commander.PutFloppyCO(index, "")
 	ae.commander.PutConfigChangedCommand()
 	ae.commander.PutLocalCommitCommand()

@@ -308,3 +308,16 @@ numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 # patch -p1 < ../go.amipi400/amiberry.amipi400.patch
 # make clean
 # make -j2 PLATFORM=rpi4
+
+
+TODO FIX:
+fodder2 adf not found
+2023/11/30 20:56:34 Sleeping for 1 seconds
+
+
+^[^[		df0cannonfodder2		2023/11/30 20:56:44 dfInsertFromSourceIndexToTargetIndex CANNONFODDER2 0 -1
+^[^[		df0fodder2disk1		2023/11/30 20:57:04 dfInsertFromSourceIndexToTargetIndex FODDER2DISK1 0 -1
+^C2023/11/30 20:57:11 Unmounting all mountpoints...
+2023/11/30 20:57:11 lsblk: signal: interrupt
+
+

@@ -14,6 +14,7 @@ const AMIPI400_VERSION = "0.1"
 // global
 const HDD_SECTOR_SIZE = 512
 const CMD_PENDING_BLINK_POWER_SECS = math.MaxInt
+const CMD_SUCCESS_BLINK_POWER_SECS = 4
 const CMD_FAILURE_BLINK_NUM_LOCK_SECS = 4
 
 // amipi400.go

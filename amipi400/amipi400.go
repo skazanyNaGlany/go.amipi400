@@ -104,9 +104,15 @@ func attachAdf(index int, pathname string) bool {
 		return false
 	}
 
+	volume := 0
+
+	if !amigaDiskDevicesDiscovery.HasFile(pathname) {
+		volume = shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME
+	}
+
 	log.Println("Attaching", pathname, "to DF"+strIndex)
 
-	emulator.AttachAdf(index, pathname)
+	emulator.AttachAdf(index, pathname, volume, 0)
 
 	return true
 }
@@ -206,7 +212,7 @@ func detachAdf(index int, pathname string) bool {
 
 	log.Println("Detaching", pathname, "from DF"+strIndex)
 
-	emulator.DetachAdf(index)
+	emulator.DetachAdf(index, 0, 0)
 
 	return true
 }
@@ -241,12 +247,7 @@ func detachHd(index int, pathname string) bool {
 func attachAmigaDiskDeviceAdf(pathname string) {
 	index := adfPathnameToDFIndex(pathname)
 
-	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
-	emulator.SetFloppySoundVolumeDisk(index, 0, 0)
-
-	if !attachAdf(index, pathname) {
-		emulator.SetFloppySoundVolumeDisk(index, oldVolume, 0)
-	}
+	attachAdf(index, pathname)
 }
 
 func attachAmigaDiskDeviceIso(pathname string) {
@@ -563,7 +564,7 @@ func fillIndexes(indexStr string, maxIndex int) []int {
 
 func dfUnmountFromSourceIndex(sourceIndex string) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	sourceIndexes := fillIndexes(sourceIndex, shared.MAX_ADFS)
 	countFailed := 0
@@ -589,7 +590,7 @@ func dfUnmountFromSourceIndex(sourceIndex string) {
 
 func cdUnmountFromSourceIndex(sourceIndex string) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	sourceIndexes := fillIndexes(sourceIndex, shared.MAX_CDS)
 	countFailed := 0
@@ -619,7 +620,7 @@ func hfUnmountFromSourceIndex(sourceIndex string) {
 
 func dhUnmountFromSourceIndex(sourceIndex string) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	sourceIndexes := fillIndexes(sourceIndex, shared.MAX_HDFS)
 	countFailed := 0
@@ -645,7 +646,7 @@ func dhUnmountFromSourceIndex(sourceIndex string) {
 
 func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetIndex string) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	diskNoInt, _ := utils.StringUtilsInstance.StringToInt(diskNo, 10, 16)
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
@@ -720,11 +721,7 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 		}
 	}
 
-	targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
-	emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME, 0)
-
 	if !attachAdf(targetIndexInt, toInsertPathname) {
-		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
 		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
@@ -738,7 +735,7 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 	}
 
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	filenamePart = strings.TrimSpace(filenamePart)
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
@@ -796,11 +793,7 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 		}
 	}
 
-	targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
-	emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME, 0)
-
 	if !attachAdf(targetIndexInt, foundAdfPathname) {
-		emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
 		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
@@ -808,7 +801,7 @@ func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 
 func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	filenamePart = strings.TrimSpace(filenamePart)
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
@@ -887,7 +880,7 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 
 func cdInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	// TODO test me - check if ISO attached by this method works in the emulator
 	// eg. by using emulating CD32 (use cd32.uae.template config)
@@ -953,7 +946,7 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 	}
 
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 
@@ -984,7 +977,7 @@ func dfEjectFromSourceIndex(sourceIndex string) {
 
 func cdEjectFromSourceIndex(sourceIndex string) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 
@@ -1015,7 +1008,7 @@ func cdEjectFromSourceIndex(sourceIndex string) {
 
 func hfEjectFromSourceIndex(sourceIndex string) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 
@@ -1052,7 +1045,7 @@ func hfEjectFromSourceIndex(sourceIndex string) {
 
 func dfEjectFromSourceIndexAll() {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	for index := 0; index < shared.MAX_ADFS; index++ {
 		adfPathname := emulator.GetAdf(index)
@@ -1167,7 +1160,7 @@ func findSimilarROMFile(mountpoint *components_amipi400.Mountpoint, filenamePatt
 
 func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	filenamePart = strings.TrimSpace(filenamePart)
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
@@ -1229,11 +1222,7 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 			}
 		}
 
-		targetIndexOldVolume := emulator.GetFloppySoundVolumeDisk(targetIndexInt)
-		emulator.SetFloppySoundVolumeDisk(targetIndexInt, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME, 0)
-
 		if !attachAdf(targetIndexInt, pathname) {
-			emulator.SetFloppySoundVolumeDisk(targetIndexInt, targetIndexOldVolume, 0)
 			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 			return
 		}
@@ -1441,13 +1430,8 @@ func attachDFMediumDiskImage(
 		return
 	}
 
-	oldVolume := emulator.GetFloppySoundVolumeDisk(index)
-	emulator.SetFloppySoundVolumeDisk(index, shared.FLOPPY_DISK_IN_DRIVE_SOUND_VOLUME, 0)
-
 	if !attachAdf(index, mountpoint.DefaultFile) {
 		unmountMountpoint(mountpoint, true)
-
-		emulator.SetFloppySoundVolumeDisk(index, oldVolume, 0)
 		return
 	}
 }
@@ -1822,7 +1806,7 @@ func detachMountpointROMs(mountpoint *components_amipi400.Mountpoint) {
 
 func unmountAll() {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(0)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	emulator.SetRerunEmulator(false)
 	defer emulator.SetRerunEmulator(true)
