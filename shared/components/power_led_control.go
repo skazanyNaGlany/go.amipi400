@@ -22,9 +22,8 @@ func (plc *PowerLEDControl) loop() {
 
 		if plc.blinkPowerLedSecs > 0 {
 			plc.blinkPowerLed()
+			plc.enablePowerLed()
 		}
-
-		plc.enablePowerLed()
 	}
 
 	plc.running = false

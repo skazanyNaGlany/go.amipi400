@@ -22,9 +22,8 @@ func (nllc *NumLockLEDControl) loop() {
 
 		if nllc.blinkNumLockLedSecs > 0 {
 			nllc.blinkNumLockLed()
+			nllc.disableNumLockLed()
 		}
-
-		nllc.disableNumLockLed()
 	}
 
 	nllc.running = false
