@@ -23,6 +23,7 @@ import (
 var runnersBlocker components.RunnersBlocker
 var powerLEDControl components.PowerLEDControl
 var numLockLEDControl components.NumLockLEDControl
+var monitorControl components_amipi400.MonitorControl
 var allKeyboardsControl components.AllKeyboardsControl
 var amigaDiskDevicesDiscovery components_amipi400.AmigaDiskDevicesDiscovery
 var emulator components_amipi400.AmiberryEmulator
@@ -277,6 +278,9 @@ func attachAmigaDiskDeviceHdf(pathname string) {
 		return
 	}
 
+	onHDOperationStart()
+	defer onHDOperationDone()
+
 	attachHdf(index, shared.DH_BOOT_PRIORITY_DEFAULT, pathname)
 }
 
@@ -288,6 +292,9 @@ func detachAmigaDiskDeviceHdf(pathname string) {
 
 		return
 	}
+
+	onHDOperationStart()
+	defer onHDOperationDone()
 
 	detachHd(index, pathname)
 }
@@ -622,6 +629,9 @@ func dhUnmountFromSourceIndex(sourceIndex string) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
 	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
+	onHDOperationStart()
+	defer onHDOperationDone()
+
 	sourceIndexes := fillIndexes(sourceIndex, shared.MAX_HDFS)
 	countFailed := 0
 
@@ -840,6 +850,9 @@ func hfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex
 		return
 	}
 
+	onHDOperationStart()
+	defer onHDOperationDone()
+
 	targetIndexHdf := emulator.GetHd(targetIndexInt)
 
 	if targetIndexHdf != "" {
@@ -1036,6 +1049,9 @@ func hfEjectFromSourceIndex(sourceIndex string) {
 		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 		return
 	}
+
+	onHDOperationStart()
+	defer onHDOperationDone()
 
 	if !detachHd(sourceIndexInt, sourceIndexHdf) {
 		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
@@ -1474,6 +1490,9 @@ func attachDHMediumDiskImage(
 		return
 	}
 
+	onHDOperationStart()
+	defer onHDOperationDone()
+
 	if !attachHdDir(index, bootPriority, mountpoint.Mountpoint) {
 		unmountMountpoint(mountpoint, true)
 		return
@@ -1520,6 +1539,9 @@ func attachHFMediumDiskImage(
 	if mountpoint.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
 		return
 	}
+
+	onHDOperationStart()
+	defer onHDOperationDone()
 
 	if !attachHdf(index, bootPriority, mountpoint.DefaultFile) {
 		unmountMountpoint(mountpoint, true)
@@ -1626,6 +1648,9 @@ func detachHDMediumDiskImage(
 		log.Println(path, label, "not mounted")
 		return
 	}
+
+	onHDOperationStart()
+	defer onHDOperationDone()
 
 	if mountpoint.DHIndex != shared.DRIVE_INDEX_UNSPECIFIED {
 		hdfPathname := emulator.GetHd(mountpoint.DHIndex)
@@ -1804,12 +1829,23 @@ func detachMountpointROMs(mountpoint *components_amipi400.Mountpoint) {
 	detachCDMountpointROMs(mountpoint)
 }
 
+func onHDOperationStart() {
+	monitorControl.TurnOffMonitor()
+	monitorControl.TurnOffForSecs(shared.HD_OP_START_MONITOR_TURN_OFF_SECS)
+	emulator.SetRerunEmulator(false)
+}
+
+func onHDOperationDone() {
+	monitorControl.TurnOffForSecs(shared.HD_OP_DONE_MONITOR_TURN_OFF_SECS)
+	emulator.SetRerunEmulator(true)
+}
+
 func unmountAll() {
+	onHDOperationStart()
+	defer onHDOperationDone()
+
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
 	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
-
-	emulator.SetRerunEmulator(false)
-	defer emulator.SetRerunEmulator(true)
 
 	emulator.HardReset()
 
@@ -1847,6 +1883,7 @@ func stopServices() {
 	commander.Stop(&commander)
 	blockDevices.Stop(&blockDevices)
 	blockDevices.Stop(&powerLEDControl)
+	monitorControl.Stop(&monitorControl)
 }
 
 func gracefulShutdown() {
@@ -1906,6 +1943,8 @@ func main() {
 	powerLEDControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 	numLockLEDControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
 	numLockLEDControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	monitorControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	monitorControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 
 	amigaDiskDevicesDiscovery.Start(&amigaDiskDevicesDiscovery)
 	allKeyboardsControl.Start(&allKeyboardsControl)
@@ -1914,6 +1953,7 @@ func main() {
 	blockDevices.Start(&blockDevices)
 	powerLEDControl.Start(&powerLEDControl)
 	numLockLEDControl.Start(&numLockLEDControl)
+	monitorControl.Start(&monitorControl)
 
 	runnersBlocker.AddRunner(&amigaDiskDevicesDiscovery)
 	runnersBlocker.AddRunner(&allKeyboardsControl)
@@ -1922,6 +1962,7 @@ func main() {
 	runnersBlocker.AddRunner(&blockDevices)
 	runnersBlocker.AddRunner(&powerLEDControl)
 	runnersBlocker.AddRunner(&numLockLEDControl)
+	runnersBlocker.AddRunner(&monitorControl)
 
 	go gracefulShutdown()
 
