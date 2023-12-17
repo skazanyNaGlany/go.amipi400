@@ -521,7 +521,7 @@ func processKeyboardCommand(keyboardCommand string) {
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
 	} else if shared.UNMOUNT_ALL_RE.MatchString(keyboardCommand) {
 		// example: u
-		unmountAll()
+		unmountAll(false)
 	} else if dfUnmountRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_UNMOUNT_FROM_SOURCE_INDEX_RE,
 		keyboardCommand); len(dfUnmountRule) > 0 {
@@ -1840,12 +1840,14 @@ func onHDOperationDone() {
 	emulator.SetRerunEmulator(true)
 }
 
-func unmountAll() {
-	onHDOperationStart()
-	defer onHDOperationDone()
+func unmountAll(fromSignal bool) {
+	if !fromSignal {
+		onHDOperationStart()
+		defer onHDOperationDone()
 
-	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
-	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
+		powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+		defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
+	}
 
 	emulator.HardReset()
 
@@ -1870,7 +1872,9 @@ func unmountAll() {
 	}
 
 	if len(mountpoints.Mountpoints) > 0 {
-		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+		if !fromSignal {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+		}
 	}
 
 	log.Println("Done unmounting mountpoints")
@@ -1893,7 +1897,7 @@ func gracefulShutdown() {
 
 	<-signalChan
 
-	unmountAll()
+	unmountAll(true)
 	stopServices()
 }
 
@@ -1924,6 +1928,8 @@ func main() {
 	emulator.SetAmiberryCommander(&commander)
 	blockDevices.AddAttachedCallback(attachedBlockDeviceCallback)
 	blockDevices.AddDetachedCallback(detachedBlockDeviceCallback)
+
+	powerLEDControl.EnablePowerLed()
 
 	discoverDriveDevices()
 	printFloppyDevices()

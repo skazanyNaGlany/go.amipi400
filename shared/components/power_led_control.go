@@ -22,7 +22,7 @@ func (plc *PowerLEDControl) loop() {
 
 		if plc.blinkPowerLedSecs > 0 {
 			plc.blinkPowerLed()
-			plc.enablePowerLed()
+			plc.EnablePowerLed()
 		}
 	}
 
@@ -34,9 +34,9 @@ func (plc *PowerLEDControl) blinkPowerLed() {
 
 	for plc.blinkPowerLedSecs > 0 {
 		if step%2 == 0 {
-			plc.disablePowerLed()
+			plc.DisablePowerLed()
 		} else {
-			plc.enablePowerLed()
+			plc.EnablePowerLed()
 		}
 
 		time.Sleep(time.Second * 1)
@@ -58,11 +58,11 @@ func (plc *PowerLEDControl) setPowerLedBrightness(brightness int) {
 		nil)
 }
 
-func (plc *PowerLEDControl) disablePowerLed() {
+func (plc *PowerLEDControl) DisablePowerLed() {
 	plc.setPowerLedBrightness(0)
 }
 
-func (plc *PowerLEDControl) enablePowerLed() {
+func (plc *PowerLEDControl) EnablePowerLed() {
 	plc.setPowerLedBrightness(100)
 }
 
