@@ -479,7 +479,7 @@ func processKeyboardCommand(keyboardCommand string) {
 	} else if dfSourceTargetRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_RE,
 		keyboardCommand); len(dfSourceTargetRule) > 0 {
-		// example: df0kwater disk 2df1
+		// example: df0kwaterdf1
 		// example: df0kwaterdfn
 		dfInsertFromSourceIndexToTargetIndex(
 			dfSourceTargetRule["filename_part"],
@@ -501,7 +501,7 @@ func processKeyboardCommand(keyboardCommand string) {
 	} else if cdSourceRule := utils.RegExInstance.FindNamedMatches(
 		shared.CD_INSERT_FROM_SOURCE_INDEX_RE,
 		keyboardCommand); len(cdSourceRule) > 0 {
-		// example: cd0workbench iso
+		// example: cd0workbenchiso
 		cdInsertFromSourceIndexToTargetIndex(
 			cdSourceRule["filename_part"],
 			cdSourceRule["source_index"],
@@ -514,7 +514,7 @@ func processKeyboardCommand(keyboardCommand string) {
 	} else if hfSourceRule := utils.RegExInstance.FindNamedMatches(
 		shared.HF_INSERT_FROM_SOURCE_INDEX_RE,
 		keyboardCommand); len(hfSourceRule) > 0 {
-		// example: hf0workbench hdf
+		// example: hf0workbenchhdf
 		hfInsertFromSourceIndexToTargetIndex(
 			hfSourceRule["filename_part"],
 			hfSourceRule["source_index"],
@@ -738,7 +738,6 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 }
 
 func dfInsertFromSourceIndexToTargetIndex(filenamePart, sourceIndex, targetIndex string) {
-	log.Println("dfInsertFromSourceIndexToTargetIndex", filenamePart, sourceIndex, targetIndex)
 	if targetIndex == "N" {
 		dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex)
 		return
@@ -1152,22 +1151,32 @@ func findSimilarROMFiles(mountpoint *components_amipi400.Mountpoint, pathname st
 }
 
 func findSimilarROMFile(mountpoint *components_amipi400.Mountpoint, filenamePattern string) string {
-	filenamePattern = utils.StringUtilsInstance.StringUnify(filenamePattern)
-	filenamePattern = strings.ReplaceAll(filenamePattern, " ", ".*")
-	filenamePattern = ".*" + filenamePattern + ".*"
-	filenamePattern = strings.ToUpper(filenamePattern)
-
-	filenamePatternRegEx := regexp.MustCompile(filenamePattern)
+	if !mountpoint.HasFiles() {
+		return ""
+	}
 
 	for _, iRomPathname := range mountpoint.Files {
-		iRomBasename := path.Base(iRomPathname)
-		iRomBasename = adfBasenameCleanDiskOf(iRomBasename)
+		iRomBasenme := path.Base(iRomPathname)
 
-		iRomBasenameUnified := utils.StringUtilsInstance.StringUnify(iRomBasename)
-		iRomBasenameUnified = strings.ToUpper(iRomBasenameUnified)
+		iRomUnified := utils.StringUtilsInstance.StringUnify(iRomBasenme)
+		iRomUnified = strings.ToUpper(iRomUnified)
 
-		if filenamePatternRegEx.MatchString(iRomBasenameUnified) {
+		if strings.Contains(iRomUnified, filenamePattern) {
 			return iRomPathname
+		}
+
+		iRomParts := strings.Split(iRomUnified, " ")
+		filenamePatternCopy := filenamePattern
+
+		for _, iRomPart := range iRomParts {
+			if strings.Index(filenamePatternCopy, iRomPart) == 0 {
+				filenamePatternCopy = strings.Replace(filenamePatternCopy, iRomPart, "", 1)
+				filenamePatternCopy = strings.TrimSpace(filenamePatternCopy)
+
+				if filenamePatternCopy == "" {
+					return iRomPathname
+				}
+			}
 		}
 	}
 
