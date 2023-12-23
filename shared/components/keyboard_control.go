@@ -13,7 +13,7 @@ import (
 // key codes that does not exists in
 // the github.com/MarinX/keylogger
 var extendedKeyCodeMap = map[uint16]string{
-	125: "KEY_LEFTMETA",
+	125: shared.KEY_LEFTMETA,
 }
 
 type KeySequence struct {

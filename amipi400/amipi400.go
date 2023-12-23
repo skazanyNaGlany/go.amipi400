@@ -1271,12 +1271,53 @@ func keyEventCallback(sender any, key string, pressed bool) {
 		emulator.ToggleZoom()
 	} else if isReleasedKey(shared.KEY_ESC) {
 		clearAllKeyboardsControl()
+	} else if diskNo := isReplaceDFByIndexShortcut(); diskNo != shared.DISK_INDEX_UNSPECIFIED {
+		clearAllKeyboardsControl()
+
+		dfInsertFromSourceIndexToTargetIndexByDiskNo(
+			fmt.Sprint(diskNo),
+			"0",
+			shared.DRIVE_INDEX_UNSPECIFIED_STR)
 	} else {
 		if keyboardCommand := getKeyboardCommand(); keyboardCommand != "" {
 			clearAllKeyboardsControl()
 			processKeyboardCommand(keyboardCommand)
 		}
 	}
+}
+
+func isReplaceDFByIndexShortcut() int {
+	var err error
+
+	releasedKeys := allKeyboardsControl.GetReleasedKeys()
+
+	currentTimestamp := time.Now().UnixMilli()
+	goodCount := 0
+	diskNo := int64(shared.DISK_INDEX_UNSPECIFIED)
+
+	for key, pressedTimestamp := range releasedKeys {
+		pressedTimestampChange := currentTimestamp - pressedTimestamp
+
+		if pressedTimestampChange < 0 || pressedTimestampChange > 1000 {
+			continue
+		}
+
+		if key == shared.KEY_LEFTMETA {
+			goodCount++
+		} else {
+			diskNo, err = strconv.ParseInt(key, 10, 16)
+
+			if err == nil {
+				goodCount++
+			}
+		}
+	}
+
+	if goodCount != 2 {
+		return shared.DISK_INDEX_UNSPECIFIED
+	}
+
+	return int(diskNo)
 }
 
 func parseMediumLabel(label string, re *regexp.Regexp) (int, int, error) {
