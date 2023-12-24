@@ -186,6 +186,33 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 	}
 
+	// zoom
+	if ae.isZoom {
+		key, value := ae.commander.FormatGfxCenterHorizontalCO(true)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+
+		key, value = ae.commander.FormatGfxCenterVerticalCO(true)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+
+		key, value = ae.commander.FormatGfxHeightCO(shared.AMIBERRY_ZOOM_WINDOW_HEIGHT)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+
+		key, value = ae.commander.FormatGfxHeightWindowedCO(shared.AMIBERRY_ZOOM_WINDOW_HEIGHT)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+	} else {
+		key, value := ae.commander.FormatGfxCenterHorizontalCO(false)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+
+		key, value = ae.commander.FormatGfxCenterVerticalCO(false)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+
+		key, value = ae.commander.FormatGfxHeightCO(shared.AMIBERRY_DEFAULT_WINDOW_HEIGHT)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+
+		key, value = ae.commander.FormatGfxHeightWindowedCO(shared.AMIBERRY_DEFAULT_WINDOW_HEIGHT)
+		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
+	}
+
 	configPathname := filepath.Join(
 		os.TempDir(),
 		shared.AMIBERRY_TEMPORARY_CONFIG_FILENAME)
@@ -450,10 +477,9 @@ func (ae *AmiberryEmulator) SoftReset() error {
 }
 
 func (ae *AmiberryEmulator) HardReset() error {
-	// isAutoHeight and isZoom are temporary so they must be reset when hard
+	// isAutoHeight is temporary so it must be reset when hard
 	// resetting the emulator
 	ae.isAutoHeight = false
-	ae.isZoom = false
 
 	if ae.emulatorCommand == nil {
 		return nil
@@ -562,8 +588,6 @@ func (ae *AmiberryEmulator) SetAutoHeight(autoHeight bool) {
 }
 
 func (ae *AmiberryEmulator) SetZoom(zoom bool) {
-	// WARNING these settings are temporary and will not be
-	// synced with the config at getEmulatorProcessedConfig
 	if zoom {
 		ae.commander.PutGfxCenterHorizontalCO(true)
 		ae.commander.PutGfxCenterVerticalCO(true)

@@ -321,3 +321,9 @@ fodder2 adf not found
 2023/11/30 20:57:11 lsblk: signal: interrupt
 
 
+
+
+gfx_center_horizontal
+gfx_center_vertical
+gfx_height
+gfx_height_windowed
