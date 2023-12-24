@@ -26,12 +26,16 @@ type Mountpoint struct {
 }
 
 func (m *Mountpoint) Mount() error {
+	// do not use syscall.MS_SYNCHRONOUS as "flags" parameter
+	// or "flush" as "data" parameter since it will slow down
+	// the emulator when accessing / reading / writing rom
+	// files
 	return syscall.Mount(
 		m.DevicePathname,
 		m.Mountpoint,
 		m.FsType,
-		syscall.MS_SYNCHRONOUS,
-		"flush")
+		0,
+		"")
 }
 
 func (m *Mountpoint) Unmount() error {
