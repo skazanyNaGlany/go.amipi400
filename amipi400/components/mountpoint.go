@@ -1,6 +1,7 @@
 package components
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -8,7 +9,6 @@ import (
 
 	"github.com/skazanyNaGlany/go.amipi400/shared"
 	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
-	"gopkg.in/ini.v1"
 )
 
 type Mountpoint struct {
@@ -17,12 +17,11 @@ type Mountpoint struct {
 	Label          string
 	FsType         string
 	Files          []string
-	DefaultFile    string
 	DFIndex        int
 	DHIndex        int
 	CDIndex        int
 	DHBootPriority int
-	Config         *ini.File
+	Config         *MountpointConfig
 }
 
 func (m *Mountpoint) Mount() error {
@@ -59,54 +58,35 @@ func (m *Mountpoint) LoadFiles(extensions []string) {
 }
 
 func (m *Mountpoint) LoadConfig() error {
-	var err error
-
-	m.Config, err = ini.Load(
-		filepath.Join(m.Mountpoint, shared.MEDIUM_CONFIG_INI_NAME))
+	err := m.Config.Load()
 
 	if err != nil {
 		return err
 	}
 
-	return nil
-
+	return m.setupDefaultFilePath()
 }
 
-func (m *Mountpoint) LoadDefaultFile() {
-	if m.HasFiles() {
-		// by default first file in the mountpoint
-		// is default file
-		m.DefaultFile = m.Files[0]
+func (m *Mountpoint) setupDefaultFilePath() error {
+	if m.Config.AmiPi400.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+		return nil
 	}
 
-	if m.Config == nil {
-		return
-	}
-
-	if !m.Config.HasSection(shared.MEDIUM_CONFIG_DEFAULT_SECTION) {
-		return
-	}
-
-	if !m.Config.Section(shared.MEDIUM_CONFIG_DEFAULT_SECTION).HasKey(shared.MEDIUM_CONFIG_DEFAULT_FILE) {
-		return
-	}
-
-	filename := m.Config.Section(shared.MEDIUM_CONFIG_DEFAULT_SECTION).Key(shared.MEDIUM_CONFIG_DEFAULT_FILE).String()
-
-	if filename == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
-		m.DefaultFile = shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE
-		return
-	}
-
-	fullPathname := filepath.Join(m.Mountpoint, filename)
+	fullPathname := filepath.Join(m.Mountpoint, m.Config.AmiPi400.DefaultFile)
 
 	stat, err := os.Stat(fullPathname)
 
-	if err != nil || stat.IsDir() {
-		return
+	if err != nil {
+		return err
 	}
 
-	m.DefaultFile = fullPathname
+	if stat.IsDir() {
+		return fmt.Errorf("%v must be a file, not a directory", fullPathname)
+	}
+
+	m.Config.AmiPi400.DefaultFile = fullPathname
+
+	return nil
 }
 
 func NewMountpoint(devicePathname string, mountpoint string, label string, fsType string) *Mountpoint {
@@ -120,6 +100,7 @@ func NewMountpoint(devicePathname string, mountpoint string, label string, fsTyp
 	mp.DFIndex = shared.DRIVE_INDEX_UNSPECIFIED
 	mp.DHIndex = shared.DRIVE_INDEX_UNSPECIFIED
 	mp.CDIndex = shared.DRIVE_INDEX_UNSPECIFIED
+	mp.Config = NewMountpointConfig(filepath.Join(mountpoint, shared.MEDIUM_CONFIG_INI_NAME))
 
 	return &mp
 }

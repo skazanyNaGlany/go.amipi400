@@ -1407,9 +1407,7 @@ func setupAddMountpoint(
 		log.Printf("Cannot load medium config for %v: %v\n", mountpoint.Mountpoint, err)
 	}
 
-	mountpoint.LoadDefaultFile()
-
-	if extensions != nil && !mountpoint.HasFiles() && mountpoint.DefaultFile != shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+	if extensions != nil && !mountpoint.HasFiles() && mountpoint.Config.AmiPi400.DefaultFile != shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
 		unmountMountpoint(mountpoint, false)
 
 		return nil, fmt.Errorf("%v contains no %v files", label, strings.Join(extensions, ","))
@@ -1503,11 +1501,11 @@ func attachDFMediumDiskImage(
 		return
 	}
 
-	if mountpoint.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+	if mountpoint.Config.AmiPi400.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
 		return
 	}
 
-	if !attachAdf(index, mountpoint.DefaultFile) {
+	if !attachAdf(index, mountpoint.Config.AmiPi400.DefaultFile) {
 		unmountMountpoint(mountpoint, true)
 		return
 	}
@@ -1597,14 +1595,14 @@ func attachHFMediumDiskImage(
 		return
 	}
 
-	if mountpoint.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+	if mountpoint.Config.AmiPi400.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
 		return
 	}
 
 	onHDOperationStart()
 	defer onHDOperationDone()
 
-	if !attachHdf(index, bootPriority, mountpoint.DefaultFile) {
+	if !attachHdf(index, bootPriority, mountpoint.Config.AmiPi400.DefaultFile) {
 		unmountMountpoint(mountpoint, true)
 		return
 	}
@@ -1648,11 +1646,11 @@ func attachCDMediumDiskImage(
 		return
 	}
 
-	if mountpoint.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+	if mountpoint.Config.AmiPi400.DefaultFile == shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
 		return
 	}
 
-	if !attachIso(index, mountpoint.DefaultFile) {
+	if !attachIso(index, mountpoint.Config.AmiPi400.DefaultFile) {
 		unmountMountpoint(mountpoint, true)
 		return
 	}
