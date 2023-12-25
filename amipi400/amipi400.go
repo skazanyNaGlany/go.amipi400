@@ -374,7 +374,7 @@ func servicesIdleCallback(sender any) {
 	log.Println("All services idle, running emulator")
 
 	emulator.SetRerunEmulator(true)
-	powerLEDControl.BlinkPowerLEDSecs(0)
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 }
 
 func isSoftResetKeys() bool {
@@ -2008,7 +2008,6 @@ func main() {
 	log.Printf("Executable directory %v\n", exeDir)
 	log.Printf("Log filename %v\n", logFilename)
 
-	initializing = true
 	log.Println("Waiting for all services to became idle...")
 
 	// start blinking of the power LED and wait for amigaDiskDevicesDiscovery
