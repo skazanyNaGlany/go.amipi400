@@ -21,6 +21,7 @@ const HD_OP_DONE_MONITOR_TURN_OFF_SECS = 8
 
 // amipi400.go
 const _AMIPI400_AMIBERRY_CONFIG_PATHNAME = "/boot/amipi400.uae.template"
+const MAIN_CONFIG_INI_PATHNAME = "/boot/amipi400.ini"
 const _AMIBERRY_EXE_PATHNAME = "../../amiberry/amiberry"
 const AMIBERRY_EMULATOR_TMP_INI_FILENAME = "amiberry.tmp.ini"
 const AP4_ROOT_MOUNTPOINT = "/media/"

@@ -31,6 +31,7 @@ var driveDevicesDiscovery components.DriveDevicesDiscovery
 var commander components_amipi400.AmiberryCommander
 var blockDevices components.BlockDevices
 var mountpoints = components_amipi400.NewMountpointList()
+var mainConfig = components_amipi400.NewMainConfig(shared.MAIN_CONFIG_INI_PATHNAME)
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()
@@ -1269,6 +1270,8 @@ func keyEventCallback(sender any, key string, pressed bool) {
 		clearAllKeyboardsControl()
 
 		emulator.ToggleZoom()
+
+		saveZoomConfigSetting()
 	} else if isReleasedKey(shared.KEY_ESC) {
 		clearAllKeyboardsControl()
 	} else if diskNo := isReplaceDFByIndexShortcut(); diskNo != shared.DISK_INDEX_UNSPECIFIED {
@@ -1283,6 +1286,14 @@ func keyEventCallback(sender any, key string, pressed bool) {
 			clearAllKeyboardsControl()
 			processKeyboardCommand(keyboardCommand)
 		}
+	}
+}
+
+func saveZoomConfigSetting() {
+	mainConfig.AmiPi400.Zoom = emulator.IsZoom()
+
+	if err := mainConfig.Save(); err != nil {
+		log.Println(err)
 	}
 }
 
@@ -1961,6 +1972,12 @@ func main() {
 	utils.SysUtilsInstance.CheckForExecutables(
 		shared.AMIPI400_NEEDED_EXECUTABLES)
 
+	mainConfig.Load()
+
+	// this will save config file
+	// with default values if not exists
+	mainConfig.Save()
+
 	exeDir := utils.GoUtilsInstance.MustCwdToExeOrScript()
 	logFilename := utils.GoUtilsInstance.MustDuplicateLog(exeDir)
 
@@ -1976,6 +1993,7 @@ func main() {
 	emulator.SetExecutablePathname(shared.AMIBERRY_EXE_PATHNAME)
 	emulator.SetConfigPathname(shared.AMIPI400_AMIBERRY_CONFIG_PATHNAME)
 	emulator.SetAmiberryCommander(&commander)
+	emulator.SetZoom(mainConfig.AmiPi400.Zoom)
 	blockDevices.AddAttachedCallback(attachedBlockDeviceCallback)
 	blockDevices.AddDetachedCallback(detachedBlockDeviceCallback)
 

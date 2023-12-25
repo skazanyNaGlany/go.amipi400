@@ -11,6 +11,7 @@ require (
 	github.com/ncw/directio v1.0.5 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/shirou/gopsutil/v3 v3.22.11 // indirect
+	github.com/subpop/go-ini v0.1.5 // indirect
 	github.com/thoas/go-funk v0.9.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.11 // indirect
 	github.com/tklauser/numcpus v0.6.0 // indirect

@@ -615,3 +615,7 @@ func (ae *AmiberryEmulator) ToggleAutoHeight() {
 func (ae *AmiberryEmulator) ToggleZoom() {
 	ae.SetZoom(!ae.isZoom)
 }
+
+func (ae *AmiberryEmulator) IsZoom() bool {
+	return ae.isZoom
+}
