@@ -61,10 +61,20 @@ func (m *Mountpoint) LoadConfig() error {
 	err := m.Config.Load()
 
 	if err != nil {
+		m.setupDefaultFileNoConfig()
+
 		return err
 	}
 
 	return m.setupDefaultFilePath()
+}
+
+func (m *Mountpoint) setupDefaultFileNoConfig() {
+	if !m.HasFiles() {
+		return
+	}
+
+	m.Config.AmiPi400.DefaultFile = m.Files[0]
 }
 
 func (m *Mountpoint) setupDefaultFilePath() error {
