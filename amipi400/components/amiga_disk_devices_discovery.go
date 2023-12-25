@@ -15,6 +15,8 @@ type AmigaDiskDevicesDiscovery struct {
 	detachedAmigaDiskDeviceCallback interfaces.DetachedAmigaDiskDeviceCallback
 	mountpoint                      string
 	currentFiles                    []string
+	isIdle                          bool
+	idleCallback                    interfaces.IdleCallback
 }
 
 func (addd *AmigaDiskDevicesDiscovery) loop() {
@@ -38,15 +40,32 @@ func (addd *AmigaDiskDevicesDiscovery) HasFile(pathname string) bool {
 }
 
 func (addd *AmigaDiskDevicesDiscovery) callCallbacks(files []string, oldFiles []string) {
+	affected := 0
+	oldIsIdle := addd.isIdle
+
 	for _, pathname := range oldFiles {
 		if !funk.ContainsString(files, pathname) {
+			affected++
+			addd.isIdle = false
+
 			addd.detachedAmigaDiskDeviceCallback(pathname)
 		}
 	}
 
 	for _, pathname := range files {
 		if !funk.ContainsString(oldFiles, pathname) {
+			affected++
+			addd.isIdle = false
+
 			addd.attachedAmigaDiskDeviceCallback(pathname)
+		}
+	}
+
+	addd.isIdle = affected == 0
+
+	if addd.isIdle && !oldIsIdle {
+		if addd.idleCallback != nil {
+			addd.idleCallback(addd)
 		}
 	}
 }
@@ -67,4 +86,12 @@ func (addd *AmigaDiskDevicesDiscovery) Run() {
 
 func (addd *AmigaDiskDevicesDiscovery) SetMountpoint(mountpoint string) {
 	addd.mountpoint = mountpoint
+}
+
+func (addd *AmigaDiskDevicesDiscovery) SetIdleCallback(callback interfaces.IdleCallback) {
+	addd.idleCallback = callback
+}
+
+func (addd *AmigaDiskDevicesDiscovery) IsIdle() bool {
+	return addd.isIdle
 }

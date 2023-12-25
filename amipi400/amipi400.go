@@ -23,7 +23,6 @@ import (
 var runnersBlocker components.RunnersBlocker
 var powerLEDControl components.PowerLEDControl
 var numLockLEDControl components.NumLockLEDControl
-var monitorControl components_amipi400.MonitorControl
 var allKeyboardsControl components.AllKeyboardsControl
 var amigaDiskDevicesDiscovery components_amipi400.AmigaDiskDevicesDiscovery
 var emulator components_amipi400.AmiberryEmulator
@@ -32,6 +31,7 @@ var commander components_amipi400.AmiberryCommander
 var blockDevices components.BlockDevices
 var mountpoints = components_amipi400.NewMountpointList()
 var mainConfig = components_amipi400.NewMainConfig(shared.MAIN_CONFIG_INI_PATHNAME)
+var initializing = true
 
 func adfPathnameToDFIndex(pathname string) int {
 	floppyDevices := driveDevicesDiscovery.GetFloppies()
@@ -354,6 +354,27 @@ func detachedAmigaDiskDeviceCallback(pathname string) {
 	}
 
 	log.Fatalln(pathname, "not supported")
+}
+
+func servicesIdleCallback(sender any) {
+	if !initializing {
+		return
+	}
+
+	if !amigaDiskDevicesDiscovery.IsIdle() {
+		return
+	}
+
+	if !blockDevices.IsIdle() {
+		return
+	}
+
+	initializing = false
+
+	log.Println("All services idle, running emulator")
+
+	emulator.SetRerunEmulator(true)
+	powerLEDControl.BlinkPowerLEDSecs(0)
 }
 
 func isSoftResetKeys() bool {
@@ -1889,13 +1910,18 @@ func detachMountpointROMs(mountpoint *components_amipi400.Mountpoint) {
 }
 
 func onHDOperationStart() {
-	monitorControl.TurnOffMonitor()
-	monitorControl.TurnOffForSecs(shared.HD_OP_START_MONITOR_TURN_OFF_SECS)
+	if initializing {
+		return
+	}
+
 	emulator.SetRerunEmulator(false)
 }
 
 func onHDOperationDone() {
-	monitorControl.TurnOffForSecs(shared.HD_OP_DONE_MONITOR_TURN_OFF_SECS)
+	if initializing {
+		return
+	}
+
 	emulator.SetRerunEmulator(true)
 }
 
@@ -1946,7 +1972,6 @@ func stopServices() {
 	commander.Stop(&commander)
 	blockDevices.Stop(&blockDevices)
 	blockDevices.Stop(&powerLEDControl)
-	monitorControl.Stop(&monitorControl)
 }
 
 func gracefulShutdown() {
@@ -1983,9 +2008,21 @@ func main() {
 	log.Printf("Executable directory %v\n", exeDir)
 	log.Printf("Log filename %v\n", logFilename)
 
+	initializing = true
+	log.Println("Waiting for all services to became idle...")
+
+	// start blinking of the power LED and wait for amigaDiskDevicesDiscovery
+	// and blockDevices to became idle, before running the emulator
+	// servicesIdleCallback will disable blinking of the power LED and
+	// unlock the emulator by SetRerunEmulator(true)
+	powerLEDControl.EnablePowerLed()
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	emulator.SetRerunEmulator(false)
+
 	amigaDiskDevicesDiscovery.SetAttachedAmigaDiskDeviceCallback(attachedAmigaDiskDeviceCallback)
 	amigaDiskDevicesDiscovery.SetDetachedAmigaDiskDeviceCallback(detachedAmigaDiskDeviceCallback)
 	amigaDiskDevicesDiscovery.SetMountpoint(shared.FILE_SYSTEM_MOUNT)
+	amigaDiskDevicesDiscovery.SetIdleCallback(servicesIdleCallback)
 	allKeyboardsControl.SetKeyEventCallback(keyEventCallback)
 	commander.SetTmpIniPathname(shared.AMIBERRY_EMULATOR_TMP_INI_PATHNAME)
 	emulator.SetExecutablePathname(shared.AMIBERRY_EXE_PATHNAME)
@@ -1994,8 +2031,7 @@ func main() {
 	emulator.SetZoom(mainConfig.AmiPi400.Zoom)
 	blockDevices.AddAttachedCallback(attachedBlockDeviceCallback)
 	blockDevices.AddDetachedCallback(detachedBlockDeviceCallback)
-
-	powerLEDControl.EnablePowerLed()
+	blockDevices.SetIdleCallback(servicesIdleCallback)
 
 	discoverDriveDevices()
 	printFloppyDevices()
@@ -2015,8 +2051,6 @@ func main() {
 	powerLEDControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 	numLockLEDControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
 	numLockLEDControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
-	monitorControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
-	monitorControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 
 	amigaDiskDevicesDiscovery.Start(&amigaDiskDevicesDiscovery)
 	allKeyboardsControl.Start(&allKeyboardsControl)
@@ -2025,7 +2059,6 @@ func main() {
 	blockDevices.Start(&blockDevices)
 	powerLEDControl.Start(&powerLEDControl)
 	numLockLEDControl.Start(&numLockLEDControl)
-	monitorControl.Start(&monitorControl)
 
 	runnersBlocker.AddRunner(&amigaDiskDevicesDiscovery)
 	runnersBlocker.AddRunner(&allKeyboardsControl)
@@ -2034,7 +2067,6 @@ func main() {
 	runnersBlocker.AddRunner(&blockDevices)
 	runnersBlocker.AddRunner(&powerLEDControl)
 	runnersBlocker.AddRunner(&numLockLEDControl)
-	runnersBlocker.AddRunner(&monitorControl)
 
 	go gracefulShutdown()
 

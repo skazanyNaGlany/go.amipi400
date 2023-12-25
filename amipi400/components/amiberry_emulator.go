@@ -61,8 +61,6 @@ func (ae *AmiberryEmulator) Run() {
 		return
 	}
 
-	ae.rerunEmulator = true
-
 	ae.loop()
 }
 

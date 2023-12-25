@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	amipi400_interfaces "github.com/skazanyNaGlany/go.amipi400/amipi400/interfaces"
 	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/shared/interfaces"
 )
@@ -19,6 +20,8 @@ type BlockDevices struct {
 	RunnerBase
 	attachedCallbacks []interfaces.AttachedBlockDeviceCallback
 	detachedCallback  []interfaces.DetachedBlockDeviceCallback
+	isIdle            bool
+	idleCallback      amipi400_interfaces.IdleCallback
 }
 
 func (bd *BlockDevices) loop() {
@@ -71,16 +74,34 @@ func (bd *BlockDevices) loop() {
 }
 
 func (bd *BlockDevices) callCallbacks(old_block_devices, block_devices map[string]map[string]string) error {
-	err := bd.callDetachedCallbacks(old_block_devices, block_devices)
+	oldIsIdle := bd.isIdle
+
+	added, err := bd.callDetachedCallbacks(old_block_devices, block_devices)
 
 	if err != nil {
 		return err
 	}
 
-	return bd.callAttachedCallbacks(old_block_devices, block_devices)
+	removed, err := bd.callAttachedCallbacks(old_block_devices, block_devices)
+
+	if err != nil {
+		return err
+	}
+
+	bd.isIdle = added+removed == 0
+
+	if bd.isIdle && !oldIsIdle {
+		if bd.idleCallback != nil {
+			bd.idleCallback(bd)
+		}
+	}
+
+	return nil
 }
 
-func (bd *BlockDevices) callAttachedCallbacks(old_block_devices, block_devices map[string]map[string]string) error {
+func (bd *BlockDevices) callAttachedCallbacks(old_block_devices, block_devices map[string]map[string]string) (int, error) {
+	added := 0
+
 	for name := range block_devices {
 		new_block_device_data := block_devices[name]
 		old_block_device_data, exists := old_block_devices[name]
@@ -97,8 +118,11 @@ func (bd *BlockDevices) callAttachedCallbacks(old_block_devices, block_devices m
 			converted, err := bd.convertDataMap(new_block_device_data)
 
 			if err != nil {
-				return err
+				return added, err
 			}
+
+			added++
+			bd.isIdle = false
 
 			for _, callback := range bd.attachedCallbacks {
 				callback(
@@ -115,10 +139,12 @@ func (bd *BlockDevices) callAttachedCallbacks(old_block_devices, block_devices m
 		}
 	}
 
-	return nil
+	return added, nil
 }
 
-func (bd *BlockDevices) callDetachedCallbacks(old_block_devices, block_devices map[string]map[string]string) error {
+func (bd *BlockDevices) callDetachedCallbacks(old_block_devices, block_devices map[string]map[string]string) (int, error) {
+	removed := 0
+
 	for name := range old_block_devices {
 		old_block_device_data := old_block_devices[name]
 		new_block_device_data, exists := block_devices[name]
@@ -135,8 +161,11 @@ func (bd *BlockDevices) callDetachedCallbacks(old_block_devices, block_devices m
 			converted, err := bd.convertDataMap(old_block_device_data)
 
 			if err != nil {
-				return err
+				return removed, err
 			}
+
+			removed++
+			bd.isIdle = false
 
 			for _, callback := range bd.detachedCallback {
 				callback(
@@ -153,7 +182,7 @@ func (bd *BlockDevices) callDetachedCallbacks(old_block_devices, block_devices m
 		}
 	}
 
-	return nil
+	return removed, nil
 }
 
 func (*BlockDevices) blockDevicePropertyChanged(
@@ -234,4 +263,12 @@ func (bd *BlockDevices) AddDetachedCallback(callback interfaces.DetachedBlockDev
 
 func (bd *BlockDevices) Run() {
 	bd.loop()
+}
+
+func (bd *BlockDevices) SetIdleCallback(callback amipi400_interfaces.IdleCallback) {
+	bd.idleCallback = callback
+}
+
+func (bd *BlockDevices) IsIdle() bool {
+	return bd.isIdle
 }
