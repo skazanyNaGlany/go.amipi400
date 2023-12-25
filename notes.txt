@@ -327,3 +327,24 @@ gfx_center_horizontal
 gfx_center_vertical
 gfx_height
 gfx_height_windowed
+
+
+
+
+
+
+
+
+
+var ADF_DISK_NO_OF_MAX_RE = regexp.MustCompile(`(?P<disk_no_of_max>\((Disk\ \d)\ (of\ \d)\))`)
+func adfBasenameCleanDiskOf(basename string) string {
+	return shared.ADF_DISK_NO_OF_MAX_RE.ReplaceAllString(basename, "($1)")
+}
+
+
+
+
+
+
+
+

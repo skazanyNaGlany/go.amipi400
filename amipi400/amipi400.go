@@ -1985,10 +1985,6 @@ func gracefulShutdown() {
 	stopServices()
 }
 
-func adfBasenameCleanDiskOf(basename string) string {
-	return shared.ADF_DISK_NO_OF_MAX_RE.ReplaceAllString(basename, "($1)")
-}
-
 func main() {
 	utils.GoUtilsInstance.CheckPlatform()
 	utils.UnixUtilsInstance.CheckForRoot()
