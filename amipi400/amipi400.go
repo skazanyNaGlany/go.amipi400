@@ -194,7 +194,6 @@ func detachIso(index int, pathname string) bool {
 	return true
 }
 
-// TODO set empty floppy drive sound volume to 0
 func detachAdf(index int, pathname string) bool {
 	strIndex := fmt.Sprint(index)
 

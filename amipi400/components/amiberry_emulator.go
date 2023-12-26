@@ -319,8 +319,6 @@ func (ae *AmiberryEmulator) AttachAdf(index int, pathname string, volume int, vo
 	ae.commander.PutFloppySoundVolumeEmptyCO(index, volumeNoDisk)
 
 	// set floppy at index
-
-	// TODO attach with read-write or read-only mode
 	if ae.adfs[index] != "" {
 		ae.commander.PutFloppyCO(index, "")
 		ae.commander.PutConfigChangedCommand()
@@ -413,7 +411,6 @@ func (ae *AmiberryEmulator) getHdfType(pathname string) (int, error) {
 }
 
 func (ae *AmiberryEmulator) AttachHdf(index int, bootPriority int, pathname string) error {
-	// TODO attach with read-write or read-only mode
 	stat, err := os.Stat(pathname)
 
 	if err != nil {
@@ -437,7 +434,6 @@ func (ae *AmiberryEmulator) AttachHdf(index int, bootPriority int, pathname stri
 }
 
 func (ae *AmiberryEmulator) AttachHdDir(index int, bootPriority int, pathname string) error {
-	// TODO attach with read-write or read-only mode
 	stat, err := os.Stat(pathname)
 
 	if err != nil {
@@ -497,7 +493,6 @@ func (ae *AmiberryEmulator) HardReset() error {
 }
 
 func (ae *AmiberryEmulator) AttachCd(index int, pathname string) error {
-	// TODO attach with read-write or read-only mode
 	if ae.cds[index] != "" {
 		ae.commander.PutCdImageCO(index, "")
 		ae.commander.PutConfigChangedCommand()
