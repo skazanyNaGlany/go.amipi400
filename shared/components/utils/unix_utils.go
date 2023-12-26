@@ -53,3 +53,13 @@ func (k *UnixUtils) Sync() (string, error) {
 
 	return string(output), err
 }
+
+func (k *UnixUtils) Shutdown() (string, error) {
+	output, err := exec.Command(
+		"shutdown",
+		"-h",
+		"now",
+	).CombinedOutput()
+
+	return string(output), err
+}

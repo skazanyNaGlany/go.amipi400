@@ -80,6 +80,7 @@ var FORCE_INSERT_KEYS []string = []string{"KEY_LEFTMETA", "L_SHIFT"}
 var FORMAT_DEVICE_KEYS []string = []string{"KEY_LEFTMETA", "Del"}
 var EMPTY_DEVICE_HEADER [2048]byte = [2048]byte{'D', 'O', 'S'}
 var TOGGLE_AUTO_HEIGHT_KEYS []string = []string{"KEY_LEFTMETA", "H"}
+var SHUTDOWN_KEYS []string = []string{"KEY_LEFTMETA", "F10"}
 var AMIGA_DISK_DEVICES_NEEDED_EXECUTABLES = []string{"sync", "fsck", "ufiformat", "hwinfo", "lsblk"}
 
 // PowerLEDControl
@@ -133,7 +134,7 @@ var AMIPI400_AMIBERRY_CONFIG_PATHNAME, _ = filepath.Abs(_AMIPI400_AMIBERRY_CONFI
 var AMIBERRY_EMULATOR_TMP_INI_PATHNAME = filepath.Join(
 	filepath.Dir(AMIBERRY_EXE_PATHNAME),
 	AMIBERRY_EMULATOR_TMP_INI_FILENAME)
-var AMIPI400_NEEDED_EXECUTABLES = []string{"sync", "fsck", "ufiformat"}
+var AMIPI400_NEEDED_EXECUTABLES = []string{"sync", "fsck", "ufiformat", "shutdown"}
 
 const DRIVE_INDEX_UNSPECIFIED = -1
 const DRIVE_INDEX_UNSPECIFIED_STR = "-1"

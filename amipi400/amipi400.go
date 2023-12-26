@@ -415,6 +415,10 @@ func isToggleAutoHeightKeys() bool {
 	return allKeyboardsControl.IsKeysReleased(shared.TOGGLE_AUTO_HEIGHT_KEYS)
 }
 
+func isShutdownKeys() bool {
+	return allKeyboardsControl.IsKeysReleased(shared.SHUTDOWN_KEYS)
+}
+
 func isReleasedKey(key string) bool {
 	releasedKeys := allKeyboardsControl.GetReleasedKeys()
 
@@ -1293,6 +1297,11 @@ func keyEventCallback(sender any, key string, pressed bool) {
 		emulator.ToggleZoom()
 
 		saveZoomConfigSetting()
+	} else if isShutdownKeys() {
+		clearAllKeyboardsControl()
+
+		utils.UnixUtilsInstance.Sync()
+		utils.UnixUtilsInstance.Shutdown()
 	} else if isReleasedKey(shared.KEY_ESC) {
 		clearAllKeyboardsControl()
 	} else if diskNo := isReplaceDFByIndexShortcut(); diskNo != shared.DISK_INDEX_UNSPECIFIED {
