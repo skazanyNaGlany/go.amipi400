@@ -22,7 +22,7 @@ var fileSystem components_amiga_disk_devices.ADDFileSystem
 var runnersBlocker components.RunnersBlocker
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var volumeControl components_amiga_disk_devices.VolumeControl
-var ledControl components.PowerLEDControl
+var powerLEDControl components.PowerLEDControl
 var asyncFileOps components.AsyncFileOps
 var asyncFileOpsDf0 components.AsyncFileOps
 var asyncFileOpsDf1 components.AsyncFileOps
@@ -30,7 +30,6 @@ var asyncFileOpsDf2 components.AsyncFileOps
 var asyncFileOpsDf3 components.AsyncFileOps
 var allKeyboardsControl components.AllKeyboardsControl
 var cachedAdfsDir = ""
-
 var floppyDevices []string
 
 func ProbeMediumForDriver(
@@ -337,7 +336,7 @@ func onFloppyWrite(_medium interfaces_amiga_disk_devices.Medium) {
 }
 
 func onMediumWrite(_medium interfaces_amiga_disk_devices.Medium) {
-	ledControl.BlinkPowerLEDSecs(shared.FLOPPY_WRITE_BLINK_POWER_SECS)
+	powerLEDControl.BlinkPowerLEDSecs(shared.FLOPPY_WRITE_BLINK_POWER_SECS)
 }
 
 func onHardDiskRead(_medium interfaces_amiga_disk_devices.Medium) {
@@ -352,7 +351,7 @@ func onHardDiskRead(_medium interfaces_amiga_disk_devices.Medium) {
 	}
 
 	// reading from hard-disk, blink the power led
-	ledControl.BlinkPowerLEDSecs(shared.HARD_DISK_READ_BLINK_POWER_SECS)
+	powerLEDControl.BlinkPowerLEDSecs(shared.HARD_DISK_READ_BLINK_POWER_SECS)
 }
 
 func preReadCallback(_medium interfaces_amiga_disk_devices.Medium, path string, buff []byte, ofst int64, fh uint64) {
@@ -381,11 +380,11 @@ func closedCallback(_medium interfaces_amiga_disk_devices.Medium, err error) {
 }
 
 func fileWriteBytesCallback(name string, offset int64, buff []byte, flag int, perm fs.FileMode, useHandle *os.File, n int, err error) {
-	ledControl.BlinkPowerLEDSecs(shared.FLOPPY_WRITE_BLINK_POWER_SECS)
+	powerLEDControl.BlinkPowerLEDSecs(shared.FLOPPY_WRITE_BLINK_POWER_SECS)
 }
 
 func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag int, perm fs.FileMode, useHandle *os.File, oneTimeFinal bool) {
-	ledControl.BlinkPowerLEDSecs(shared.FLOPPY_WRITE_BLINK_POWER_SECS)
+	powerLEDControl.BlinkPowerLEDSecs(shared.FLOPPY_WRITE_BLINK_POWER_SECS)
 
 	async := devicePathnameToAsyncFileOps(name)
 
@@ -510,8 +509,8 @@ func main() {
 	fileSystem.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 	volumeControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
 	volumeControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
-	ledControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
-	ledControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	powerLEDControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	powerLEDControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 	asyncFileOps.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
 	asyncFileOps.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 	asyncFileOpsDf0.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
@@ -532,7 +531,7 @@ func main() {
 	fileSystem.Start(&fileSystem)
 	blockDevices.Start(&blockDevices)
 	volumeControl.Start(&volumeControl)
-	ledControl.Start(&ledControl)
+	powerLEDControl.Start(&powerLEDControl)
 	asyncFileOps.Start(&asyncFileOps)
 	asyncFileOpsDf0.Start(&asyncFileOpsDf0)
 	asyncFileOpsDf1.Start(&asyncFileOpsDf1)
@@ -543,7 +542,7 @@ func main() {
 	defer fileSystem.Stop(&fileSystem)
 	defer blockDevices.Stop(&blockDevices)
 	defer volumeControl.Stop(&volumeControl)
-	defer ledControl.Stop(&ledControl)
+	defer powerLEDControl.Stop(&powerLEDControl)
 	defer asyncFileOps.Stop(&asyncFileOps)
 	defer asyncFileOpsDf0.Stop(&asyncFileOpsDf0)
 	defer asyncFileOpsDf1.Stop(&asyncFileOpsDf1)
@@ -554,7 +553,7 @@ func main() {
 	runnersBlocker.AddRunner(&blockDevices)
 	runnersBlocker.AddRunner(&fileSystem)
 	runnersBlocker.AddRunner(&volumeControl)
-	runnersBlocker.AddRunner(&ledControl)
+	runnersBlocker.AddRunner(&powerLEDControl)
 	runnersBlocker.AddRunner(&asyncFileOps)
 	runnersBlocker.AddRunner(&asyncFileOpsDf0)
 	runnersBlocker.AddRunner(&asyncFileOpsDf1)
