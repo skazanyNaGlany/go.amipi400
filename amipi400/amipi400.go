@@ -377,71 +377,23 @@ func servicesIdleCallback(sender any) {
 }
 
 func isSoftResetKeys() bool {
-	releasedKeys := allKeyboardsControl.GetReleasedKeys()
-	currentTimestamp := time.Now().UnixMilli()
-	goodCount := 0
-
-	for key, pressedTimestamp := range releasedKeys {
-		if funk.ContainsString(shared.SOFT_RESET_KEYS, key) {
-			// this is not a mistake, the user must hold CTRL-ALT-ALTGR less seconds
-			// than shared.HARD_RESET_KEYS_MIN_MS
-			if currentTimestamp-pressedTimestamp < shared.HARD_RESET_KEYS_MIN_MS {
-				goodCount++
-			}
-		}
-	}
-
-	return goodCount == len(shared.SOFT_RESET_KEYS)
+	return allKeyboardsControl.IsKeysReleasedAgo(shared.SOFT_RESET_KEYS, shared.SOFT_RESET_KEYS_MIN_MS)
 }
 
 func isHardResetKeys() bool {
-	releasedKeys := allKeyboardsControl.GetReleasedKeys()
-	currentTimestamp := time.Now().UnixMilli()
-	goodCount := 0
-
-	for key, pressedTimestamp := range releasedKeys {
-		if funk.ContainsString(shared.HARD_RESET_KEYS, key) {
-			if currentTimestamp-pressedTimestamp >= shared.HARD_RESET_KEYS_MIN_MS {
-				goodCount++
-			}
-		}
-	}
-
-	return goodCount == len(shared.HARD_RESET_KEYS)
+	return allKeyboardsControl.IsKeysReleasedAgo(shared.HARD_RESET_KEYS, shared.HARD_RESET_KEYS_MIN_MS)
 }
 
-func isToggleAutoHeightKeys() bool {
-	return allKeyboardsControl.IsKeysReleased(shared.TOGGLE_AUTO_HEIGHT_KEYS)
+func isToggleZoomKeys() bool {
+	return allKeyboardsControl.IsKeysReleasedAgo(shared.TOGGLE_ZOOM_KEYS, shared.TOGGLE_ZOOM_KEYS_MIN_MS)
 }
 
 func isShutdownKeys() bool {
-	return allKeyboardsControl.IsKeysReleased(shared.SHUTDOWN_KEYS)
-}
-
-func isReleasedKey(key string) bool {
-	releasedKeys := allKeyboardsControl.GetReleasedKeys()
-
-	_, exists := releasedKeys[key]
-
-	return exists
-}
-
-func getReleasedKeysSequence() []string {
-	released := make([]string, 0)
-
-	for _, ks := range allKeyboardsControl.GetKeysSequence() {
-		if ks.Pressed {
-			continue
-		}
-
-		released = append(released, ks.Key)
-	}
-
-	return released
+	return allKeyboardsControl.IsKeysReleasedAgo(shared.SHUTDOWN_KEYS, shared.SHUTDOWN_KEYS_MIN_MS)
 }
 
 func getKeyboardCommand() string {
-	releasedSequence := getReleasedKeysSequence()
+	releasedSequence := allKeyboardsControl.GetReleasedKeysSequenceAsString()
 	lenReleasedSequence := len(releasedSequence)
 
 	if lenReleasedSequence < 4 {
@@ -473,9 +425,7 @@ func getKeyboardCommand() string {
 }
 
 func clearAllKeyboardsControl() {
-	allKeyboardsControl.ClearPressedKeys()
-	allKeyboardsControl.ClearReleasedKeys()
-	allKeyboardsControl.ClearKeysSequence()
+	allKeyboardsControl.ClearAll()
 }
 
 func processKeyboardCommand(keyboardCommand string) {
@@ -1290,7 +1240,7 @@ func keyEventCallback(sender any, key string, pressed bool) {
 
 		utils.UnixUtilsInstance.Sync()
 		emulator.HardReset()
-	} else if isToggleAutoHeightKeys() {
+	} else if isToggleZoomKeys() {
 		clearAllKeyboardsControl()
 
 		emulator.ToggleZoom()
@@ -1301,7 +1251,9 @@ func keyEventCallback(sender any, key string, pressed bool) {
 
 		utils.UnixUtilsInstance.Sync()
 		utils.UnixUtilsInstance.Shutdown()
-	} else if isReleasedKey(shared.KEY_ESC) {
+	} else if allKeyboardsControl.IsKeysReleasedAgo(
+		shared.CLEAR_BUFFER_KEYS,
+		shared.CLEAR_COMMAND_BUFFER_MIN_MS) {
 		clearAllKeyboardsControl()
 	} else if diskNo := isReplaceDFByIndexShortcut(); diskNo != shared.DISK_INDEX_UNSPECIFIED {
 		clearAllKeyboardsControl()

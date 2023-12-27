@@ -206,6 +206,22 @@ func (kc *KeyboardControl) IsKeysPressed(keys []string) bool {
 	return count == len(keys)
 }
 
+func (kc *KeyboardControl) IsKeysPressedAgo(keys []string, ms int64) bool {
+	pressedKeys := kc.GetPressedKeys()
+	currentTimestamp := time.Now().UnixMilli()
+	goodCount := 0
+
+	for key, pressedTimestamp := range pressedKeys {
+		if funk.ContainsString(keys, key) {
+			if currentTimestamp-pressedTimestamp <= ms {
+				goodCount++
+			}
+		}
+	}
+
+	return goodCount == len(keys)
+}
+
 func (kc *KeyboardControl) IsKeysReleased(keys []string) bool {
 	count := 0
 
@@ -216,6 +232,22 @@ func (kc *KeyboardControl) IsKeysReleased(keys []string) bool {
 	}
 
 	return count == len(keys)
+}
+
+func (kc *KeyboardControl) IsKeysReleasedAgo(keys []string, ms int64) bool {
+	releasedKeys := kc.GetReleasedKeys()
+	currentTimestamp := time.Now().UnixMilli()
+	goodCount := 0
+
+	for key, releasedTimestamp := range releasedKeys {
+		if funk.ContainsString(keys, key) {
+			if currentTimestamp-releasedTimestamp <= ms {
+				goodCount++
+			}
+		}
+	}
+
+	return goodCount == len(keys)
 }
 
 func (kc *KeyboardControl) AddKeyEventCallback(callback interfaces.KeyEventCallback) {

@@ -134,6 +134,20 @@ func (akc *AllKeyboardsControl) GetKeysSequence() []KeySequence {
 	return all
 }
 
+func (akc *AllKeyboardsControl) GetReleasedKeysSequenceAsString() []string {
+	released := make([]string, 0)
+
+	for _, ks := range akc.GetKeysSequence() {
+		if ks.Pressed {
+			continue
+		}
+
+		released = append(released, ks.Key)
+	}
+
+	return released
+}
+
 func (akc *AllKeyboardsControl) SetPressedKey(key string) bool {
 	for _, kc := range akc.keyboardControls {
 		kc.SetPressedKey(key)
@@ -170,9 +184,29 @@ func (akc *AllKeyboardsControl) IsKeysPressed(keys []string) bool {
 	return false
 }
 
+func (akc *AllKeyboardsControl) IsKeysPressedAgo(keys []string, ms int64) bool {
+	for _, kc := range akc.keyboardControls {
+		if kc.IsKeysPressedAgo(keys, ms) {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (akc *AllKeyboardsControl) IsKeysReleased(keys []string) bool {
 	for _, kc := range akc.keyboardControls {
 		if kc.IsKeysReleased(keys) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (akc *AllKeyboardsControl) IsKeysReleasedAgo(keys []string, ms int64) bool {
+	for _, kc := range akc.keyboardControls {
+		if kc.IsKeysReleasedAgo(keys, ms) {
 			return true
 		}
 	}
@@ -198,4 +232,10 @@ func (akc *AllKeyboardsControl) FindAllKeyboardDevices() []string {
 
 func (akc *AllKeyboardsControl) SetKeyEventCallback(callback interfaces.KeyEventCallback) {
 	akc.keyEventCallback = callback
+}
+
+func (akc *AllKeyboardsControl) ClearAll() {
+	akc.ClearPressedKeys()
+	akc.ClearReleasedKeys()
+	akc.ClearKeysSequence()
 }

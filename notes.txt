@@ -348,3 +348,22 @@ func adfBasenameCleanDiskOf(basename string) string {
 
 
 
+
+
+
+
+
+
+
+
+
+func isSoftResetKeys() bool {
+	return allKeyboardsControl.IsKeysReleasedAgo(shared.SOFT_RESET_KEYS, shared.HARD_RESET_KEYS_MIN_MS)
+}
+
+
+
+
+
+
+
