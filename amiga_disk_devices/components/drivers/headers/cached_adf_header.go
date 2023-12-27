@@ -11,6 +11,7 @@ type CachedADFHeader struct {
 	Magic      [32]byte
 	HeaderType [32]byte
 	Sha512     [128]byte
+	UUID       [64]byte
 	MTime      int64
 }
 
@@ -37,6 +38,14 @@ func (cah *CachedADFHeader) SetSha512(sha512 string) {
 	copy(cah.Sha512[:], []byte(sha512))
 }
 
+func (cah *CachedADFHeader) GetUUID() string {
+	return strings.Trim(string(cah.UUID[:]), "\x00")
+}
+
+func (cah *CachedADFHeader) SetUUID(uuid string) {
+	copy(cah.UUID[:], []byte(uuid))
+}
+
 func (cah *CachedADFHeader) SetMTime(mTime int64) {
 	cah.MTime = mTime
 }
@@ -49,10 +58,12 @@ func (cah *CachedADFHeader) IsValid() bool {
 	magic := cah.GetMagic()
 	headerType := cah.GetHeaderType()
 	sha512 := cah.GetSha512()
+	uuid := cah.GetUUID()
 
 	if magic != shared.CACHED_ADF_HEADER_MAGIC ||
 		headerType != shared.CACHED_ADF_HEADER_HEADER_TYPE ||
-		len(sha512) != shared.CACHED_ADF_HEADER_SHA512_LENGTH {
+		len(sha512) != shared.CACHED_ADF_HEADER_SHA512_LENGTH ||
+		len(uuid) != shared.CACHED_ADF_HEADER_UUID_LENGTH {
 		return false
 	}
 

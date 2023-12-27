@@ -125,6 +125,7 @@ const ASYNC_FILE_OP_WRITE = "write"
 // CachedADFHeader
 const CACHED_ADF_HEADER_HEADER_TYPE = "CachedADFHeader"
 const CACHED_ADF_HEADER_SHA512_LENGTH = 128
+const CACHED_ADF_HEADER_UUID_LENGTH = 32
 
 // amiga_disk_devices.go [2]
 const HD_HDF_FULL_EXTENSION = "." + HD_HDF_EXTENSION

@@ -7,9 +7,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 	"unsafe"
 
+	"github.com/google/uuid"
 	"github.com/ncw/directio"
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/drivers/headers"
 	"github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/medium"
@@ -76,7 +78,7 @@ func (fmd *FloppyMediumDriver) Probe(
 	_medium.SetModificationTime(now)
 
 	// fail or not, we will re-cache the ADF again
-	// if needed, sha512Id of the ADF should be set
+	// if needed, sha512Id and UUID of the ADF should be set
 	// in the FloppyMedium properly if it is known
 	// (eg. ADF has its ID already, but cached ADF
 	// does not exists)
@@ -105,6 +107,7 @@ func (fmd *FloppyMediumDriver) Probe(
 
 func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) error {
 	var sha512Id string
+	var uuidStr string
 	var err error
 	var n int
 
@@ -142,9 +145,18 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 		_medium.SetCachedAdfSha512(sha512Id)
 	}
 
+	uuidStr = _medium.GetFloppyUUID()
+
+	if uuidStr == "" {
+		// remove all - from the UUID
+		uuidStr = strings.ReplaceAll(uuid.NewString(), "-", "")
+
+		_medium.SetFloppyUUID(uuidStr)
+	}
+
 	cachedAdfPathname := path.Join(
 		fmd.cachedAdfsDirectory,
-		fmd.buildCachedAdfFilename(sha512Id, shared.FLOPPY_ADF_EXTENSION))
+		fmd.buildCachedAdfFilename(uuidStr, shared.FLOPPY_ADF_EXTENSION))
 
 	if err = fmd.preCacheADFCallback(_medium, cachedAdfPathname); err != nil {
 		return err
@@ -171,6 +183,7 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 	err = fmd.updateCachedADFHeader(
 		_medium.GetDevicePathname(),
 		sha512Id,
+		uuidStr,
 		stat.ModTime().Unix())
 
 	if err != nil {
@@ -191,15 +204,17 @@ func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) erro
 		log.Printf("ADF in medium %v have been cached\n", _medium.GetDevicePathname())
 		log.Printf("\tCached ADF: %v\n", cachedAdfPathname)
 		log.Printf("\tSHA512 ID:  %v\n", sha512Id)
+		log.Printf("\tUUID:  %v\n", uuidStr)
 	}
 
 	return nil
 }
 
-func (fmd *FloppyMediumDriver) updateCachedADFHeader(pathname, sha512Id string, mTime int64) error {
+func (fmd *FloppyMediumDriver) updateCachedADFHeader(pathname, sha512Id string, uuidStr string, mTime int64) error {
 	header := new(headers.CachedADFHeader).Init()
 
 	header.SetSha512(sha512Id)
+	header.SetUUID(uuidStr)
 	header.SetMTime(mTime)
 
 	data, err := utils.GoUtilsInstance.StructToByteSlice(header)
@@ -250,12 +265,14 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 	}
 
 	sha512Id := header.GetSha512()
+	uuidStr := header.GetUUID()
 
 	_medium.SetCachedAdfSha512(sha512Id)
+	_medium.SetFloppyUUID(uuidStr)
 
 	cachedAdfPathname := path.Join(
 		fmd.cachedAdfsDirectory,
-		fmd.buildCachedAdfFilename(sha512Id, shared.FLOPPY_ADF_EXTENSION))
+		fmd.buildCachedAdfFilename(uuidStr, shared.FLOPPY_ADF_EXTENSION))
 
 	stat, err := os.Stat(cachedAdfPathname)
 
@@ -284,13 +301,14 @@ func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMediu
 		log.Printf("ADF in medium %v is cached\n", _medium.GetDevicePathname())
 		log.Printf("\tCached ADF: %v\n", cachedAdfPathname)
 		log.Printf("\tSHA512 ID:  %v\n", sha512Id)
+		log.Printf("\tUUID:  %v\n", uuidStr)
 	}
 
 	return nil
 }
 
-func (fmd *FloppyMediumDriver) buildCachedAdfFilename(sha512Id, extension string) string {
-	return sha512Id + "." + extension
+func (fmd *FloppyMediumDriver) buildCachedAdfFilename(uuidStr, extension string) string {
+	return uuidStr + "." + extension
 }
 
 func (mdb *FloppyMediumDriver) SetCachedAdfsDirectory(cachedAdfsDirectory string) {
@@ -784,6 +802,7 @@ func (fmd *FloppyMediumDriver) cachedWrite(floppyMedium *medium.FloppyMedium, pa
 	fmd.updateCachedADFHeader(
 		floppyMedium.GetDevicePathname(),
 		floppyMedium.GetCachedAdfSha512(),
+		floppyMedium.GetFloppyUUID(),
 		stat.ModTime().Unix())
 
 	if err != nil {

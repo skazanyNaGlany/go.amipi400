@@ -9,7 +9,8 @@ type FloppyMedium struct {
 	lastCachingTime      int64
 	cachingNow           bool
 	cachedAdfPathname    string
-	cachedAdfSha512      string // TODO use UUID instead of SHA512 from bytes
+	cachedAdfSha512      string
+	floppyUUID           string
 	cachingDisabled      bool
 	deviceDirectIOHandle *os.File
 }
@@ -36,6 +37,14 @@ func (fm *FloppyMedium) SetCachedAdfSha512(cachedAdfSha512 string) {
 
 func (fm *FloppyMedium) GetCachedAdfSha512() string {
 	return fm.cachedAdfSha512
+}
+
+func (fm *FloppyMedium) SetFloppyUUID(uuid string) {
+	fm.floppyUUID = uuid
+}
+
+func (fm *FloppyMedium) GetFloppyUUID() string {
+	return fm.floppyUUID
 }
 
 func (fm *FloppyMedium) IsFullyCached() bool {
