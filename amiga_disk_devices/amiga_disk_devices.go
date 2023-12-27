@@ -23,6 +23,7 @@ var runnersBlocker components.RunnersBlocker
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var volumeControl components_amiga_disk_devices.VolumeControl
 var powerLEDControl components.PowerLEDControl
+var numLockLEDControl components.NumLockLEDControl
 var asyncFileOps components.AsyncFileOps
 var asyncFileOpsDf0 components.AsyncFileOps
 var asyncFileOpsDf1 components.AsyncFileOps
@@ -43,6 +44,9 @@ func ProbeMediumForDriver(
 	if forceInsert {
 		// perform only one special action at a time
 		allKeyboardsControl.ClearPressedKeys()
+
+		powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+		defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 	}
 
 	// try FloppyMediumDriver
@@ -69,6 +73,11 @@ func ProbeMediumForDriver(
 		formatted)
 
 	if err != nil {
+		if forceInsert {
+			powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+			defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
+		}
+
 		return nil, err
 	}
 
@@ -97,6 +106,11 @@ func ProbeMediumForDriver(
 		formatted)
 
 	if err != nil {
+		if forceInsert {
+			powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+			defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
+		}
+
 		return nil, err
 	}
 
@@ -125,6 +139,11 @@ func ProbeMediumForDriver(
 		formatted)
 
 	if err != nil {
+		if forceInsert {
+			powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+			defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
+		}
+
 		return nil, err
 	}
 
@@ -155,6 +174,9 @@ func formatDeviceIfNeeded(
 
 	allKeyboardsControl.ClearPressedKeys()
 
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
+
 	log.Println("Formatting device", path)
 
 	n, err := utils.FileUtilsInstance.FileWriteBytes(
@@ -166,11 +188,15 @@ func formatDeviceIfNeeded(
 		nil)
 
 	if err != nil {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+
 		log.Println(err)
 		return false
 	}
 
 	if n < len(shared.EMPTY_DEVICE_HEADER) {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+
 		log.Println("Cannot format medium in", path)
 		return false
 	}
@@ -523,6 +549,8 @@ func main() {
 	asyncFileOpsDf3.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 	allKeyboardsControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
 	allKeyboardsControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	numLockLEDControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	numLockLEDControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 
 	blockDevices.AddAttachedCallback(attachedBlockDeviceCallback)
 	blockDevices.AddDetachedCallback(detachedBlockDeviceCallback)
@@ -538,6 +566,7 @@ func main() {
 	asyncFileOpsDf2.Start(&asyncFileOpsDf2)
 	asyncFileOpsDf3.Start(&asyncFileOpsDf3)
 	allKeyboardsControl.Start(&allKeyboardsControl)
+	numLockLEDControl.Start(&numLockLEDControl)
 
 	defer fileSystem.Stop(&fileSystem)
 	defer blockDevices.Stop(&blockDevices)
@@ -560,6 +589,7 @@ func main() {
 	runnersBlocker.AddRunner(&asyncFileOpsDf2)
 	runnersBlocker.AddRunner(&asyncFileOpsDf3)
 	runnersBlocker.AddRunner(&allKeyboardsControl)
+	runnersBlocker.AddRunner(&numLockLEDControl)
 
 	runnersBlocker.BlockUntilRunning()
 }
