@@ -4,8 +4,10 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"os/signal"
 	"path"
 	"strings"
+	"syscall"
 
 	components_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components"
 	drivers_amiga_disk_devices "github.com/skazanyNaGlany/go.amipi400/amiga_disk_devices/components/drivers"
@@ -506,6 +508,29 @@ func printCDROMDevices() {
 	}
 }
 
+func stopServices() {
+	fileSystem.Stop(&fileSystem)
+	blockDevices.Stop(&blockDevices)
+	volumeControl.Stop(&volumeControl)
+	powerLEDControl.Stop(&powerLEDControl)
+	asyncFileOps.Stop(&asyncFileOps)
+	asyncFileOpsDf0.Stop(&asyncFileOpsDf0)
+	asyncFileOpsDf1.Stop(&asyncFileOpsDf1)
+	asyncFileOpsDf2.Stop(&asyncFileOpsDf2)
+	asyncFileOpsDf3.Stop(&asyncFileOpsDf3)
+	allKeyboardsControl.Stop(&allKeyboardsControl)
+}
+
+func gracefulShutdown() {
+	signalChan := make(chan os.Signal, 1)
+
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	<-signalChan
+
+	stopServices()
+}
+
 func main() {
 	utils.GoUtilsInstance.CheckPlatform()
 	utils.UnixUtilsInstance.CheckForRoot()
@@ -568,17 +593,6 @@ func main() {
 	allKeyboardsControl.Start(&allKeyboardsControl)
 	numLockLEDControl.Start(&numLockLEDControl)
 
-	defer fileSystem.Stop(&fileSystem)
-	defer blockDevices.Stop(&blockDevices)
-	defer volumeControl.Stop(&volumeControl)
-	defer powerLEDControl.Stop(&powerLEDControl)
-	defer asyncFileOps.Stop(&asyncFileOps)
-	defer asyncFileOpsDf0.Stop(&asyncFileOpsDf0)
-	defer asyncFileOpsDf1.Stop(&asyncFileOpsDf1)
-	defer asyncFileOpsDf2.Stop(&asyncFileOpsDf2)
-	defer asyncFileOpsDf3.Stop(&asyncFileOpsDf3)
-	defer allKeyboardsControl.Stop(&allKeyboardsControl)
-
 	runnersBlocker.AddRunner(&blockDevices)
 	runnersBlocker.AddRunner(&fileSystem)
 	runnersBlocker.AddRunner(&volumeControl)
@@ -590,6 +604,8 @@ func main() {
 	runnersBlocker.AddRunner(&asyncFileOpsDf3)
 	runnersBlocker.AddRunner(&allKeyboardsControl)
 	runnersBlocker.AddRunner(&numLockLEDControl)
+
+	go gracefulShutdown()
 
 	runnersBlocker.BlockUntilRunning()
 }
