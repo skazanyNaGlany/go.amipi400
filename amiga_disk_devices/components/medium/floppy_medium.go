@@ -9,7 +9,7 @@ type FloppyMedium struct {
 	lastCachingTime      int64
 	cachingNow           bool
 	cachedAdfPathname    string
-	cachedAdfSha512      string
+	cachedAdfSha512      string // TODO use UUID instead of SHA512 from bytes
 	cachingDisabled      bool
 	deviceDirectIOHandle *os.File
 }
