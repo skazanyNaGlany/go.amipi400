@@ -263,3 +263,7 @@ func (kc *KeyboardControl) callKeyEventCallbacks(key string, pressed bool) {
 func (kc *KeyboardControl) SetKeyboardDevice(keyboardDevice string) {
 	kc.keyboardDevice = keyboardDevice
 }
+
+func (kc *KeyboardControl) WriteOnce(key string) error {
+	return kc.keyboard.WriteOnce(key)
+}

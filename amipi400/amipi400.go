@@ -1266,7 +1266,18 @@ func keyEventCallback(sender any, key string, pressed bool) {
 		if keyboardCommand := getKeyboardCommand(); keyboardCommand != "" {
 			clearAllKeyboardsControl()
 			processKeyboardCommand(keyboardCommand)
+		} else {
+			emulateNumPad()
 		}
+	}
+}
+
+func emulateNumPad() {
+	if allKeyboardsControl.IsKeysReleasedAgo(
+		shared.NUMPAD_EMULATE_ENTER_KEYS,
+		shared.NUMPAD_EMULATE_MIN_MS) {
+		// emulate ENTER on the numpad
+		allKeyboardsControl.WriteOnce(shared.KEY_R_ENTER)
 	}
 }
 

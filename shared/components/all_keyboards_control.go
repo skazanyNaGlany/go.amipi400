@@ -239,3 +239,7 @@ func (akc *AllKeyboardsControl) ClearAll() {
 	akc.ClearReleasedKeys()
 	akc.ClearKeysSequence()
 }
+
+func (akc *AllKeyboardsControl) WriteOnce(key string) error {
+	return akc.keyboardControls[0].WriteOnce(key)
+}

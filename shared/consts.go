@@ -31,6 +31,7 @@ const HARD_RESET_KEYS_MIN_MS = 4000      // less than 4 seconds
 const TOGGLE_ZOOM_KEYS_MIN_MS = 1000     // less than 1 second
 const SHUTDOWN_KEYS_MIN_MS = 1000        // less than 1 second
 const CLEAR_COMMAND_BUFFER_MIN_MS = 1000 // less than 1 second
+const NUMPAD_EMULATE_MIN_MS = 1000       // less than 1 second
 const MEDIUM_CONFIG_INI_NAME = "amipi400.ini"
 const MEDIUM_CONFIG_DEFAULT_SECTION = "amipi400"
 const MEDIUM_CONFIG_DEFAULT_FILE = "default_file"
@@ -85,6 +86,8 @@ var EMPTY_DEVICE_HEADER [2048]byte = [2048]byte{'D', 'O', 'S'}
 var TOGGLE_ZOOM_KEYS []string = []string{KEY_LEFTMETA, KEY_H}
 var SHUTDOWN_KEYS []string = []string{KEY_LEFTMETA, KEY_F10}
 var CLEAR_BUFFER_KEYS []string = []string{KEY_ESC}
+var NUMPAD_EMULATE_ENTER_KEYS []string = []string{KEY_LEFTMETA, KEY_ENTER}
+var NUMPAD_EMULATE_STAR_KEYS []string = []string{KEY_LEFTMETA, KEY_8}
 var AMIGA_DISK_DEVICES_NEEDED_EXECUTABLES = []string{"sync", "fsck", "ufiformat", "hwinfo", "lsblk"}
 
 // PowerLEDControl
@@ -176,3 +179,7 @@ const KEY_L_ALT = "L_ALT"
 const KEY_R_ALT = "R_ALT"
 const KEY_L_SHIFT = "L_SHIFT"
 const KEY_F10 = "F10"
+const KEY_ENTER = "ENTER"
+const KEY_R_ENTER = "R_ENTER"
+const KEY_8 = "8"
+const KEY_STAR = "*"
