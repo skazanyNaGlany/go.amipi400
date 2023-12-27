@@ -1931,7 +1931,8 @@ func stopServices() {
 	emulator.Stop(&emulator)
 	commander.Stop(&commander)
 	blockDevices.Stop(&blockDevices)
-	blockDevices.Stop(&powerLEDControl)
+	powerLEDControl.Stop(&powerLEDControl)
+	numLockLEDControl.Stop(&numLockLEDControl)
 }
 
 func gracefulShutdown() {
