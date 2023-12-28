@@ -367,3 +367,18 @@ func isSoftResetKeys() bool {
 
 
 
+cdf0dh1
+
+
+
+
+
+
+
+
+^C[A-Z][A-Z]\d[A-Z][A-Z]\d$
+CDF0DH1
+
+
+
+

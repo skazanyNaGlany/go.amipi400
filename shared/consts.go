@@ -37,6 +37,8 @@ const MEDIUM_CONFIG_DEFAULT_SECTION = "amipi400"
 const MEDIUM_CONFIG_DEFAULT_FILE = "default_file"
 const MEDIUM_CONFIG_DEFAULT_FILE_NONE = "none"
 const ADF_DISK_NO_OF_MAX = "(Disk %d of %d)"
+const LOW_LEVEL_DEVICE_FLOPPY = "DF"
+const LOW_LEVEL_DEVICE_HARD_DISK = "DH"
 const AUTORUN_EMULATOR = true
 
 var SOFT_RESET_KEYS []string = []string{KEY_L_CTRL, KEY_L_ALT, KEY_R_ALT}
@@ -59,6 +61,7 @@ var DF_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UDF(?P<source_index>\
 var CD_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UCD(?P<source_index>\d|N)$`)
 var HF_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UHF(?P<source_index>\d|N)$`)
 var DH_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UDH(?P<source_index>\d|N)$`)
+var LOW_LEVEL_COPY_RE = regexp.MustCompile(`^C(?P<source_low_level_device>[A-Z][A-Z])(?P<source_index>\d)(?P<target_low_level_device>[A-Z][A-Z])(?P<target_index>\d)$`)
 var UNMOUNT_ALL_RE = regexp.MustCompile(`^U$`)
 
 // amiga_disk_devices.go

@@ -521,6 +521,15 @@ func processKeyboardCommand(keyboardCommand string) {
 		// example: udh0
 		// example: udhn
 		dhUnmountFromSourceIndex(dhUnmountRule["source_index"])
+	} else if lowLevelCopyRule := utils.RegExInstance.FindNamedMatches(
+		shared.LOW_LEVEL_COPY_RE,
+		keyboardCommand); len(lowLevelCopyRule) > 0 {
+		// example: cdf0dh1
+		lowLevelCopy(
+			lowLevelCopyRule["source_low_level_device"],
+			lowLevelCopyRule["source_index"],
+			lowLevelCopyRule["target_low_level_device"],
+			lowLevelCopyRule["target_index"])
 	}
 }
 
@@ -627,6 +636,216 @@ func dhUnmountFromSourceIndex(sourceIndex string) {
 	if countFailed > 0 {
 		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
 	}
+}
+
+func lowLevelCopy(
+	sourceLowLevelDevice string,
+	sourceIndex string,
+	targetLowLevelDevice string,
+	targetIndex string) {
+	var sourceMountpoint *components_amipi400.Mountpoint
+	var targetMountpoint *components_amipi400.Mountpoint
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
+
+	// TODO move to consts.go
+	supportedDevices := []string{shared.LOW_LEVEL_DEVICE_FLOPPY, shared.LOW_LEVEL_DEVICE_HARD_DISK}
+
+	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
+	targetIndexInt, _ := utils.StringUtilsInstance.StringToInt(targetIndex, 10, 16)
+
+	if !funk.ContainsString(supportedDevices, sourceLowLevelDevice) {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+		return
+	}
+
+	if !funk.ContainsString(supportedDevices, targetLowLevelDevice) {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+		return
+	}
+
+	// valiate source/target indexes
+
+	// source
+	if sourceLowLevelDevice == shared.LOW_LEVEL_DEVICE_FLOPPY {
+		if sourceIndexInt > shared.MAX_ADFS-1 {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	} else if sourceLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK {
+		if sourceIndexInt > shared.MAX_HDFS-1 {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	}
+
+	// target
+	if targetLowLevelDevice == shared.LOW_LEVEL_DEVICE_FLOPPY {
+		if targetIndexInt > shared.MAX_ADFS-1 {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	} else if sourceLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK {
+		if targetIndexInt > shared.MAX_HDFS-1 {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	}
+
+	if sourceLowLevelDevice == targetLowLevelDevice {
+		if sourceIndexInt == targetIndexInt {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	}
+
+	// validation almost done, next:
+	// get source/target pathnames
+	// for DH - check if the user wants to copy a directory, if does error
+	// detach
+	// pause the emulator
+	// copy
+	// resume the emulator
+	// attach again
+
+	if sourceLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK || targetLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK {
+		onHDOperationStart()
+		defer onHDOperationDone()
+	}
+
+	sourcePathname := ""
+	targetPathname := ""
+
+	// get and detach both
+
+	// source
+	if sourceLowLevelDevice == shared.LOW_LEVEL_DEVICE_FLOPPY {
+		sourcePathname = emulator.GetAdf(sourceIndexInt)
+
+		if sourcePathname == "" {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+
+		if !detachAdf(sourceIndexInt, sourcePathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+
+		sourceMountpoint = mountpoints.GetMountpointByDFIndex(sourceIndexInt)
+
+		if sourceMountpoint == nil {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	} else if sourceLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK {
+		sourcePathname = emulator.GetHd(sourceIndexInt)
+
+		if sourcePathname == "" {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+
+		sourceIsHdf := strings.HasSuffix(sourcePathname, shared.HD_HDF_FULL_EXTENSION)
+
+		if !sourceIsHdf {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+
+		if !detachHd(sourceIndexInt, sourcePathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+
+		sourceMountpoint = mountpoints.GetMountpointByDHIndex(sourceIndexInt)
+
+		if sourceMountpoint == nil {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	}
+
+	// target
+	if targetLowLevelDevice == shared.LOW_LEVEL_DEVICE_FLOPPY {
+		targetPathname = emulator.GetAdf(targetIndexInt)
+
+		if targetPathname == "" {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+
+		if !detachAdf(targetIndexInt, targetPathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+
+		targetMountpoint = mountpoints.GetMountpointByDFIndex(targetIndexInt)
+
+		if targetMountpoint == nil {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	} else if targetLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK {
+		targetPathname = emulator.GetHd(targetIndexInt)
+
+		if targetPathname == "" {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+
+		targetIsHdf := strings.HasSuffix(targetPathname, shared.HD_HDF_FULL_EXTENSION)
+
+		if !targetIsHdf {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+
+		if !detachHd(targetIndexInt, targetPathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+
+		targetMountpoint = mountpoints.GetMountpointByDHIndex(targetIndexInt)
+
+		if targetMountpoint == nil {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	}
+
+	log.Println("Low-level copying", sourcePathname, "to", targetPathname)
+
+	utils.UnixUtilsInstance.Sync()
+
+	// attach both
+	// source
+	if sourceLowLevelDevice == shared.LOW_LEVEL_DEVICE_FLOPPY {
+		if !attachAdf(sourceIndexInt, sourcePathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	} else if sourceLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK {
+		if !attachHdf(sourceIndexInt, sourceMountpoint.DHBootPriority, sourcePathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	}
+
+	// target
+	if targetLowLevelDevice == shared.LOW_LEVEL_DEVICE_FLOPPY {
+		if !attachAdf(targetIndexInt, targetPathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	} else if targetLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK {
+		if !attachHdf(targetIndexInt, targetMountpoint.DHBootPriority, targetPathname) {
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	}
+
+	utils.UnixUtilsInstance.Sync()
 }
 
 func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetIndex string) {
