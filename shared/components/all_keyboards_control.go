@@ -20,7 +20,7 @@ type AllKeyboardsControl struct {
 }
 
 func (akc *AllKeyboardsControl) Run() {
-	devices := akc.FindAllKeyboardDevices()
+	devices := akc.findAllKeyboardDevices()
 
 	for _, idevice := range devices {
 		_kc := &KeyboardControl{}
@@ -68,38 +68,10 @@ func (akc *AllKeyboardsControl) IsRunning() bool {
 	return true
 }
 
-func (akc *AllKeyboardsControl) GetPressedKeys() map[string]int64 {
-	all := make(map[string]int64)
-
-	for _, kc := range akc.keyboardControls {
-		pressedKeys := kc.GetPressedKeys()
-
-		for ikey, timestamp := range pressedKeys {
-			all[ikey] = timestamp
-		}
-	}
-
-	return all
-}
-
 func (akc *AllKeyboardsControl) ClearPressedKeys() {
 	for _, kc := range akc.keyboardControls {
 		kc.ClearPressedKeys()
 	}
-}
-
-func (akc *AllKeyboardsControl) GetReleasedKeys() map[string]int64 {
-	all := make(map[string]int64)
-
-	for _, kc := range akc.keyboardControls {
-		pressedKeys := kc.GetReleasedKeys()
-
-		for ikey, timestamp := range pressedKeys {
-			all[ikey] = timestamp
-		}
-	}
-
-	return all
 }
 
 func (akc *AllKeyboardsControl) GetReleasedKeysAgo(ms int64) map[string]int64 {
@@ -119,12 +91,6 @@ func (akc *AllKeyboardsControl) GetReleasedKeysAgo(ms int64) map[string]int64 {
 func (akc *AllKeyboardsControl) ClearReleasedKeys() {
 	for _, kc := range akc.keyboardControls {
 		kc.ClearReleasedKeys()
-	}
-}
-
-func (akc *AllKeyboardsControl) AddKeySequence(key string, timestamp int64, pressed bool) {
-	for _, kc := range akc.keyboardControls {
-		kc.AddKeySequence(key, timestamp, pressed)
 	}
 }
 
@@ -162,55 +128,9 @@ func (akc *AllKeyboardsControl) GetReleasedKeysSequenceAsString() []string {
 	return released
 }
 
-func (akc *AllKeyboardsControl) SetPressedKey(key string) bool {
-	for _, kc := range akc.keyboardControls {
-		kc.SetPressedKey(key)
-	}
-
-	return false
-}
-
-func (akc *AllKeyboardsControl) ClearPressedKey(key string) bool {
-	for _, kc := range akc.keyboardControls {
-		kc.ClearPressedKey(key)
-	}
-
-	return false
-}
-
-func (akc *AllKeyboardsControl) IsKeyPressed(key string) bool {
-	for _, kc := range akc.keyboardControls {
-		if kc.IsKeyPressed(key) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (akc *AllKeyboardsControl) IsKeysPressed(keys []string) bool {
 	for _, kc := range akc.keyboardControls {
 		if kc.IsKeysPressed(keys) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (akc *AllKeyboardsControl) IsKeysPressedAgo(keys []string, ms int64) bool {
-	for _, kc := range akc.keyboardControls {
-		if kc.IsKeysPressedAgo(keys, ms) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (akc *AllKeyboardsControl) IsKeysReleased(keys []string) bool {
-	for _, kc := range akc.keyboardControls {
-		if kc.IsKeysReleased(keys) {
 			return true
 		}
 	}
@@ -228,7 +148,7 @@ func (akc *AllKeyboardsControl) IsKeysReleasedAgo(keys []string, ms int64) bool 
 	return false
 }
 
-func (akc *AllKeyboardsControl) FindAllKeyboardDevices() []string {
+func (akc *AllKeyboardsControl) findAllKeyboardDevices() []string {
 	devices := keylogger.FindAllKeyboardDevices()
 
 	for _, pathname := range utils.FileUtilsInstance.GetDirFiles("/dev/input/by-path", false) {

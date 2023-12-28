@@ -70,7 +70,7 @@ func (kc *KeyboardControl) loop() {
 				}
 
 				if ievent.KeyPress() {
-					if kc.SetPressedKey(keyStr) {
+					if kc.setPressedKey(keyStr) {
 						kc.callKeyEventCallbacks(keyStr, true)
 					}
 				}
@@ -152,7 +152,7 @@ func (kc *KeyboardControl) ClearReleasedKeys() {
 	kc.releasedKeys = make(map[string]int64)
 }
 
-func (kc *KeyboardControl) AddKeySequence(key string, timestamp int64, pressed bool) {
+func (kc *KeyboardControl) addKeySequence(key string, timestamp int64, pressed bool) {
 	kc.keysSequence = append(kc.keysSequence, KeySequence{
 		Key:       key,
 		Timestamp: timestamp,
@@ -171,14 +171,14 @@ func (kc *KeyboardControl) GetKeysSequence() []KeySequence {
 	return kc.keysSequence
 }
 
-func (kc *KeyboardControl) SetPressedKey(key string) bool {
+func (kc *KeyboardControl) setPressedKey(key string) bool {
 	if _, isPressed := kc.pressedKeys[key]; !isPressed {
 		timestamp := time.Now().UnixMilli()
 
 		kc.pressedKeys[key] = timestamp
 		delete(kc.releasedKeys, key)
 
-		kc.AddKeySequence(key, timestamp, true)
+		kc.addKeySequence(key, timestamp, true)
 
 		return true
 	}
@@ -193,7 +193,7 @@ func (kc *KeyboardControl) ClearPressedKey(key string) bool {
 		delete(kc.pressedKeys, key)
 		kc.releasedKeys[key] = oldTimestamp
 
-		kc.AddKeySequence(key, time.Now().UnixMilli(), false)
+		kc.addKeySequence(key, time.Now().UnixMilli(), false)
 
 		return true
 	}
@@ -201,44 +201,10 @@ func (kc *KeyboardControl) ClearPressedKey(key string) bool {
 	return false
 }
 
-func (kc *KeyboardControl) IsKeyPressed(key string) bool {
-	_, isPressed := kc.pressedKeys[key]
-
-	return isPressed
-}
-
 func (kc *KeyboardControl) IsKeysPressed(keys []string) bool {
 	count := 0
 
 	for ikey := range kc.pressedKeys {
-		if funk.ContainsString(keys, ikey) {
-			count++
-		}
-	}
-
-	return count == len(keys)
-}
-
-func (kc *KeyboardControl) IsKeysPressedAgo(keys []string, ms int64) bool {
-	pressedKeys := kc.GetPressedKeys()
-	currentTimestamp := time.Now().UnixMilli()
-	goodCount := 0
-
-	for key, pressedTimestamp := range pressedKeys {
-		if funk.ContainsString(keys, key) {
-			if currentTimestamp-pressedTimestamp <= ms {
-				goodCount++
-			}
-		}
-	}
-
-	return goodCount == len(keys)
-}
-
-func (kc *KeyboardControl) IsKeysReleased(keys []string) bool {
-	count := 0
-
-	for ikey := range kc.releasedKeys {
 		if funk.ContainsString(keys, ikey) {
 			count++
 		}
