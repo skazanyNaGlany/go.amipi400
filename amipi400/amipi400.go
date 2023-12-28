@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
@@ -638,6 +639,31 @@ func dhUnmountFromSourceIndex(sourceIndex string) {
 	}
 }
 
+func copyFile(sourcePathname string, targetPathname string) error {
+	oldPercent := 0
+
+	err := utils.FileUtilsInstance.CopyFile(
+		sourcePathname,
+		targetPathname,
+		func(offset int64, size int64) bool {
+			if offset == 0 || size == 0 {
+				return true
+			}
+
+			percent := int(offset * 100 / size)
+
+			if percent != oldPercent {
+				log.Println(percent, "%")
+			}
+
+			oldPercent = percent
+
+			return true
+		})
+
+	return err
+}
+
 func lowLevelCopy(
 	sourceLowLevelDevice string,
 	sourceIndex string,
@@ -815,6 +841,17 @@ func lowLevelCopy(
 	}
 
 	log.Println("Low-level copying", sourcePathname, "to", targetPathname)
+
+	utils.UnixUtilsInstance.Sync()
+
+	if err := copyFile(sourcePathname, targetPathname); err != nil {
+		if err != io.EOF {
+			log.Println(err)
+
+			numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+			return
+		}
+	}
 
 	utils.UnixUtilsInstance.Sync()
 
@@ -1508,38 +1545,40 @@ func saveZoomConfigSetting() {
 	}
 }
 
+// TODO fix
 func isReplaceDFByIndexShortcut() int {
-	var err error
+	return shared.DISK_INDEX_UNSPECIFIED
+	// var err error
 
-	releasedKeys := allKeyboardsControl.GetReleasedKeys()
+	// releasedKeys := allKeyboardsControl.GetReleasedKeys()
 
-	currentTimestamp := time.Now().UnixMilli()
-	goodCount := 0
-	diskNo := int64(shared.DISK_INDEX_UNSPECIFIED)
+	// currentTimestamp := time.Now().UnixMilli()
+	// goodCount := 0
+	// diskNo := int64(shared.DISK_INDEX_UNSPECIFIED)
 
-	for key, pressedTimestamp := range releasedKeys {
-		pressedTimestampChange := currentTimestamp - pressedTimestamp
+	// for key, pressedTimestamp := range releasedKeys {
+	// 	pressedTimestampChange := currentTimestamp - pressedTimestamp
 
-		if pressedTimestampChange < 0 || pressedTimestampChange > 1000 {
-			continue
-		}
+	// 	if pressedTimestampChange < 0 || pressedTimestampChange > 1000 {
+	// 		continue
+	// 	}
 
-		if key == shared.KEY_LEFTMETA {
-			goodCount++
-		} else {
-			diskNo, err = strconv.ParseInt(key, 10, 16)
+	// 	if key == shared.KEY_LEFTMETA {
+	// 		goodCount++
+	// 	} else {
+	// 		diskNo, err = strconv.ParseInt(key, 10, 16)
 
-			if err == nil {
-				goodCount++
-			}
-		}
-	}
+	// 		if err == nil {
+	// 			goodCount++
+	// 		}
+	// 	}
+	// }
 
-	if goodCount != 2 {
-		return shared.DISK_INDEX_UNSPECIFIED
-	}
+	// if goodCount != 2 {
+	// 	return shared.DISK_INDEX_UNSPECIFIED
+	// }
 
-	return int(diskNo)
+	// return int(diskNo)
 }
 
 func parseMediumLabel(label string, re *regexp.Regexp) (int, int, error) {

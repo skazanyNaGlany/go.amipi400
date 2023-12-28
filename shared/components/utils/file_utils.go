@@ -12,6 +12,7 @@ import (
 )
 
 type FileUtils struct{}
+type CopyFileCallback func(offset int64, size int64) bool
 
 var FileUtilsInstance FileUtils
 
@@ -189,4 +190,66 @@ func (fu *FileUtils) FileWriteBytes(
 	}
 
 	return n, nil
+}
+
+func (fu *FileUtils) CopyFile(sourcePathname string, targetPathname string, callback CopyFileCallback) error {
+	stat, err := os.Stat(sourcePathname)
+
+	if err != nil {
+		return err
+	}
+
+	sourceFileSize := stat.Size()
+	sourceFile, err := os.OpenFile(sourcePathname, os.O_RDONLY, 0644)
+
+	if err != nil {
+		return err
+	}
+
+	targetFile, err := os.OpenFile(targetPathname, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+
+	if err != nil {
+		sourceFile.Close()
+
+		return err
+	}
+
+	offset := int64(0)
+
+	for {
+		if callback != nil {
+			if !callback(offset, sourceFileSize) {
+				break
+			}
+		}
+
+		data, _, err := fu.FileReadBytes("", offset, 4096, 0, 0, sourceFile)
+
+		if err != nil {
+			sourceFile.Close()
+			targetFile.Close()
+
+			return err
+		}
+
+		if len(data) == 0 {
+			break
+		}
+
+		_, err = fu.FileWriteBytes("", offset, data, 0, 0, targetFile)
+
+		if err != nil {
+			sourceFile.Close()
+			targetFile.Close()
+
+			return err
+		}
+
+		offset += 4096
+	}
+
+	sourceFile.Close()
+	targetFile.Close()
+
+	return nil
 }
