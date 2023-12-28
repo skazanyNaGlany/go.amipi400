@@ -1545,40 +1545,35 @@ func saveZoomConfigSetting() {
 	}
 }
 
-// TODO fix
 func isReplaceDFByIndexShortcut() int {
-	return shared.DISK_INDEX_UNSPECIFIED
-	// var err error
+	var err error
 
-	// releasedKeys := allKeyboardsControl.GetReleasedKeys()
+	releasedKeys := allKeyboardsControl.GetReleasedKeysAgo(1000)
+	diskNo := int64(shared.DISK_INDEX_UNSPECIFIED)
+	haveLeftMeta := false
+	haveDiskNo := false
 
-	// currentTimestamp := time.Now().UnixMilli()
-	// goodCount := 0
-	// diskNo := int64(shared.DISK_INDEX_UNSPECIFIED)
+	for key := range releasedKeys {
+		if key == shared.KEY_LEFTMETA {
+			haveLeftMeta = true
+		} else {
+			diskNo, err = strconv.ParseInt(key, 10, 16)
 
-	// for key, pressedTimestamp := range releasedKeys {
-	// 	pressedTimestampChange := currentTimestamp - pressedTimestamp
+			if err == nil {
+				haveDiskNo = true
+			}
+		}
 
-	// 	if pressedTimestampChange < 0 || pressedTimestampChange > 1000 {
-	// 		continue
-	// 	}
+		if haveLeftMeta && haveDiskNo {
+			break
+		}
+	}
 
-	// 	if key == shared.KEY_LEFTMETA {
-	// 		goodCount++
-	// 	} else {
-	// 		diskNo, err = strconv.ParseInt(key, 10, 16)
+	if !haveLeftMeta || !haveDiskNo {
+		return shared.DISK_INDEX_UNSPECIFIED
+	}
 
-	// 		if err == nil {
-	// 			goodCount++
-	// 		}
-	// 	}
-	// }
-
-	// if goodCount != 2 {
-	// 	return shared.DISK_INDEX_UNSPECIFIED
-	// }
-
-	// return int(diskNo)
+	return int(diskNo)
 }
 
 func parseMediumLabel(label string, re *regexp.Regexp) (int, int, error) {

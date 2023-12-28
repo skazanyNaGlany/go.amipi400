@@ -102,6 +102,20 @@ func (akc *AllKeyboardsControl) GetReleasedKeys() map[string]int64 {
 	return all
 }
 
+func (akc *AllKeyboardsControl) GetReleasedKeysAgo(ms int64) map[string]int64 {
+	all := make(map[string]int64)
+
+	for _, kc := range akc.keyboardControls {
+		releasedKeys := kc.GetReleasedKeysAgo(ms)
+
+		for ikey, timestamp := range releasedKeys {
+			all[ikey] = timestamp
+		}
+	}
+
+	return all
+}
+
 func (akc *AllKeyboardsControl) ClearReleasedKeys() {
 	for _, kc := range akc.keyboardControls {
 		kc.ClearReleasedKeys()

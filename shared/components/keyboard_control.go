@@ -135,6 +135,19 @@ func (kc *KeyboardControl) GetReleasedKeys() map[string]int64 {
 	return kc.releasedKeys
 }
 
+func (kc *KeyboardControl) GetReleasedKeysAgo(ms int64) map[string]int64 {
+	currentTimestamp := time.Now().UnixMilli()
+	keys := make(map[string]int64)
+
+	for key, timestamp := range kc.releasedKeys {
+		if currentTimestamp-timestamp <= ms {
+			keys[key] = timestamp
+		}
+	}
+
+	return keys
+}
+
 func (kc *KeyboardControl) ClearReleasedKeys() {
 	kc.releasedKeys = make(map[string]int64)
 }
