@@ -304,6 +304,28 @@ func (ac *AmiberryCommander) FormatHardFile2_UaeController_CO(
 	return key, value
 }
 
+func (ac *AmiberryCommander) PutHardFile2_UaeController_CO(
+	driveIndex int,
+	pathname string,
+	sectors int,
+	surfaces int,
+	reserved int,
+	blockSize int,
+	bootPriority int,
+	controllerIndex int) {
+	key, value := ac.FormatHardFile2_UaeController_CO(
+		driveIndex,
+		pathname,
+		sectors,
+		surfaces,
+		reserved,
+		blockSize,
+		bootPriority,
+		controllerIndex)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
 func (ac *AmiberryCommander) FormatFileSystem2_CO(
 	driveIndex int,
 	label string,
@@ -315,6 +337,16 @@ func (ac *AmiberryCommander) FormatFileSystem2_CO(
 	return key, value
 }
 
+func (ac *AmiberryCommander) PutFileSystem2_CO(
+	driveIndex int,
+	label string,
+	pathname string,
+	bootPriority int) {
+	key, value := ac.FormatFileSystem2_CO(driveIndex, label, pathname, bootPriority)
+
+	ac.PutSetConfigOptionCommand(key, value)
+}
+
 func (ac *AmiberryCommander) FormatUaeHfDir_CO(
 	driveIndex int,
 	label string,
@@ -324,6 +356,16 @@ func (ac *AmiberryCommander) FormatUaeHfDir_CO(
 	value := fmt.Sprintf("dir,rw,DH%v:%v:%v,%v", driveIndex, label, pathname, bootPriority)
 
 	return key, value
+}
+
+func (ac *AmiberryCommander) PutUaeHfDir_CO(
+	driveIndex int,
+	label string,
+	pathname string,
+	bootPriority int) {
+	key, value := ac.FormatUaeHfDir_CO(driveIndex, label, pathname, bootPriority)
+
+	ac.PutSetConfigOptionCommand(key, value)
 }
 
 func (ac *AmiberryCommander) FormatUaeHf_IdeController_CO(
@@ -354,6 +396,20 @@ func (ac *AmiberryCommander) FormatUaeHf_UaeController_CO(
 	value := fmt.Sprintf("hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,uae%v", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
 
 	return key, value
+}
+
+func (ac *AmiberryCommander) PutUaeHf_UaeController_CO(
+	driveIndex int,
+	pathname string,
+	sectors int,
+	surfaces int,
+	reserved int,
+	blockSize int,
+	bootPriority int,
+	controllerIndex int) {
+	key, value := ac.FormatUaeHf_UaeController_CO(driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+
+	ac.PutSetConfigOptionCommand(key, value)
 }
 
 // Enable/disable floppy sound
