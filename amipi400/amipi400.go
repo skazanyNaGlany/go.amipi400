@@ -531,7 +531,27 @@ func processKeyboardCommand(keyboardCommand string) {
 			lowLevelCopyRule["source_index"],
 			lowLevelCopyRule["target_low_level_device"],
 			lowLevelCopyRule["target_index"])
+	} else if shared.WIFI_DISCONNECT_RE.MatchString(keyboardCommand) {
+		// example: wifi
+		wifiDisconect()
+	} else if wifiConnectRule := utils.RegExInstance.FindNamedMatches(
+		shared.WIFI_CONNECT_RE,
+		keyboardCommand); len(wifiConnectRule) > 0 {
+		wifiConnect(
+			wifiConnectRule["country_code_iso_iec_3166_1"],
+			wifiConnectRule["ssid"],
+			wifiConnectRule["password"])
 	}
+}
+
+func wifiDisconect() {
+	// TODO
+	log.Println("wifiDisconect")
+}
+
+func wifiConnect(country_code_iso_iec_3166_1 string, ssid string, password string) {
+	// TODO
+	log.Println("wifiConnect", country_code_iso_iec_3166_1, ssid, password)
 }
 
 func fillIndexes(indexStr string, maxIndex int) []int {

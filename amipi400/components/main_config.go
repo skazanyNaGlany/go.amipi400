@@ -11,7 +11,11 @@ type MainConfig struct {
 	pathname string `ini:"-"`
 
 	AmiPi400 struct {
-		Zoom bool `ini:"zoom"`
+		Zoom            bool   `ini:"zoom"`
+		WIFIConnect     bool   `ini:"wifi_connect"`
+		WIFICountryCode string `ini:"wifi_country_code"`
+		WIFISSID        string `ini:"wifi_ssid"`
+		WIFIPassword    string `ini:"wifi_password"`
 	} `ini:"amipi400"`
 }
 

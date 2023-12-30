@@ -39,7 +39,7 @@ const MEDIUM_CONFIG_DEFAULT_FILE_NONE = "none"
 const ADF_DISK_NO_OF_MAX = "(Disk %d of %d)"
 const LOW_LEVEL_DEVICE_FLOPPY = "DF"
 const LOW_LEVEL_DEVICE_HARD_DISK = "DH"
-const AUTORUN_EMULATOR = true
+const AUTORUN_EMULATOR = false
 
 var SOFT_RESET_KEYS []string = []string{KEY_L_CTRL, KEY_L_ALT, KEY_R_ALT}
 var HARD_RESET_KEYS []string = []string{KEY_L_CTRL, KEY_L_ALT, KEY_R_ALT}
@@ -63,6 +63,8 @@ var HF_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UHF(?P<source_index>\
 var DH_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UDH(?P<source_index>\d|N)$`)
 var LOW_LEVEL_COPY_RE = regexp.MustCompile(`^C(?P<source_low_level_device>[A-Z][A-Z])(?P<source_index>\d)(?P<target_low_level_device>[A-Z][A-Z])(?P<target_index>\d)$`)
 var UNMOUNT_ALL_RE = regexp.MustCompile(`^U$`)
+var WIFI_CONNECT_RE = regexp.MustCompile(`^W,(?P<country_code_iso_iec_3166_1>[A-Z][A-Z]),(?P<ssid>.*),(?P<password>.*)$`)
+var WIFI_DISCONNECT_RE = regexp.MustCompile(`^W$`)
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
