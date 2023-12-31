@@ -30,6 +30,7 @@ var emulator components_amipi400.AmiberryEmulator
 var driveDevicesDiscovery components.DriveDevicesDiscovery
 var commander components_amipi400.AmiberryCommander
 var blockDevices components.BlockDevices
+var wifiControl = components_amipi400.NewWIFIControl()
 var mountpoints = components_amipi400.NewMountpointList()
 var mainConfig = components_amipi400.NewMainConfig(shared.MAIN_CONFIG_INI_PATHNAME)
 var initializing = true
@@ -2217,6 +2218,7 @@ func stopServices() {
 	blockDevices.Stop(&blockDevices)
 	powerLEDControl.Stop(&powerLEDControl)
 	numLockLEDControl.Stop(&numLockLEDControl)
+	wifiControl.Stop(wifiControl)
 }
 
 func gracefulShutdown() {
@@ -2291,6 +2293,8 @@ func main() {
 	powerLEDControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 	numLockLEDControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
 	numLockLEDControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
+	wifiControl.SetVerboseMode(shared.RUNNERS_VERBOSE_MODE)
+	wifiControl.SetDebugMode(shared.RUNNERS_DEBUG_MODE)
 
 	amigaDiskDevicesDiscovery.Start(&amigaDiskDevicesDiscovery)
 	allKeyboardsControl.Start(&allKeyboardsControl)
@@ -2299,6 +2303,7 @@ func main() {
 	blockDevices.Start(&blockDevices)
 	powerLEDControl.Start(&powerLEDControl)
 	numLockLEDControl.Start(&numLockLEDControl)
+	wifiControl.Start(wifiControl)
 
 	runnersBlocker.AddRunner(&amigaDiskDevicesDiscovery)
 	runnersBlocker.AddRunner(&allKeyboardsControl)
@@ -2307,6 +2312,7 @@ func main() {
 	runnersBlocker.AddRunner(&blockDevices)
 	runnersBlocker.AddRunner(&powerLEDControl)
 	runnersBlocker.AddRunner(&numLockLEDControl)
+	runnersBlocker.AddRunner(wifiControl)
 
 	go gracefulShutdown()
 

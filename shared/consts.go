@@ -39,6 +39,7 @@ const MEDIUM_CONFIG_DEFAULT_FILE_NONE = "none"
 const ADF_DISK_NO_OF_MAX = "(Disk %d of %d)"
 const LOW_LEVEL_DEVICE_FLOPPY = "DF"
 const LOW_LEVEL_DEVICE_HARD_DISK = "DH"
+const WPA_SUPPLICANT_CONF_PATHNAME = "/boot/wpa_supplicant.conf"
 const AUTORUN_EMULATOR = false
 
 var SOFT_RESET_KEYS []string = []string{KEY_L_CTRL, KEY_L_ALT, KEY_R_ALT}
@@ -65,6 +66,7 @@ var LOW_LEVEL_COPY_RE = regexp.MustCompile(`^C(?P<source_low_level_device>[A-Z][
 var UNMOUNT_ALL_RE = regexp.MustCompile(`^U$`)
 var WIFI_CONNECT_RE = regexp.MustCompile(`^W,(?P<country_code_iso_iec_3166_1>[A-Z][A-Z]),(?P<ssid>.*),(?P<password>.*)$`)
 var WIFI_DISCONNECT_RE = regexp.MustCompile(`^W$`)
+var IWCONFIG_INTERFACE_TO_SSID_RE = regexp.MustCompile(`(?P<name>^.*)IEEE.*802.*11.*ESSID\:(?P<ssid>.*)$`)
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
@@ -130,6 +132,10 @@ const DEFAULT_READ_AHEAD = 256
 const ASYNC_FILE_OP_DIRECT_READ = "direct_read"
 const ASYNC_FILE_OP_WRITE = "write"
 
+// WIFIControl
+const WIFI_CONTROL_OP_CONNECT = "connect"
+const WIFI_CONTROL_OP_DISCONNECT = "disconnect"
+
 // CachedADFHeader
 const CACHED_ADF_HEADER_HEADER_TYPE = "CachedADFHeader"
 const CACHED_ADF_HEADER_SHA512_LENGTH = 128
@@ -147,7 +153,18 @@ var AMIPI400_AMIBERRY_CONFIG_PATHNAME, _ = filepath.Abs(_AMIPI400_AMIBERRY_CONFI
 var AMIBERRY_EMULATOR_TMP_INI_PATHNAME = filepath.Join(
 	filepath.Dir(AMIBERRY_EXE_PATHNAME),
 	AMIBERRY_EMULATOR_TMP_INI_FILENAME)
-var AMIPI400_NEEDED_EXECUTABLES = []string{"sync", "fsck", "ufiformat", "shutdown"}
+var AMIPI400_NEEDED_EXECUTABLES = []string{
+	"sync",
+	"fsck",
+	"ufiformat",
+	"shutdown",
+	"killall",
+	"ifconfig",
+	"iwconfig",
+	"iw",
+	"wpa_passphrase",
+	"rfkill",
+	"wpa_supplicant"}
 
 const DRIVE_INDEX_UNSPECIFIED = -1
 const DRIVE_INDEX_UNSPECIFIED_STR = "-1"
