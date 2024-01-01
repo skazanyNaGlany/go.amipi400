@@ -1507,6 +1507,10 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 }
 
 func keyEventCallback(sender any, key string, pressed bool) {
+	if initializing {
+		return
+	}
+
 	if isSoftResetKeys() {
 		clearAllKeyboardsControl()
 
