@@ -1,11 +1,16 @@
 package components
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"path"
+	"strings"
 	"time"
 
 	"github.com/MarinX/keylogger"
 	"github.com/skazanyNaGlany/go.amipi400/shared"
+	"github.com/skazanyNaGlany/go.amipi400/shared/components/utils"
 	"github.com/skazanyNaGlany/go.amipi400/shared/interfaces"
 	"github.com/thoas/go-funk"
 )
@@ -25,12 +30,16 @@ type KeySequence struct {
 type KeyboardControl struct {
 	RunnerBase
 
-	keyboard          *keylogger.KeyLogger
-	pressedKeys       map[string]int64
-	releasedKeys      map[string]int64
-	keyEventCallbacks []interfaces.KeyEventCallback
-	keyboardDevice    string
-	keysSequence      []KeySequence
+	keyboard                 *keylogger.KeyLogger
+	pressedKeys              map[string]int64
+	releasedKeys             map[string]int64
+	keyEventCallbacks        []interfaces.KeyEventCallback
+	keyboardDevice           string
+	keysSequence             []KeySequence
+	capsLockOn               bool
+	lShiftPressed            bool
+	rShiftPressed            bool
+	capsLockBrightnessHandle *os.File
 }
 
 func (kc *KeyboardControl) init() bool {
@@ -50,11 +59,49 @@ func (kc *KeyboardControl) init() bool {
 		return false
 	}
 
+	base := path.Base(kc.keyboardDevice)
+	inputNo := string(base[len(base)-1])
+
+	capsLockBrightness := fmt.Sprintf("/sys/class/leds/input%v::capslock/brightness",
+		inputNo)
+
+	kc.capsLockBrightnessHandle, err = os.Open(capsLockBrightness)
+
+	if err != nil {
+		if kc.debugMode {
+			log.Println(err)
+		}
+	}
+
 	return true
 }
 
+func (kc *KeyboardControl) close() {
+	if kc.keyboard != nil {
+		if err := kc.keyboard.Close(); err != nil {
+			if kc.debugMode {
+				log.Println(err)
+			}
+		}
+
+		kc.keyboard = nil
+	}
+
+	if kc.capsLockBrightnessHandle != nil {
+		if err := kc.capsLockBrightnessHandle.Close(); err != nil {
+			if kc.debugMode {
+				log.Println(err)
+			}
+		}
+
+		kc.capsLockBrightnessHandle = nil
+	}
+}
+
 func (kc *KeyboardControl) loop() {
-	defer kc.keyboard.Close()
+	defer func() {
+		kc.close()
+	}()
 
 	for kc.running {
 		time.Sleep(time.Millisecond * 10)
@@ -70,12 +117,20 @@ func (kc *KeyboardControl) loop() {
 				}
 
 				if ievent.KeyPress() {
+					kc.updateModifier(keyStr, true)
+
+					keyStr = kc.toggleAlphaKey(keyStr, ievent.Code)
+
 					if kc.setPressedKey(keyStr) {
 						kc.callKeyEventCallbacks(keyStr, true)
 					}
 				}
 
 				if ievent.KeyRelease() {
+					kc.updateModifier(keyStr, false)
+
+					keyStr = kc.toggleAlphaKey(keyStr, ievent.Code)
+
 					if kc.ClearPressedKey(keyStr) {
 						kc.callKeyEventCallbacks(keyStr, false)
 					}
@@ -85,6 +140,54 @@ func (kc *KeyboardControl) loop() {
 	}
 
 	kc.running = false
+}
+
+func (kc *KeyboardControl) updateModifier(key string, pressed bool) {
+	if key == shared.KEY_L_SHIFT {
+		kc.lShiftPressed = pressed
+	} else if key == shared.KEY_R_SHIFT {
+		kc.rShiftPressed = pressed
+	}
+
+	if kc.capsLockBrightnessHandle != nil {
+		capslockBrightness, _, err := utils.FileUtilsInstance.FileReadBytes(
+			"",
+			0,
+			1,
+			0,
+			0,
+			kc.capsLockBrightnessHandle)
+
+		if err != nil {
+			if kc.debugMode {
+				log.Println(err)
+			}
+
+			return
+		}
+
+		kc.capsLockOn = strings.TrimSpace(string(capslockBrightness)) == "1"
+	}
+}
+
+func (kc *KeyboardControl) upModifierActive() bool {
+	return kc.capsLockOn || kc.lShiftPressed || kc.rShiftPressed
+}
+
+func (kc *KeyboardControl) toggleAlphaKey(key string, code uint16) string {
+	if len(key) != 1 {
+		return key
+	}
+
+	if !utils.StringUtilsInstance.IsAlpha(int(key[0])) {
+		return key
+	}
+
+	if kc.upModifierActive() {
+		return strings.ToUpper(key)
+	} else {
+		return strings.ToLower(key)
+	}
 }
 
 func (kc *KeyboardControl) guessUnknownKeyName(code uint16) string {
@@ -99,6 +202,7 @@ func (kc *KeyboardControl) guessUnknownKeyName(code uint16) string {
 
 func (kc *KeyboardControl) Run() {
 	if !kc.init() {
+		kc.running = false
 		return
 	}
 
@@ -112,13 +216,7 @@ func (kc *KeyboardControl) Stop(_runner interfaces.Runner) error {
 
 	kc.running = false
 
-	if kc.keyboard != nil {
-		if err := kc.keyboard.Close(); err != nil {
-			if kc.debugMode {
-				log.Println(err)
-			}
-		}
-	}
+	kc.close()
 
 	return nil
 }

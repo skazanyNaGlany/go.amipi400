@@ -24,6 +24,10 @@ func (st *StringUtils) IsASCII(s string) bool {
 	return true
 }
 
+func (st *StringUtils) IsAlpha(keyCode int) bool {
+	return (keyCode >= 65 && keyCode <= 90) || (keyCode >= 97 && keyCode <= 122)
+}
+
 func (st *StringUtils) StringUnify(strToUnify string, exclude ...string) string {
 	unified := ""
 
