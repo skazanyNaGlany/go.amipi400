@@ -387,26 +387,27 @@ func isHardResetKeys() bool {
 }
 
 func isToggleZoomKeys() bool {
-	return allKeyboardsControl.IsKeysReleasedAgo(shared.TOGGLE_ZOOM_KEYS, shared.TOGGLE_ZOOM_KEYS_MIN_MS)
+	return allKeyboardsControl.IsKeysReleasedAgo(shared.TOGGLE_ZOOM_KEYS, shared.TOGGLE_ZOOM_KEYS_MIN_MS) ||
+		allKeyboardsControl.IsKeysReleasedAgo(shared.TOGGLE_ZOOM_KEYS_ALT, shared.TOGGLE_ZOOM_KEYS_MIN_MS)
 }
 
 func isShutdownKeys() bool {
 	return allKeyboardsControl.IsKeysReleasedAgo(shared.SHUTDOWN_KEYS, shared.SHUTDOWN_KEYS_MIN_MS)
 }
 
-func getKeyboardCommand() string {
+func getKeyboardCommand() (string, string) {
 	releasedSequence := allKeyboardsControl.GetReleasedKeysSequenceAsString()
 	lenReleasedSequence := len(releasedSequence)
 
 	if lenReleasedSequence < 4 {
-		return ""
+		return "", ""
 	}
 
 	if releasedSequence[0] != shared.KEY_TAB ||
 		releasedSequence[1] != shared.KEY_TAB ||
 		releasedSequence[lenReleasedSequence-1] != shared.KEY_TAB ||
 		releasedSequence[lenReleasedSequence-2] != shared.KEY_TAB {
-		return ""
+		return "", ""
 	}
 
 	releasedSequence = releasedSequence[2:]
@@ -423,23 +424,26 @@ func getKeyboardCommand() string {
 		}
 	}
 
-	return strings.Join(releasedSequence, "")
+	keyboardCommand := strings.Join(releasedSequence, "")
+	keyboardCommandUpper := strings.ToUpper(keyboardCommand)
+
+	return keyboardCommand, keyboardCommandUpper
 }
 
 func clearAllKeyboardsControl() {
 	allKeyboardsControl.ClearAll()
 }
 
-func processKeyboardCommand(keyboardCommand string) {
+func processKeyboardCommand(keyboardCommand string, keyboardCommandUpper string) {
 	if dfEjectRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_EJECT_FROM_SOURCE_INDEX_RE,
-		keyboardCommand); len(dfEjectRule) > 0 {
+		keyboardCommandUpper); len(dfEjectRule) > 0 {
 		// example: df0
 		// example: dfn
 		dfEjectFromSourceIndex(dfEjectRule["source_index"])
 	} else if dfSourceByDiskRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_INSERT_FROM_SOURCE_INDEX_BY_DISK_NO_RE,
-		keyboardCommand); len(dfSourceByDiskRule) > 0 {
+		keyboardCommandUpper); len(dfSourceByDiskRule) > 0 {
 		// example: df02
 		dfInsertFromSourceIndexToTargetIndexByDiskNo(
 			dfSourceByDiskRule["disk_no"],
@@ -447,7 +451,7 @@ func processKeyboardCommand(keyboardCommand string) {
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
 	} else if dfSourceTargetByDiskRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_BY_DISK_NO_RE,
-		keyboardCommand); len(dfSourceTargetByDiskRule) > 0 {
+		keyboardCommandUpper); len(dfSourceTargetByDiskRule) > 0 {
 		// example: df02df1
 		dfInsertFromSourceIndexToTargetIndexByDiskNo(
 			dfSourceTargetByDiskRule["disk_no"],
@@ -455,7 +459,7 @@ func processKeyboardCommand(keyboardCommand string) {
 			dfSourceTargetByDiskRule["target_index"])
 	} else if dfSourceTargetRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_RE,
-		keyboardCommand); len(dfSourceTargetRule) > 0 {
+		keyboardCommandUpper); len(dfSourceTargetRule) > 0 {
 		// example: df0kwaterdf1
 		// example: df0kwaterdfn
 		dfInsertFromSourceIndexToTargetIndex(
@@ -464,7 +468,7 @@ func processKeyboardCommand(keyboardCommand string) {
 			dfSourceTargetRule["target_index"])
 	} else if dfSourceRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_INSERT_FROM_SOURCE_INDEX_RE,
-		keyboardCommand); len(dfSourceRule) > 0 {
+		keyboardCommandUpper); len(dfSourceRule) > 0 {
 		// example: df0traps
 		dfInsertFromSourceIndexToTargetIndex(
 			dfSourceRule["filename_part"],
@@ -472,12 +476,12 @@ func processKeyboardCommand(keyboardCommand string) {
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
 	} else if cdEjectRule := utils.RegExInstance.FindNamedMatches(
 		shared.CD_EJECT_FROM_SOURCE_INDEX_RE,
-		keyboardCommand); len(cdEjectRule) > 0 {
+		keyboardCommandUpper); len(cdEjectRule) > 0 {
 		// example: cd0
 		cdEjectFromSourceIndex(cdEjectRule["source_index"])
 	} else if cdSourceRule := utils.RegExInstance.FindNamedMatches(
 		shared.CD_INSERT_FROM_SOURCE_INDEX_RE,
-		keyboardCommand); len(cdSourceRule) > 0 {
+		keyboardCommandUpper); len(cdSourceRule) > 0 {
 		// example: cd0workbenchiso
 		cdInsertFromSourceIndexToTargetIndex(
 			cdSourceRule["filename_part"],
@@ -485,54 +489,54 @@ func processKeyboardCommand(keyboardCommand string) {
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
 	} else if hfEjectRule := utils.RegExInstance.FindNamedMatches(
 		shared.HF_EJECT_FROM_SOURCE_INDEX_RE,
-		keyboardCommand); len(hfEjectRule) > 0 {
+		keyboardCommandUpper); len(hfEjectRule) > 0 {
 		// example: hf0
 		hfEjectFromSourceIndex(hfEjectRule["source_index"])
 	} else if hfSourceRule := utils.RegExInstance.FindNamedMatches(
 		shared.HF_INSERT_FROM_SOURCE_INDEX_RE,
-		keyboardCommand); len(hfSourceRule) > 0 {
+		keyboardCommandUpper); len(hfSourceRule) > 0 {
 		// example: hf0workbenchhdf
 		hfInsertFromSourceIndexToTargetIndex(
 			hfSourceRule["filename_part"],
 			hfSourceRule["source_index"],
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
-	} else if shared.UNMOUNT_ALL_RE.MatchString(keyboardCommand) {
+	} else if shared.UNMOUNT_ALL_RE.MatchString(keyboardCommandUpper) {
 		// example: u
 		unmountAll(false)
 	} else if dfUnmountRule := utils.RegExInstance.FindNamedMatches(
 		shared.DF_UNMOUNT_FROM_SOURCE_INDEX_RE,
-		keyboardCommand); len(dfUnmountRule) > 0 {
+		keyboardCommandUpper); len(dfUnmountRule) > 0 {
 		// example: udf0
 		// example: udfn
 		dfUnmountFromSourceIndex(dfUnmountRule["source_index"])
 	} else if cdUnmountRule := utils.RegExInstance.FindNamedMatches(
 		shared.CD_UNMOUNT_FROM_SOURCE_INDEX_RE,
-		keyboardCommand); len(cdUnmountRule) > 0 {
+		keyboardCommandUpper); len(cdUnmountRule) > 0 {
 		// example: ucd0
 		// example: ucdn
 		cdUnmountFromSourceIndex(cdUnmountRule["source_index"])
 	} else if hfUnmountRule := utils.RegExInstance.FindNamedMatches(
 		shared.HF_UNMOUNT_FROM_SOURCE_INDEX_RE,
-		keyboardCommand); len(hfUnmountRule) > 0 {
+		keyboardCommandUpper); len(hfUnmountRule) > 0 {
 		// example: uhf0
 		// example: uhfn
 		hfUnmountFromSourceIndex(hfUnmountRule["source_index"])
 	} else if dhUnmountRule := utils.RegExInstance.FindNamedMatches(
 		shared.DH_UNMOUNT_FROM_SOURCE_INDEX_RE,
-		keyboardCommand); len(dhUnmountRule) > 0 {
+		keyboardCommandUpper); len(dhUnmountRule) > 0 {
 		// example: udh0
 		// example: udhn
 		dhUnmountFromSourceIndex(dhUnmountRule["source_index"])
 	} else if lowLevelCopyRule := utils.RegExInstance.FindNamedMatches(
 		shared.LOW_LEVEL_COPY_RE,
-		keyboardCommand); len(lowLevelCopyRule) > 0 {
+		keyboardCommandUpper); len(lowLevelCopyRule) > 0 {
 		// example: cdf0dh1
 		lowLevelCopy(
 			lowLevelCopyRule["source_low_level_device"],
 			lowLevelCopyRule["source_index"],
 			lowLevelCopyRule["target_low_level_device"],
 			lowLevelCopyRule["target_index"])
-	} else if shared.WIFI_DISCONNECT_RE.MatchString(keyboardCommand) {
+	} else if shared.WIFI_DISCONNECT_RE.MatchString(keyboardCommandUpper) {
 		// example: wifi
 		wifiDisconect()
 	} else if wifiConnectRule := utils.RegExInstance.FindNamedMatches(
@@ -1544,9 +1548,11 @@ func keyEventCallback(sender any, key string, pressed bool) {
 			"0",
 			shared.DRIVE_INDEX_UNSPECIFIED_STR)
 	} else {
-		if keyboardCommand := getKeyboardCommand(); keyboardCommand != "" {
+		keyboardCommand, keyboardCommandUpper := getKeyboardCommand()
+
+		if keyboardCommand != "" {
 			clearAllKeyboardsControl()
-			processKeyboardCommand(keyboardCommand)
+			processKeyboardCommand(keyboardCommand, keyboardCommandUpper)
 		} else {
 			emulateNumPad()
 		}
