@@ -39,7 +39,7 @@ const MEDIUM_CONFIG_DEFAULT_FILE_NONE = "none"
 const ADF_DISK_NO_OF_MAX = "(Disk %d of %d)"
 const LOW_LEVEL_DEVICE_FLOPPY = "DF"
 const LOW_LEVEL_DEVICE_HARD_DISK = "DH"
-const WPA_SUPPLICANT_CONF_PATHNAME = "/boot/wpa_supplicant.conf"
+const WPA_SUPPLICANT_CONF_PATHNAME = "/etc/wpa_supplicant/wpa_supplicant.conf"
 const AUTORUN_EMULATOR = false
 
 var SOFT_RESET_KEYS []string = []string{KEY_L_CTRL, KEY_L_ALT, KEY_R_ALT}

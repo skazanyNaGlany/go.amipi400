@@ -80,10 +80,6 @@ func (wc *WIFIControl) Connect(countryCode string, ssid string, password string)
 func (wc *WIFIControl) disconnect() {
 	wc.logPrintLn("disconnecting from WIFI")
 
-	if err := os.Remove(shared.WPA_SUPPLICANT_CONF_PATHNAME); err != nil {
-		wc.logPrintLn(err)
-	}
-
 	ifaces, err := wc.Interfaces()
 
 	if err != nil {
@@ -184,10 +180,14 @@ func (wc *WIFIControl) connect(countryCode string, ssid string, password string)
 		return
 	}
 
+	passphraseStr := string(passphrase)
+	passphraseStr = strings.TrimSpace(passphraseStr)
+	passphraseStr += "\n\nctrl_interface=/var/run/wpa_supplicant\n\n"
+
 	if _, err = utils.FileUtilsInstance.FileWriteBytes(
 		shared.WPA_SUPPLICANT_CONF_PATHNAME,
 		0,
-		passphrase,
+		[]byte(passphraseStr),
 		os.O_CREATE|os.O_RDWR|os.O_TRUNC,
 		0644,
 		nil); err != nil {
