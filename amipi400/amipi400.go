@@ -550,13 +550,38 @@ func processKeyboardCommand(keyboardCommand string, keyboardCommandUpper string)
 }
 
 func wifiDisconect() {
-	// TODO
-	log.Println("wifiDisconect")
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
+
+	wifiControl.Disconnect()
+	wifiControl.Wait()
+	wifiControl.WaitUntilDisconnected(32)
+
+	saveWifiSetting(false, "", "", "")
+
+	if wifiControl.GetLastError() != nil {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+	}
 }
 
 func wifiConnect(country_code_iso_iec_3166_1 string, ssid string, password string) {
-	// TODO
-	log.Println("wifiConnect", country_code_iso_iec_3166_1, ssid, password)
+	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
+	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
+
+	countryCodeUpper := strings.ToUpper(country_code_iso_iec_3166_1)
+
+	wifiControl.Connect(
+		countryCodeUpper,
+		ssid,
+		password)
+	wifiControl.Wait()
+	wifiControl.WaitUntilConnected(32)
+
+	saveWifiSetting(true, countryCodeUpper, ssid, password)
+
+	if wifiControl.GetLastError() != nil {
+		numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+	}
 }
 
 func fillIndexes(indexStr string, maxIndex int) []int {
@@ -1576,6 +1601,17 @@ func saveZoomConfigSetting() {
 	}
 }
 
+func saveWifiSetting(manage bool, countryCode string, ssid string, password string) {
+	mainConfig.AmiPi400.WIFIManage = manage
+	mainConfig.AmiPi400.WIFICountryCode = countryCode
+	mainConfig.AmiPi400.WIFISSID = ssid
+	mainConfig.AmiPi400.WIFIPassword = password
+
+	if err := mainConfig.Save(); err != nil {
+		log.Println(err)
+	}
+}
+
 func isReplaceDFByIndexShortcut() int {
 	var err error
 
@@ -2220,6 +2256,17 @@ func unmountAll(fromSignal bool) {
 	log.Println("Done unmounting mountpoints")
 }
 
+func initWifi() {
+	if !mainConfig.AmiPi400.WIFIManage {
+		return
+	}
+
+	wifiControl.Connect(
+		mainConfig.AmiPi400.WIFICountryCode,
+		mainConfig.AmiPi400.WIFISSID,
+		mainConfig.AmiPi400.WIFIPassword)
+}
+
 func stopServices() {
 	amigaDiskDevicesDiscovery.Stop(&amigaDiskDevicesDiscovery)
 	allKeyboardsControl.Stop(&allKeyboardsControl)
@@ -2323,6 +2370,8 @@ func main() {
 	runnersBlocker.AddRunner(&powerLEDControl)
 	runnersBlocker.AddRunner(&numLockLEDControl)
 	runnersBlocker.AddRunner(wifiControl)
+
+	initWifi()
 
 	go gracefulShutdown()
 

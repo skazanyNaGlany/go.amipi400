@@ -12,7 +12,7 @@ type MainConfig struct {
 
 	AmiPi400 struct {
 		Zoom            bool   `ini:"zoom"`
-		WIFIConnect     bool   `ini:"wifi_connect"`
+		WIFIManage      bool   `ini:"wifi_manage"`
 		WIFICountryCode string `ini:"wifi_country_code"`
 		WIFISSID        string `ini:"wifi_ssid"`
 		WIFIPassword    string `ini:"wifi_password"`
