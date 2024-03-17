@@ -82,7 +82,7 @@ func (fmd *FloppyMediumDriver) Probe(
 	// in the FloppyMedium properly if it is known
 	// (eg. ADF has its ID already, but cached ADF
 	// does not exists)
-	fmd.DecodeCachedADFHeader(&_medium)
+	fmd.decodeCachedADFHeader(&_medium)
 
 	if formatted || force {
 		if _medium.GetCachedAdfPathname() != "" {
@@ -113,7 +113,7 @@ func (fmd *FloppyMediumDriver) Probe(
 	return &_medium, nil
 }
 
-func (fmd *FloppyMediumDriver) FloppyCacheAdf(_medium *medium.FloppyMedium) error {
+func (fmd *FloppyMediumDriver) floppyCacheAdf(_medium *medium.FloppyMedium) error {
 	var sha512Id string
 	var uuidStr string
 	var err error
@@ -247,7 +247,7 @@ func (fmd *FloppyMediumDriver) updateCachedADFHeader(
 	return nil
 }
 
-func (fmd *FloppyMediumDriver) DecodeCachedADFHeader(_medium *medium.FloppyMedium) error {
+func (fmd *FloppyMediumDriver) decodeCachedADFHeader(_medium *medium.FloppyMedium) error {
 	header := headers.CachedADFHeader{}
 	headerSize := unsafe.Sizeof(header)
 
@@ -615,7 +615,7 @@ func (mdb *FloppyMediumDriver) realRead2(
 			floppyMedium.SetFullyCached(true)
 
 			if !floppyMedium.IsCachingDisabled() && floppyMedium.IsWritable() {
-				err := mdb.FloppyCacheAdf(floppyMedium)
+				err := mdb.floppyCacheAdf(floppyMedium)
 
 				if err != nil {
 					// cannot cache the ADF, disable
