@@ -8,7 +8,6 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -1689,42 +1688,6 @@ func isReplaceDFByIndexShortcut() int {
 	return int(diskNo)
 }
 
-func parseMediumLabel(label string, re *regexp.Regexp) (int, int, error) {
-	var err error
-	var index int64
-	var bootPriority int64
-
-	matches := utils.RegExInstance.FindNamedMatches(re, label)
-
-	strIndex, ok1 := matches["index"]
-	strBootPriority, ok2 := matches["boot_priority"]
-
-	_ = ok1
-	_ = ok2
-
-	// index
-	if strIndex == "X" {
-		index = shared.DRIVE_INDEX_UNSPECIFIED
-	} else {
-		index, err = strconv.ParseInt(strIndex, 10, 32)
-
-		if err != nil {
-			return 0, 0, err
-		}
-	}
-
-	// boot priority (optional)
-	if strBootPriority != "" {
-		bootPriority, err = strconv.ParseInt(strBootPriority, 10, 32)
-
-		if err != nil {
-			return 0, 0, err
-		}
-	}
-
-	return int(index), int(bootPriority), nil
-}
-
 func setupAddMountpoint(
 	devicePathname string,
 	label string,
@@ -1768,7 +1731,7 @@ func setupAddMountpoint(
 		mountpoint.FsType,
 	)
 
-	if err := mountpoint.Mount(); err != nil {
+	if err := mountpoint.Mount(0, ""); err != nil {
 		return nil, fmt.Errorf(
 			"cannot mount mountpoint %v (%v, %v)",
 			mountpointStr,
@@ -1856,7 +1819,11 @@ func attachDFMediumDiskImage(
 	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
 
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_RE)
+	index, _, err := utils.AmiPi400UtilsInstance.ParseMediumLabel(
+		label,
+		shared.AP4_MEDIUM_DF_RE,
+	)
+	// index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_DF_RE)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -1904,7 +1871,10 @@ func attachDHMediumDiskImage(
 	size uint64,
 	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
-	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_DH_RE)
+	index, bootPriority, err := utils.AmiPi400UtilsInstance.ParseMediumLabel(
+		label,
+		shared.AP4_MEDIUM_DH_RE,
+	)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -1951,7 +1921,10 @@ func attachHFMediumDiskImage(
 	size uint64,
 	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
-	index, bootPriority, err := parseMediumLabel(label, shared.AP4_MEDIUM_HF_RE)
+	index, bootPriority, err := utils.AmiPi400UtilsInstance.ParseMediumLabel(
+		label,
+		shared.AP4_MEDIUM_HF_RE,
+	)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)
@@ -2001,7 +1974,10 @@ func attachCDMediumDiskImage(
 	size uint64,
 	_type, mountpointStr, label, path, fsType, ptType string,
 	readOnly bool) {
-	index, _, err := parseMediumLabel(label, shared.AP4_MEDIUM_CD_RE)
+	index, _, err := utils.AmiPi400UtilsInstance.ParseMediumLabel(
+		label,
+		shared.AP4_MEDIUM_CD_RE,
+	)
 
 	if err != nil || index == shared.DRIVE_INDEX_UNSPECIFIED {
 		log.Println(path, label, "cannot get index for medium: ", err)

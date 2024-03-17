@@ -24,7 +24,7 @@ type Mountpoint struct {
 	Config         *MountpointConfig
 }
 
-func (m *Mountpoint) Mount() error {
+func (m *Mountpoint) Mount(flags uintptr, data string) error {
 	// do not use syscall.MS_SYNCHRONOUS as "flags" parameter
 	// or "flush" as "data" parameter since it will slow down
 	// the emulator when accessing / reading / writing rom
@@ -33,8 +33,8 @@ func (m *Mountpoint) Mount() error {
 		m.DevicePathname,
 		m.Mountpoint,
 		m.FsType,
-		0,
-		"")
+		flags,
+		data)
 }
 
 func (m *Mountpoint) Unmount() error {
