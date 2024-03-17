@@ -44,7 +44,9 @@ func (addfs *ADDFileSystem) AddMedium(medium interfaces.Medium) {
 	addfs.mediums = append(addfs.mediums, medium)
 }
 
-func (addfs *ADDFileSystem) RemoveMediumByDevicePathname(devicePathname string) (interfaces.Medium, error) {
+func (addfs *ADDFileSystem) RemoveMediumByDevicePathname(
+	devicePathname string,
+) (interfaces.Medium, error) {
 	for i, medium := range addfs.mediums {
 		if medium.GetDevicePathname() == devicePathname {
 			addfs.mediums = slices.Delete(addfs.mediums, i, i+1)
@@ -62,7 +64,9 @@ func (addfs *ADDFileSystem) RemoveMediumByDevicePathname(devicePathname string) 
 
 // Find the medium by public file-system pathname
 // like /__dev__sda.adf , /__dev__sdb.adf etc.
-func (addfs *ADDFileSystem) FindMediumByPublicFSPathname(publicFSPathname string) interfaces.Medium {
+func (addfs *ADDFileSystem) FindMediumByPublicFSPathname(
+	publicFSPathname string,
+) interfaces.Medium {
 	fullWithMountPathname := filepath.Join(addfs.mountDir, publicFSPathname)
 
 	for _, medium := range addfs.mediums {
@@ -95,7 +99,11 @@ func (addfs *ADDFileSystem) Truncate(path string, size int64, fh uint64) int {
 	return 0
 }
 
-func (addfs *ADDFileSystem) Getattr(path string, stat *fuse.Stat_t, fh uint64) (errc int) {
+func (addfs *ADDFileSystem) Getattr(
+	path string,
+	stat *fuse.Stat_t,
+	fh uint64,
+) (errc int) {
 	if path == "/" {
 		stat.Mode = fuse.S_IFDIR | 0555
 		return 0
@@ -145,7 +153,12 @@ func (addfs *ADDFileSystem) Readdir(path string,
 	return 0
 }
 
-func (addfs *ADDFileSystem) Read(path string, buff []byte, ofst int64, fh uint64) (n int) {
+func (addfs *ADDFileSystem) Read(
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+) (n int) {
 	if medium := addfs.FindMediumByPublicFSPathname(path); medium != nil {
 		n, err := medium.Read(path, buff, ofst, fh)
 

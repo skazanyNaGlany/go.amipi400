@@ -79,11 +79,21 @@ func (fm *FloppyMedium) IsCachingDisabled() bool {
 	return fm.cachingDisabled
 }
 
-func (fm *FloppyMedium) Read(path string, buff []byte, ofst int64, fh uint64) (int, error) {
+func (fm *FloppyMedium) Read(
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+) (int, error) {
 	return fm.driver.Read(fm, path, buff, ofst, fh)
 }
 
-func (mb *FloppyMedium) Write(path string, buff []byte, ofst int64, fh uint64) (int, error) {
+func (mb *FloppyMedium) Write(
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+) (int, error) {
 	return mb.driver.Write(mb, path, buff, ofst, fh)
 }
 

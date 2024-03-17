@@ -93,7 +93,10 @@ func (ac *AmiberryCommander) blockTillTmpIniExists() {
 	}
 }
 
-func (ac *AmiberryCommander) executeLocalCommand(command string, currentCommands string) bool {
+func (ac *AmiberryCommander) executeLocalCommand(
+	command string,
+	currentCommands string,
+) bool {
 	if command == "local-commit" {
 		if currentCommands == "" {
 			return false
@@ -261,7 +264,10 @@ func (ac *AmiberryCommander) PutLocalSleepCommand(sleepSecs int) {
 	ac.PutCommand("local-sleep "+sleepSecsStr, false, false)
 }
 
-func (ac *AmiberryCommander) FormatCdImageCO(index int, pathname string) (string, string) {
+func (ac *AmiberryCommander) FormatCdImageCO(
+	index int,
+	pathname string,
+) (string, string) {
 	key := fmt.Sprintf("cdimage%v", index)
 	value := pathname + ",image"
 
@@ -284,7 +290,17 @@ func (ac *AmiberryCommander) FormatHardFile2_IdeController_CO(
 	bootPriority int,
 	controllerIndex int) (string, string) {
 	key := "hardfile2"
-	value := fmt.Sprintf("rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+	value := fmt.Sprintf(
+		"rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0",
+		driveIndex,
+		pathname,
+		sectors,
+		surfaces,
+		reserved,
+		blockSize,
+		bootPriority,
+		controllerIndex,
+	)
 
 	return key, value
 }
@@ -299,7 +315,17 @@ func (ac *AmiberryCommander) FormatHardFile2_UaeController_CO(
 	bootPriority int,
 	controllerIndex int) (string, string) {
 	key := "hardfile2"
-	value := fmt.Sprintf("rw,DH%v:%v,%v,%v,%v,%v,%v,,uae%v", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+	value := fmt.Sprintf(
+		"rw,DH%v:%v,%v,%v,%v,%v,%v,,uae%v",
+		driveIndex,
+		pathname,
+		sectors,
+		surfaces,
+		reserved,
+		blockSize,
+		bootPriority,
+		controllerIndex,
+	)
 
 	return key, value
 }
@@ -353,7 +379,13 @@ func (ac *AmiberryCommander) FormatUaeHfDir_CO(
 	pathname string,
 	bootPriority int) (string, string) {
 	key := fmt.Sprintf("uaehf%v", driveIndex)
-	value := fmt.Sprintf("dir,rw,DH%v:%v:%v,%v", driveIndex, label, pathname, bootPriority)
+	value := fmt.Sprintf(
+		"dir,rw,DH%v:%v:%v,%v",
+		driveIndex,
+		label,
+		pathname,
+		bootPriority,
+	)
 
 	return key, value
 }
@@ -378,7 +410,17 @@ func (ac *AmiberryCommander) FormatUaeHf_IdeController_CO(
 	bootPriority int,
 	controllerIndex int) (string, string) {
 	key := fmt.Sprintf("uaehf%v", driveIndex)
-	value := fmt.Sprintf("hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+	value := fmt.Sprintf(
+		"hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,ide%v_mainboard,0",
+		driveIndex,
+		pathname,
+		sectors,
+		surfaces,
+		reserved,
+		blockSize,
+		bootPriority,
+		controllerIndex,
+	)
 
 	return key, value
 }
@@ -393,7 +435,17 @@ func (ac *AmiberryCommander) FormatUaeHf_UaeController_CO(
 	bootPriority int,
 	controllerIndex int) (string, string) {
 	key := fmt.Sprintf("uaehf%v", driveIndex)
-	value := fmt.Sprintf("hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,uae%v", driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+	value := fmt.Sprintf(
+		"hdf,rw,DH%v:%v,%v,%v,%v,%v,%v,,uae%v",
+		driveIndex,
+		pathname,
+		sectors,
+		surfaces,
+		reserved,
+		blockSize,
+		bootPriority,
+		controllerIndex,
+	)
 
 	return key, value
 }
@@ -407,13 +459,25 @@ func (ac *AmiberryCommander) PutUaeHf_UaeController_CO(
 	blockSize int,
 	bootPriority int,
 	controllerIndex int) {
-	key, value := ac.FormatUaeHf_UaeController_CO(driveIndex, pathname, sectors, surfaces, reserved, blockSize, bootPriority, controllerIndex)
+	key, value := ac.FormatUaeHf_UaeController_CO(
+		driveIndex,
+		pathname,
+		sectors,
+		surfaces,
+		reserved,
+		blockSize,
+		bootPriority,
+		controllerIndex,
+	)
 
 	ac.PutSetConfigOptionCommand(key, value)
 }
 
 // Enable/disable floppy sound
-func (ac *AmiberryCommander) FormatFloppySoundConfigOption(index int, enable bool) (string, string) {
+func (ac *AmiberryCommander) FormatFloppySoundConfigOption(
+	index int,
+	enable bool,
+) (string, string) {
 	value := "0"
 
 	if enable {
@@ -431,14 +495,18 @@ func (ac *AmiberryCommander) PutFloppySoundCO(index int, enable bool) {
 	ac.PutSetConfigOptionCommand(key, value)
 }
 
-func (ac *AmiberryCommander) FormatFloppySoundVolumeDiskCO(index, volume int) (string, string) {
+func (ac *AmiberryCommander) FormatFloppySoundVolumeDiskCO(
+	index, volume int,
+) (string, string) {
 	key := fmt.Sprintf("floppy%vsoundvolume_disk", index)
 	value := fmt.Sprintf("%v", 100-volume)
 
 	return key, value
 }
 
-func (ac *AmiberryCommander) FormatFloppySoundVolumeEmptyCO(index, volume int) (string, string) {
+func (ac *AmiberryCommander) FormatFloppySoundVolumeEmptyCO(
+	index, volume int,
+) (string, string) {
 	key := fmt.Sprintf("floppy%vsoundvolume_empty", index)
 	value := fmt.Sprintf("%v", 100-volume)
 

@@ -14,7 +14,9 @@ import (
 	"github.com/skazanyNaGlany/go.amipi400/shared/interfaces"
 )
 
-var lsblkPattern *regexp.Regexp = regexp.MustCompile(`NAME="(?P<NAME>\w*)" SIZE="(?P<SIZE>\d*)" TYPE="(?P<TYPE>\w*)" MOUNTPOINT="(?P<MOUNTPOINT>.*)" LABEL="(?P<LABEL>.*)" PATH="(?P<PATH>.*)" FSTYPE="(?P<FSTYPE>.*)" PTTYPE="(?P<PTTYPE>.*)" RO="(?P<RO>.*)"`)
+var lsblkPattern *regexp.Regexp = regexp.MustCompile(
+	`NAME="(?P<NAME>\w*)" SIZE="(?P<SIZE>\d*)" TYPE="(?P<TYPE>\w*)" MOUNTPOINT="(?P<MOUNTPOINT>.*)" LABEL="(?P<LABEL>.*)" PATH="(?P<PATH>.*)" FSTYPE="(?P<FSTYPE>.*)" PTTYPE="(?P<PTTYPE>.*)" RO="(?P<RO>.*)"`,
+)
 
 type BlockDevices struct {
 	RunnerBase
@@ -73,7 +75,9 @@ func (bd *BlockDevices) loop() {
 	bd.SetRunning(false)
 }
 
-func (bd *BlockDevices) callCallbacks(old_block_devices, block_devices map[string]map[string]string) error {
+func (bd *BlockDevices) callCallbacks(
+	old_block_devices, block_devices map[string]map[string]string,
+) error {
 	oldIsIdle := bd.isIdle
 
 	added, err := bd.callDetachedCallbacks(old_block_devices, block_devices)
@@ -99,7 +103,9 @@ func (bd *BlockDevices) callCallbacks(old_block_devices, block_devices map[strin
 	return nil
 }
 
-func (bd *BlockDevices) callAttachedCallbacks(old_block_devices, block_devices map[string]map[string]string) (int, error) {
+func (bd *BlockDevices) callAttachedCallbacks(
+	old_block_devices, block_devices map[string]map[string]string,
+) (int, error) {
 	added := 0
 
 	for name := range block_devices {
@@ -142,7 +148,9 @@ func (bd *BlockDevices) callAttachedCallbacks(old_block_devices, block_devices m
 	return added, nil
 }
 
-func (bd *BlockDevices) callDetachedCallbacks(old_block_devices, block_devices map[string]map[string]string) (int, error) {
+func (bd *BlockDevices) callDetachedCallbacks(
+	old_block_devices, block_devices map[string]map[string]string,
+) (int, error) {
 	removed := 0
 
 	for name := range old_block_devices {
@@ -229,7 +237,9 @@ func (bd *BlockDevices) convertDataMap(data map[string]string) (map[string]any, 
 	return converted, nil
 }
 
-func (bd *BlockDevices) parseLsblkOutput(output string) (map[string]map[string]string, error) {
+func (bd *BlockDevices) parseLsblkOutput(
+	output string,
+) (map[string]map[string]string, error) {
 	parsed := make(map[string]map[string]string)
 
 	output_lines := strings.Split(output, "\n")
@@ -253,11 +263,15 @@ func (bd *BlockDevices) parseLsblkOutput(output string) (map[string]map[string]s
 	return parsed, nil
 }
 
-func (bd *BlockDevices) AddAttachedCallback(callback interfaces.AttachedBlockDeviceCallback) {
+func (bd *BlockDevices) AddAttachedCallback(
+	callback interfaces.AttachedBlockDeviceCallback,
+) {
 	bd.attachedCallbacks = append(bd.attachedCallbacks, callback)
 }
 
-func (bd *BlockDevices) AddDetachedCallback(callback interfaces.DetachedBlockDeviceCallback) {
+func (bd *BlockDevices) AddDetachedCallback(
+	callback interfaces.DetachedBlockDeviceCallback,
+) {
 	bd.detachedCallback = append(bd.detachedCallback, callback)
 }
 

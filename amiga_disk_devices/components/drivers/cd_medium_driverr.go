@@ -33,9 +33,17 @@ func (cdmd *CDMediumDriver) Probe(
 	// last chance, try to read at least 2048 bytes (CD sector size) from the medium
 	// non-inserted medium or audio CDs will report just error
 	// here, or count of the readed bytes will be less than 2048
-	data, n, err := utils.FileUtilsInstance.FileReadBytes(path, 0, shared.CD_DEVICE_SECTOR_SIZE, 0, 0, nil)
+	data, n, err := utils.FileUtilsInstance.FileReadBytes(
+		path,
+		0,
+		shared.CD_DEVICE_SECTOR_SIZE,
+		0,
+		0,
+		nil,
+	)
 
-	if len(data) < shared.CD_DEVICE_SECTOR_SIZE || n < shared.CD_DEVICE_SECTOR_SIZE || err != nil {
+	if len(data) < shared.CD_DEVICE_SECTOR_SIZE || n < shared.CD_DEVICE_SECTOR_SIZE ||
+		err != nil {
 		return nil, nil
 	}
 

@@ -34,7 +34,9 @@ func (ml *MountpointList) RemoveMountpoint(mountpoint *Mountpoint) {
 	}
 }
 
-func (ml *MountpointList) GetMountpointByDevicePathname(devicePathname string) *Mountpoint {
+func (ml *MountpointList) GetMountpointByDevicePathname(
+	devicePathname string,
+) *Mountpoint {
 	for _, iMp := range ml.Mountpoints {
 		if iMp.DevicePathname == devicePathname {
 			return iMp

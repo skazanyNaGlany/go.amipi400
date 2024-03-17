@@ -71,7 +71,14 @@ func (hdmd *HardDiskMediumDriver) Probe(
 }
 
 func (hdmd *HardDiskMediumDriver) hasDOSheader(path string) (bool, error) {
-	data, n, err := utils.FileUtilsInstance.FileReadBytes(path, 0, shared.HD_DEVICE_SECTOR_SIZE, 0, 0, nil)
+	data, n, err := utils.FileUtilsInstance.FileReadBytes(
+		path,
+		0,
+		shared.HD_DEVICE_SECTOR_SIZE,
+		0,
+		0,
+		nil,
+	)
 
 	if err != nil {
 		return false, err

@@ -379,20 +379,35 @@ func servicesIdleCallback(sender any) {
 }
 
 func isSoftResetKeys() bool {
-	return allKeyboardsControl.IsKeysReleasedAgo(shared.SOFT_RESET_KEYS, shared.SOFT_RESET_KEYS_MIN_MS)
+	return allKeyboardsControl.IsKeysReleasedAgo(
+		shared.SOFT_RESET_KEYS,
+		shared.SOFT_RESET_KEYS_MIN_MS,
+	)
 }
 
 func isHardResetKeys() bool {
-	return allKeyboardsControl.IsKeysReleasedAgo(shared.HARD_RESET_KEYS, shared.HARD_RESET_KEYS_MIN_MS)
+	return allKeyboardsControl.IsKeysReleasedAgo(
+		shared.HARD_RESET_KEYS,
+		shared.HARD_RESET_KEYS_MIN_MS,
+	)
 }
 
 func isToggleZoomKeys() bool {
-	return allKeyboardsControl.IsKeysReleasedAgo(shared.TOGGLE_ZOOM_KEYS, shared.TOGGLE_ZOOM_KEYS_MIN_MS) ||
-		allKeyboardsControl.IsKeysReleasedAgo(shared.TOGGLE_ZOOM_KEYS_ALT, shared.TOGGLE_ZOOM_KEYS_MIN_MS)
+	return allKeyboardsControl.IsKeysReleasedAgo(
+		shared.TOGGLE_ZOOM_KEYS,
+		shared.TOGGLE_ZOOM_KEYS_MIN_MS,
+	) ||
+		allKeyboardsControl.IsKeysReleasedAgo(
+			shared.TOGGLE_ZOOM_KEYS_ALT,
+			shared.TOGGLE_ZOOM_KEYS_MIN_MS,
+		)
 }
 
 func isShutdownKeys() bool {
-	return allKeyboardsControl.IsKeysReleasedAgo(shared.SHUTDOWN_KEYS, shared.SHUTDOWN_KEYS_MIN_MS)
+	return allKeyboardsControl.IsKeysReleasedAgo(
+		shared.SHUTDOWN_KEYS,
+		shared.SHUTDOWN_KEYS_MIN_MS,
+	)
 }
 
 func getKeyboardCommand() (string, string) {
@@ -725,7 +740,10 @@ func lowLevelCopy(
 	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
 	// TODO move to consts.go
-	supportedDevices := []string{shared.LOW_LEVEL_DEVICE_FLOPPY, shared.LOW_LEVEL_DEVICE_HARD_DISK}
+	supportedDevices := []string{
+		shared.LOW_LEVEL_DEVICE_FLOPPY,
+		shared.LOW_LEVEL_DEVICE_HARD_DISK,
+	}
 
 	sourceIndexInt, _ := utils.StringUtilsInstance.StringToInt(sourceIndex, 10, 16)
 	targetIndexInt, _ := utils.StringUtilsInstance.StringToInt(targetIndex, 10, 16)
@@ -784,7 +802,8 @@ func lowLevelCopy(
 	// resume the emulator
 	// attach again
 
-	if sourceLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK || targetLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK {
+	if sourceLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK ||
+		targetLowLevelDevice == shared.LOW_LEVEL_DEVICE_HARD_DISK {
 		onHDOperationStart()
 		defer onHDOperationDone()
 	}
@@ -935,7 +954,9 @@ func lowLevelCopy(
 	utils.UnixUtilsInstance.Sync()
 }
 
-func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetIndex string) {
+func dfInsertFromSourceIndexToTargetIndexByDiskNo(
+	diskNo, sourceIndex, targetIndex string,
+) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
 	defer powerLEDControl.BlinkPowerLEDSecs(shared.CMD_SUCCESS_BLINK_POWER_SECS)
 
@@ -991,7 +1012,11 @@ func dfInsertFromSourceIndexToTargetIndexByDiskNo(diskNo, sourceIndex, targetInd
 		return
 	}
 
-	requiredDiskNoOfMax := fmt.Sprintf(shared.ADF_DISK_NO_OF_MAX, diskNoInt, lenFoundAdfPathnames)
+	requiredDiskNoOfMax := fmt.Sprintf(
+		shared.ADF_DISK_NO_OF_MAX,
+		diskNoInt,
+		lenFoundAdfPathnames,
+	)
 
 	for _, pathname := range foundAdfPathnames {
 		if strings.Contains(pathname, requiredDiskNoOfMax) {
@@ -1392,18 +1417,29 @@ func isHdfAttached(hdfPathname string) int {
 	return shared.DRIVE_INDEX_UNSPECIFIED
 }
 
-func findSimilarROMFiles(mountpoint *components_amipi400.Mountpoint, pathname string) []string {
+func findSimilarROMFiles(
+	mountpoint *components_amipi400.Mountpoint,
+	pathname string,
+) []string {
 	basename := path.Base(pathname)
 	extension := path.Ext(basename)
 
-	diskNoStrPart := utils.RegExInstance.FindNamedMatches(shared.ADF_DISK_NO_OF_MAX_RE, basename)
+	diskNoStrPart := utils.RegExInstance.FindNamedMatches(
+		shared.ADF_DISK_NO_OF_MAX_RE,
+		basename,
+	)
 
 	if len(diskNoStrPart) == 0 {
 		// there is no (Disk NO of MAX) in the ADF name
 		return []string{pathname}
 	}
 
-	noDiskSignFilename := strings.Replace(basename, diskNoStrPart["disk_no_of_max"], "", 1)
+	noDiskSignFilename := strings.Replace(
+		basename,
+		diskNoStrPart["disk_no_of_max"],
+		"",
+		1,
+	)
 	noExtFilename := strings.TrimSuffix(noDiskSignFilename, extension)
 
 	similar := make([]string, 0)
@@ -1431,7 +1467,10 @@ func findSimilarROMFiles(mountpoint *components_amipi400.Mountpoint, pathname st
 	return similar
 }
 
-func findSimilarROMFile(mountpoint *components_amipi400.Mountpoint, filenamePattern string) string {
+func findSimilarROMFile(
+	mountpoint *components_amipi400.Mountpoint,
+	filenamePattern string,
+) string {
 	if !mountpoint.HasFiles() {
 		return ""
 	}
@@ -1451,7 +1490,12 @@ func findSimilarROMFile(mountpoint *components_amipi400.Mountpoint, filenamePatt
 
 		for _, iRomPart := range iRomParts {
 			if strings.Index(filenamePatternCopy, iRomPart) == 0 {
-				filenamePatternCopy = strings.Replace(filenamePatternCopy, iRomPart, "", 1)
+				filenamePatternCopy = strings.Replace(
+					filenamePatternCopy,
+					iRomPart,
+					"",
+					1,
+				)
 				filenamePatternCopy = strings.TrimSpace(filenamePatternCopy)
 
 				if filenamePatternCopy == "" {
@@ -1523,7 +1567,9 @@ func dfInsertFromSourceIndexToManyIndex(filenamePart, sourceIndex string) {
 			}
 
 			if !detachAdf(targetIndexInt, targetIndexAdf) {
-				numLockLEDControl.BlinkNumLockLEDSecs(shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS)
+				numLockLEDControl.BlinkNumLockLEDSecs(
+					shared.CMD_FAILURE_BLINK_NUM_LOCK_SECS,
+				)
 				return
 			}
 		}
@@ -1695,20 +1741,40 @@ func setupAddMountpoint(
 	}
 
 	if err := os.MkdirAll(mountpointStr, 0777); err != nil {
-		return nil, fmt.Errorf("cannot create directory for mountpoint %v (%v, %v)", mountpointStr, devicePathname, err)
+		return nil, fmt.Errorf(
+			"cannot create directory for mountpoint %v (%v, %v)",
+			mountpointStr,
+			devicePathname,
+			err,
+		)
 	}
 
-	mountpoint := components_amipi400.NewMountpoint(devicePathname, mountpointStr, label, fsType)
+	mountpoint := components_amipi400.NewMountpoint(
+		devicePathname,
+		mountpointStr,
+		label,
+		fsType,
+	)
 
 	log.Printf("Fix %v\n", mountpoint.DevicePathname)
 	mountpoint.Fix()
 
 	utils.UnixUtilsInstance.Sync()
 
-	log.Printf("Mount %v as %v (%v)\n", mountpoint.DevicePathname, mountpoint.Mountpoint, mountpoint.FsType)
+	log.Printf(
+		"Mount %v as %v (%v)\n",
+		mountpoint.DevicePathname,
+		mountpoint.Mountpoint,
+		mountpoint.FsType,
+	)
 
 	if err := mountpoint.Mount(); err != nil {
-		return nil, fmt.Errorf("cannot mount mountpoint %v (%v, %v)", mountpointStr, devicePathname, err)
+		return nil, fmt.Errorf(
+			"cannot mount mountpoint %v (%v, %v)",
+			mountpointStr,
+			devicePathname,
+			err,
+		)
 	}
 
 	if extensions != nil {
@@ -1719,10 +1785,15 @@ func setupAddMountpoint(
 		log.Printf("Cannot load medium config for %v: %v\n", mountpoint.Mountpoint, err)
 	}
 
-	if extensions != nil && !mountpoint.HasFiles() && mountpoint.Config.AmiPi400.DefaultFile != shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
+	if extensions != nil && !mountpoint.HasFiles() &&
+		mountpoint.Config.AmiPi400.DefaultFile != shared.MEDIUM_CONFIG_DEFAULT_FILE_NONE {
 		unmountMountpoint(mountpoint, false)
 
-		return nil, fmt.Errorf("%v contains no %v files", label, strings.Join(extensions, ","))
+		return nil, fmt.Errorf(
+			"%v contains no %v files",
+			label,
+			strings.Join(extensions, ","),
+		)
 	}
 
 	if dfIndex != shared.DRIVE_INDEX_UNSPECIFIED {
@@ -1746,7 +1817,12 @@ func setupAddMountpoint(
 func unmountMountpoint(mountpoint *components_amipi400.Mountpoint, remove bool) bool {
 	var err error
 
-	log.Printf("Unmount %v from %v (%v)\n", mountpoint.DevicePathname, mountpoint.Mountpoint, mountpoint.FsType)
+	log.Printf(
+		"Unmount %v from %v (%v)\n",
+		mountpoint.DevicePathname,
+		mountpoint.Mountpoint,
+		mountpoint.FsType,
+	)
 
 	// try to unmount a mountpoint for 16 times
 	for i := 0; i < 8; i++ {
@@ -1974,7 +2050,17 @@ func attachMediumDiskImage(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	if shared.AP4_MEDIUM_DF_RE.MatchString(label) {
-		attachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+		attachDFMediumDiskImage(
+			name,
+			size,
+			_type,
+			mountpoint,
+			label,
+			path,
+			fsType,
+			ptType,
+			readOnly,
+		)
 	} else if shared.AP4_MEDIUM_DH_RE.MatchString(label) {
 		attachDHMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	} else if shared.AP4_MEDIUM_HF_RE.MatchString(label) {
@@ -2063,7 +2149,17 @@ func detachMediumDiskImage(
 	_type, mountpoint, label, path, fsType, ptType string,
 	readOnly bool) {
 	if shared.AP4_MEDIUM_DF_RE.MatchString(label) {
-		detachDFMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+		detachDFMediumDiskImage(
+			name,
+			size,
+			_type,
+			mountpoint,
+			label,
+			path,
+			fsType,
+			ptType,
+			readOnly,
+		)
 	} else if shared.AP4_MEDIUM_DH_RE.MatchString(label) {
 		detachHDMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
 	} else if shared.AP4_MEDIUM_HF_RE.MatchString(label) {
@@ -2088,9 +2184,29 @@ func attachedBlockDeviceCallback(
 
 	log.Println("Found new block device", path)
 
-	utils.BlockDeviceUtilsInstance.PrintBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	utils.BlockDeviceUtilsInstance.PrintBlockDevice(
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly,
+	)
 
-	attachMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	attachMediumDiskImage(
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly,
+	)
 }
 
 func detachedBlockDeviceCallback(
@@ -2108,9 +2224,29 @@ func detachedBlockDeviceCallback(
 
 	log.Println("Removed block device", path)
 
-	utils.BlockDeviceUtilsInstance.PrintBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	utils.BlockDeviceUtilsInstance.PrintBlockDevice(
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly,
+	)
 
-	detachMediumDiskImage(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	detachMediumDiskImage(
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly,
+	)
 }
 
 func discoverDriveDevices() {
@@ -2318,8 +2454,12 @@ func main() {
 	powerLEDControl.BlinkPowerLEDSecs(shared.CMD_PENDING_BLINK_POWER_SECS)
 	emulator.SetRerunEmulator(false)
 
-	amigaDiskDevicesDiscovery.SetAttachedAmigaDiskDeviceCallback(attachedAmigaDiskDeviceCallback)
-	amigaDiskDevicesDiscovery.SetDetachedAmigaDiskDeviceCallback(detachedAmigaDiskDeviceCallback)
+	amigaDiskDevicesDiscovery.SetAttachedAmigaDiskDeviceCallback(
+		attachedAmigaDiskDeviceCallback,
+	)
+	amigaDiskDevicesDiscovery.SetDetachedAmigaDiskDeviceCallback(
+		detachedAmigaDiskDeviceCallback,
+	)
 	amigaDiskDevicesDiscovery.SetMountpoint(shared.FILE_SYSTEM_MOUNT)
 	amigaDiskDevicesDiscovery.SetIdleCallback(servicesIdleCallback)
 	allKeyboardsControl.SetKeyEventCallback(keyEventCallback)

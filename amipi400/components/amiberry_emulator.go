@@ -124,7 +124,12 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 			bootPriority := ae.hdfsBootPriority[i]
 			label := ae.hdfsLabel[i]
 
-			key, value := ae.commander.FormatFileSystem2_CO(i, label, pathname, bootPriority)
+			key, value := ae.commander.FormatFileSystem2_CO(
+				i,
+				label,
+				pathname,
+				bootPriority,
+			)
 			hard_drives += key + "=" + value + "\n"
 
 			key, value = ae.commander.FormatUaeHfDir_CO(i, label, pathname, bootPriority)
@@ -163,7 +168,11 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 	}
 
 	hard_drives = strings.TrimSpace(hard_drives)
-	templateContentStr = strings.ReplaceAll(templateContentStr, "{{hard_drives}}", hard_drives)
+	templateContentStr = strings.ReplaceAll(
+		templateContentStr,
+		"{{hard_drives}}",
+		hard_drives,
+	)
 
 	// cds
 	for i, pathname := range ae.cds {
@@ -195,7 +204,9 @@ func (ae *AmiberryEmulator) getEmulatorProcessedConfig() (string, error) {
 		key, value = ae.commander.FormatGfxHeightCO(shared.AMIBERRY_ZOOM_WINDOW_HEIGHT)
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 
-		key, value = ae.commander.FormatGfxHeightWindowedCO(shared.AMIBERRY_ZOOM_WINDOW_HEIGHT)
+		key, value = ae.commander.FormatGfxHeightWindowedCO(
+			shared.AMIBERRY_ZOOM_WINDOW_HEIGHT,
+		)
 		templateContentStr = strings.ReplaceAll(templateContentStr, "{{"+key+"}}", value)
 	} else {
 		key, value := ae.commander.FormatGfxCenterHorizontalCO(false)
@@ -307,7 +318,12 @@ func (ae *AmiberryEmulator) GetConfigPathname() string {
 	return ae.configPathname
 }
 
-func (ae *AmiberryEmulator) AttachAdf(index int, pathname string, volume int, volumeNoDisk int) error {
+func (ae *AmiberryEmulator) AttachAdf(
+	index int,
+	pathname string,
+	volume int,
+	volumeNoDisk int,
+) error {
 	// set floppy sound volume
 	ae.floppySoundVolumeDisk[index] = volume
 	ae.floppySoundVolumeNoDisk[index] = volume
@@ -410,7 +426,11 @@ func (ae *AmiberryEmulator) getHdfType(pathname string) (int, error) {
 	return 0, fmt.Errorf("cannot determine HDF type %v", pathname)
 }
 
-func (ae *AmiberryEmulator) AttachHdf(index int, bootPriority int, pathname string) error {
+func (ae *AmiberryEmulator) AttachHdf(
+	index int,
+	bootPriority int,
+	pathname string,
+) error {
 	stat, err := os.Stat(pathname)
 
 	if err != nil {
@@ -433,7 +453,11 @@ func (ae *AmiberryEmulator) AttachHdf(index int, bootPriority int, pathname stri
 	return nil
 }
 
-func (ae *AmiberryEmulator) AttachHdDir(index int, bootPriority int, pathname string) error {
+func (ae *AmiberryEmulator) AttachHdDir(
+	index int,
+	bootPriority int,
+	pathname string,
+) error {
 	stat, err := os.Stat(pathname)
 
 	if err != nil {
@@ -530,7 +554,11 @@ func (ae *AmiberryEmulator) DetachCd(index int) error {
 }
 
 // This will enable/disable sound for a floppy and set its volume
-func (ae *AmiberryEmulator) SetFloppySoundVolumeDisk(index int, volume int, volumeNoDisk int) error {
+func (ae *AmiberryEmulator) SetFloppySoundVolumeDisk(
+	index int,
+	volume int,
+	volumeNoDisk int,
+) error {
 	ae.floppySoundVolumeDisk[index] = volume
 	ae.floppySoundVolumeNoDisk[index] = volume
 

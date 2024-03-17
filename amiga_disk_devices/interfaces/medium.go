@@ -38,8 +38,24 @@ type Medium interface {
 	AddClosedCallback(closedCallback ClosedCallback)
 	CallPreReadCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64)
 	CallPreWriteCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64)
-	CallPostReadCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64)
-	CallPostWriteCallbacks(_medium Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64)
+	CallPostReadCallbacks(
+		_medium Medium,
+		path string,
+		buff []byte,
+		ofst int64,
+		fh uint64,
+		n int,
+		opTimeMs int64,
+	)
+	CallPostWriteCallbacks(
+		_medium Medium,
+		path string,
+		buff []byte,
+		ofst int64,
+		fh uint64,
+		n int,
+		opTimeMs int64,
+	)
 	CallClosedCallbacks(_medium Medium, err error)
 	DevicePathnameToPublicFilename(devicePathname string, extension string) string
 	Open(path string, flags int) (errc int, fh uint64)

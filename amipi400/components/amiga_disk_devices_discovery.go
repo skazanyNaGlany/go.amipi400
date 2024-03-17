@@ -70,11 +70,15 @@ func (addd *AmigaDiskDevicesDiscovery) callCallbacks(files []string, oldFiles []
 	}
 }
 
-func (addd *AmigaDiskDevicesDiscovery) SetAttachedAmigaDiskDeviceCallback(callback interfaces.AttachedAmigaDiskDeviceCallback) {
+func (addd *AmigaDiskDevicesDiscovery) SetAttachedAmigaDiskDeviceCallback(
+	callback interfaces.AttachedAmigaDiskDeviceCallback,
+) {
 	addd.attachedAmigaDiskDeviceCallback = callback
 }
 
-func (addd *AmigaDiskDevicesDiscovery) SetDetachedAmigaDiskDeviceCallback(callback interfaces.DetachedAmigaDiskDeviceCallback) {
+func (addd *AmigaDiskDevicesDiscovery) SetDetachedAmigaDiskDeviceCallback(
+	callback interfaces.DetachedAmigaDiskDeviceCallback,
+) {
 	addd.detachedAmigaDiskDeviceCallback = callback
 }
 

@@ -221,11 +221,31 @@ func attachedBlockDeviceCallback(
 
 	log.Println("Found new block device", path)
 
-	utils.BlockDeviceUtilsInstance.PrintBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	utils.BlockDeviceUtilsInstance.PrintBlockDevice(
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly,
+	)
 
 	formatted := false
 
-	if formatDeviceIfNeeded(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly) {
+	if formatDeviceIfNeeded(
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly,
+	) {
 		// affect these variables so the driver will
 		// think the medium is "unknown"
 		mountpoint = ""
@@ -236,7 +256,18 @@ func attachedBlockDeviceCallback(
 		formatted = true
 	}
 
-	_medium, err := ProbeMediumForDriver(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly, formatted)
+	_medium, err := ProbeMediumForDriver(
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly,
+		formatted,
+	)
 
 	if err != nil {
 		log.Println(err)
@@ -248,7 +279,12 @@ func attachedBlockDeviceCallback(
 		return
 	}
 
-	log.Printf("Medium %v will be handled by %T driver (as %v)\n", path, _medium.GetDriver(), _medium.GetPublicPathname())
+	log.Printf(
+		"Medium %v will be handled by %T driver (as %v)\n",
+		path,
+		_medium.GetDriver(),
+		_medium.GetPublicPathname(),
+	)
 
 	_medium.AddPreReadCallback(preReadCallback)
 	_medium.AddPostReadCallback(postReadCallback)
@@ -284,7 +320,17 @@ func detachedBlockDeviceCallback(
 
 	log.Println("Removed block device", path)
 
-	utils.BlockDeviceUtilsInstance.PrintBlockDevice(name, size, _type, mountpoint, label, path, fsType, ptType, readOnly)
+	utils.BlockDeviceUtilsInstance.PrintBlockDevice(
+		name,
+		size,
+		_type,
+		mountpoint,
+		label,
+		path,
+		fsType,
+		ptType,
+		readOnly,
+	)
 
 	if _, err := fileSystem.RemoveMediumByDevicePathname(path); err != nil {
 		log.Println("Unable to close medium:", path, ":", err)
@@ -382,24 +428,52 @@ func onHardDiskRead(_medium interfaces_amiga_disk_devices.Medium) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.HARD_DISK_READ_BLINK_POWER_SECS)
 }
 
-func preReadCallback(_medium interfaces_amiga_disk_devices.Medium, path string, buff []byte, ofst int64, fh uint64) {
+func preReadCallback(
+	_medium interfaces_amiga_disk_devices.Medium,
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+) {
 	// do not put too much logic here, since it will slow down MediumBase.Read
 	// or FloppyMediumDriver.Read, same for callbacks related for Write
 	onFloppyRead(_medium, ofst)
 	onHardDiskRead(_medium)
 }
 
-func postReadCallback(_medium interfaces_amiga_disk_devices.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+func postReadCallback(
+	_medium interfaces_amiga_disk_devices.Medium,
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+	n int,
+	opTimeMs int64,
+) {
 	// onFloppyRead(_medium, ofst)
 	onHardDiskRead(_medium)
 }
 
-func preWriteCallback(_medium interfaces_amiga_disk_devices.Medium, path string, buff []byte, ofst int64, fh uint64) {
+func preWriteCallback(
+	_medium interfaces_amiga_disk_devices.Medium,
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+) {
 	onFloppyWrite(_medium)
 	onMediumWrite(_medium)
 }
 
-func postWriteCallback(_medium interfaces_amiga_disk_devices.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+func postWriteCallback(
+	_medium interfaces_amiga_disk_devices.Medium,
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+	n int,
+	opTimeMs int64,
+) {
 	onFloppyWrite(_medium)
 	onMediumWrite(_medium)
 }
@@ -407,17 +481,42 @@ func postWriteCallback(_medium interfaces_amiga_disk_devices.Medium, path string
 func closedCallback(_medium interfaces_amiga_disk_devices.Medium, err error) {
 }
 
-func fileWriteBytesCallback(name string, offset int64, buff []byte, flag int, perm fs.FileMode, useHandle *os.File, n int, err error) {
+func fileWriteBytesCallback(
+	name string,
+	offset int64,
+	buff []byte,
+	flag int,
+	perm fs.FileMode,
+	useHandle *os.File,
+	n int,
+	err error,
+) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.FLOPPY_WRITE_BLINK_POWER_SECS)
 }
 
-func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag int, perm fs.FileMode, useHandle *os.File, oneTimeFinal bool) {
+func outsideAsyncFileWriterCallback(
+	name string,
+	offset int64,
+	buff []byte,
+	flag int,
+	perm fs.FileMode,
+	useHandle *os.File,
+	oneTimeFinal bool,
+) {
 	powerLEDControl.BlinkPowerLEDSecs(shared.FLOPPY_WRITE_BLINK_POWER_SECS)
 
 	async := devicePathnameToAsyncFileOps(name)
 
 	if oneTimeFinal {
-		async.FileWriteBytesOneTimeFinal(name, offset, buff, flag, perm, useHandle, fileWriteBytesCallback)
+		async.FileWriteBytesOneTimeFinal(
+			name,
+			offset,
+			buff,
+			flag,
+			perm,
+			useHandle,
+			fileWriteBytesCallback,
+		)
 	} else {
 		async.FileWriteBytes(name, offset, buff, flag, perm, useHandle, 0, fileWriteBytesCallback)
 	}
@@ -426,7 +525,10 @@ func outsideAsyncFileWriterCallback(name string, offset int64, buff []byte, flag
 func keyEventCallback(sender any, key string, pressed bool) {
 }
 
-func preCacheADFCallback(_medium interfaces_amiga_disk_devices.Medium, targetADFpathname string) error {
+func preCacheADFCallback(
+	_medium interfaces_amiga_disk_devices.Medium,
+	targetADFpathname string,
+) error {
 	size, err := utils.FileUtilsInstance.GetDirSize(cachedAdfsDir)
 
 	if err != nil {
@@ -439,7 +541,11 @@ func preCacheADFCallback(_medium interfaces_amiga_disk_devices.Medium, targetADF
 	}
 
 	// exceeded the quota
-	log.Printf("Exceeded the quota for %v (max %v bytes)\n", cachedAdfsDir, shared.CACHED_ADFS_QUOTA)
+	log.Printf(
+		"Exceeded the quota for %v (max %v bytes)\n",
+		cachedAdfsDir,
+		shared.CACHED_ADFS_QUOTA,
+	)
 	log.Println("Trying to find oldest file to delete it")
 
 	oldest, err := utils.FileUtilsInstance.GetDirOldestFile(cachedAdfsDir)
@@ -542,7 +648,11 @@ func main() {
 
 	initCreateDirs(exeDir)
 
-	log.Printf("%v v%v\n", shared.AMIGA_DISK_DEVICES_UNIXNAME, shared.AMIGA_DISK_DEVICES_VERSION)
+	log.Printf(
+		"%v v%v\n",
+		shared.AMIGA_DISK_DEVICES_UNIXNAME,
+		shared.AMIGA_DISK_DEVICES_VERSION,
+	)
 	log.Printf("Executable directory %v\n", exeDir)
 	log.Printf("Log filename %v\n", logFilename)
 	log.Println("File system directory " + shared.FILE_SYSTEM_MOUNT)

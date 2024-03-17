@@ -45,28 +45,64 @@ const AUTORUN_EMULATOR = true
 var SOFT_RESET_KEYS []string = []string{KEY_L_CTRL, KEY_L_ALT, KEY_R_ALT}
 var HARD_RESET_KEYS []string = []string{KEY_L_CTRL, KEY_L_ALT, KEY_R_ALT}
 var AP4_MEDIUM_DF_RE = regexp.MustCompile(`^AP4_DF(?P<index>\d?|X)$`)
-var AP4_MEDIUM_DH_RE = regexp.MustCompile(`^AP4_DH(?P<index>\d?|X)(_(?P<boot_priority>\d))?$`)
-var AP4_MEDIUM_HF_RE = regexp.MustCompile(`^AP4_HF(?P<index>\d?|X)(_(?P<boot_priority>\d))?$`)
+
+var AP4_MEDIUM_DH_RE = regexp.MustCompile(
+	`^AP4_DH(?P<index>\d?|X)(_(?P<boot_priority>\d))?$`,
+)
+
+var AP4_MEDIUM_HF_RE = regexp.MustCompile(
+	`^AP4_HF(?P<index>\d?|X)(_(?P<boot_priority>\d))?$`,
+)
 var AP4_MEDIUM_CD_RE = regexp.MustCompile(`^AP4_CD(?P<index>\d?|X)$`)
-var DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_RE = regexp.MustCompile(`^DF(?P<source_index>\d)(?P<filename_part>.*)DF(?P<target_index>\d|N)$`)
-var DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_BY_DISK_NO_RE = regexp.MustCompile(`^DF(?P<source_index>\d)(?P<disk_no>\d\d?)DF(?P<target_index>\d|N)$`)
-var DF_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^DF(?P<source_index>\d)(?P<filename_part>.*)$`)
-var DF_INSERT_FROM_SOURCE_INDEX_BY_DISK_NO_RE = regexp.MustCompile(`^DF(?P<source_index>\d)(?P<disk_no>\d\d?)$`)
+
+var DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_RE = regexp.MustCompile(
+	`^DF(?P<source_index>\d)(?P<filename_part>.*)DF(?P<target_index>\d|N)$`,
+)
+
+var DF_INSERT_FROM_SOURCE_TO_TARGET_INDEX_BY_DISK_NO_RE = regexp.MustCompile(
+	`^DF(?P<source_index>\d)(?P<disk_no>\d\d?)DF(?P<target_index>\d|N)$`,
+)
+
+var DF_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(
+	`^DF(?P<source_index>\d)(?P<filename_part>.*)$`,
+)
+
+var DF_INSERT_FROM_SOURCE_INDEX_BY_DISK_NO_RE = regexp.MustCompile(
+	`^DF(?P<source_index>\d)(?P<disk_no>\d\d?)$`,
+)
 var DF_EJECT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^DF(?P<source_index>\d|N)$`)
-var CD_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^CD(?P<source_index>\d)(?P<filename_part>.*)$`)
+
+var CD_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(
+	`^CD(?P<source_index>\d)(?P<filename_part>.*)$`,
+)
 var CD_EJECT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^CD(?P<source_index>\d)$`)
-var ADF_DISK_NO_OF_MAX_RE = regexp.MustCompile(`(?P<disk_no_of_max>\((Disk\ \d)\ (of\ \d)\))`)
-var HF_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^HF(?P<source_index>\d)(?P<filename_part>.*)$`)
+
+var ADF_DISK_NO_OF_MAX_RE = regexp.MustCompile(
+	`(?P<disk_no_of_max>\((Disk\ \d)\ (of\ \d)\))`,
+)
+
+var HF_INSERT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(
+	`^HF(?P<source_index>\d)(?P<filename_part>.*)$`,
+)
 var HF_EJECT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^HF(?P<source_index>\d)$`)
 var DF_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UDF(?P<source_index>\d|N)$`)
 var CD_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UCD(?P<source_index>\d|N)$`)
 var HF_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UHF(?P<source_index>\d|N)$`)
 var DH_UNMOUNT_FROM_SOURCE_INDEX_RE = regexp.MustCompile(`^UDH(?P<source_index>\d|N)$`)
-var LOW_LEVEL_COPY_RE = regexp.MustCompile(`^C(?P<source_low_level_device>[A-Z][A-Z])(?P<source_index>\d)(?P<target_low_level_device>[A-Z][A-Z])(?P<target_index>\d)$`)
+
+var LOW_LEVEL_COPY_RE = regexp.MustCompile(
+	`^C(?P<source_low_level_device>[A-Z][A-Z])(?P<source_index>\d)(?P<target_low_level_device>[A-Z][A-Z])(?P<target_index>\d)$`,
+)
 var UNMOUNT_ALL_RE = regexp.MustCompile(`^U$`)
-var WIFI_CONNECT_RE = regexp.MustCompile(`^(?i)W,(?P<country_code_iso_iec_3166_1>[A-Z][A-Z]),(?P<ssid>.*),(?P<password>.*)$`)
+
+var WIFI_CONNECT_RE = regexp.MustCompile(
+	`^(?i)W,(?P<country_code_iso_iec_3166_1>[A-Z][A-Z]),(?P<ssid>.*),(?P<password>.*)$`,
+)
 var WIFI_DISCONNECT_RE = regexp.MustCompile(`^W$`)
-var IWCONFIG_INTERFACE_TO_SSID_RE = regexp.MustCompile(`(?P<name>^.*)IEEE.*802.*11.*ESSID\:(?P<ssid>.*)$`)
+
+var IWCONFIG_INTERFACE_TO_SSID_RE = regexp.MustCompile(
+	`(?P<name>^.*)IEEE.*802.*11.*ESSID\:(?P<ssid>.*)$`,
+)
 
 // amiga_disk_devices.go
 const AMIGA_DISK_DEVICES_UNIXNAME = "amiga_disk_devices"
@@ -96,7 +132,14 @@ var SHUTDOWN_KEYS []string = []string{KEY_LEFTMETA, KEY_F10}
 var CLEAR_BUFFER_KEYS []string = []string{KEY_ESC}
 var NUMPAD_EMULATE_ENTER_KEYS []string = []string{KEY_LEFTMETA, KEY_ENTER}
 var NUMPAD_EMULATE_STAR_KEYS []string = []string{KEY_LEFTMETA, KEY_8}
-var AMIGA_DISK_DEVICES_NEEDED_EXECUTABLES = []string{"sync", "fsck", "ufiformat", "hwinfo", "lsblk"}
+
+var AMIGA_DISK_DEVICES_NEEDED_EXECUTABLES = []string{
+	"sync",
+	"fsck",
+	"ufiformat",
+	"hwinfo",
+	"lsblk",
+}
 
 // PowerLEDControl
 const POWER_LED0_BRIGHTNESS_PATHNAME = "/sys/class/leds/led0/brightness"
@@ -146,11 +189,16 @@ const CACHED_ADF_HEADER_UUID_LENGTH = 32
 const HD_HDF_FULL_EXTENSION = "." + HD_HDF_EXTENSION
 
 // CachedADFHeader [2]
-var CACHED_ADF_HEADER_MAGIC = strings.ToUpper(AMIPI400_UNIXNAME + " v." + AMIPI400_VERSION)
+var CACHED_ADF_HEADER_MAGIC = strings.ToUpper(
+	AMIPI400_UNIXNAME + " v." + AMIPI400_VERSION,
+)
 
 // amipi400.go [2]
 var AMIBERRY_EXE_PATHNAME, _ = filepath.Abs(_AMIBERRY_EXE_PATHNAME)
-var AMIPI400_AMIBERRY_CONFIG_PATHNAME, _ = filepath.Abs(_AMIPI400_AMIBERRY_CONFIG_PATHNAME)
+
+var AMIPI400_AMIBERRY_CONFIG_PATHNAME, _ = filepath.Abs(
+	_AMIPI400_AMIBERRY_CONFIG_PATHNAME,
+)
 var AMIBERRY_EMULATOR_TMP_INI_PATHNAME = filepath.Join(
 	filepath.Dir(AMIBERRY_EXE_PATHNAME),
 	AMIBERRY_EMULATOR_TMP_INI_FILENAME)

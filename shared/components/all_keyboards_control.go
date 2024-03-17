@@ -164,7 +164,9 @@ func (akc *AllKeyboardsControl) findAllKeyboardDevices() []string {
 	return funk.UniqString(devices)
 }
 
-func (akc *AllKeyboardsControl) SetKeyEventCallback(callback interfaces.KeyEventCallback) {
+func (akc *AllKeyboardsControl) SetKeyEventCallback(
+	callback interfaces.KeyEventCallback,
+) {
 	akc.keyEventCallback = callback
 }
 

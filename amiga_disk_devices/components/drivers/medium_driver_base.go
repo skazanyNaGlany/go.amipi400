@@ -18,7 +18,11 @@ type MediumDriverBase struct {
 	debugMode   bool
 }
 
-func (mdb *MediumDriverBase) Open(medium interfaces.Medium, path string, flags int) (errc int, fh uint64) {
+func (mdb *MediumDriverBase) Open(
+	medium interfaces.Medium,
+	path string,
+	flags int,
+) (errc int, fh uint64) {
 	is_writing := 0
 
 	is_writing += flags & os.O_WRONLY
@@ -34,7 +38,12 @@ func (mdb *MediumDriverBase) Open(medium interfaces.Medium, path string, flags i
 	return 0, 0
 }
 
-func (mdb *MediumDriverBase) Getattr(medium interfaces.Medium, path string, stat *fuse.Stat_t, fh uint64) (int, error) {
+func (mdb *MediumDriverBase) Getattr(
+	medium interfaces.Medium,
+	path string,
+	stat *fuse.Stat_t,
+	fh uint64,
+) (int, error) {
 	creationTime := medium.GetCreateTime()
 	accessTime := medium.GetAccessTime()
 	modificationTime := medium.GetModificationTime()
@@ -58,7 +67,13 @@ func (mdb *MediumDriverBase) Getattr(medium interfaces.Medium, path string, stat
 	return 0, nil
 }
 
-func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+func (mdb *MediumDriverBase) Read(
+	medium interfaces.Medium,
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+) (int, error) {
 	mutex := medium.GetMutex()
 
 	mutex.Lock()
@@ -98,7 +113,13 @@ func (mdb *MediumDriverBase) Read(medium interfaces.Medium, path string, buff []
 	return n, nil
 }
 
-func (mdb *MediumDriverBase) Write(medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) (int, error) {
+func (mdb *MediumDriverBase) Write(
+	medium interfaces.Medium,
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+) (int, error) {
 	mutex := medium.GetMutex()
 
 	mutex.Lock()
@@ -165,7 +186,10 @@ func (mdb *MediumDriverBase) generatePermIntMask(
 	return uint32(mask)
 }
 
-func (mdb *MediumDriverBase) OpenMediumHandle(medium interfaces.Medium, readAhead ...int) (*os.File, error) {
+func (mdb *MediumDriverBase) OpenMediumHandle(
+	medium interfaces.Medium,
+	readAhead ...int,
+) (*os.File, error) {
 	handle, err := medium.GetHandle()
 
 	if err != nil {
@@ -236,7 +260,9 @@ func (mdb *MediumDriverBase) CloseMedium(medium interfaces.Medium) error {
 }
 
 // Check if the medium is known to the system
-func (mdb *MediumDriverBase) isKnownMedium(name, mountpoint, label, path, fsType, ptType string) bool {
+func (mdb *MediumDriverBase) isKnownMedium(
+	name, mountpoint, label, path, fsType, ptType string,
+) bool {
 	return mountpoint != "" || label != "" || fsType != "" || ptType != ""
 }
 

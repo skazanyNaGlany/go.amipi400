@@ -140,7 +140,10 @@ func (wc *WIFIControl) Interfaces() (map[string]string, error) {
 	for _, line := range strings.Split(string(output), "\n") {
 		line = strings.TrimSpace(line)
 
-		matches := utils.RegExInstance.FindNamedMatches(shared.IWCONFIG_INTERFACE_TO_SSID_RE, line)
+		matches := utils.RegExInstance.FindNamedMatches(
+			shared.IWCONFIG_INTERFACE_TO_SSID_RE,
+			line,
+		)
 
 		if len(matches) == 0 {
 			continue
@@ -173,7 +176,9 @@ func (wc *WIFIControl) connect(countryCode string, ssid string, password string)
 	firstInterfaceName := funk.Keys(ifaces).([]string)[0]
 
 	if ifaces[firstInterfaceName] != "off/any" {
-		return errors.New("WIFI is connected to " + ifaces[firstInterfaceName] + " network, disconnect first")
+		return errors.New(
+			"WIFI is connected to " + ifaces[firstInterfaceName] + " network, disconnect first",
+		)
 	}
 
 	if _, err := exec.Command("iw", "reg", "set", countryCode).CombinedOutput(); err != nil {

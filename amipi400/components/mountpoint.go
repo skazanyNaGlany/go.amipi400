@@ -99,7 +99,12 @@ func (m *Mountpoint) setupDefaultFilePath() error {
 	return nil
 }
 
-func NewMountpoint(devicePathname string, mountpoint string, label string, fsType string) *Mountpoint {
+func NewMountpoint(
+	devicePathname string,
+	mountpoint string,
+	label string,
+	fsType string,
+) *Mountpoint {
 	mp := Mountpoint{
 		DevicePathname: devicePathname,
 		Mountpoint:     mountpoint,
@@ -110,7 +115,9 @@ func NewMountpoint(devicePathname string, mountpoint string, label string, fsTyp
 	mp.DFIndex = shared.DRIVE_INDEX_UNSPECIFIED
 	mp.DHIndex = shared.DRIVE_INDEX_UNSPECIFIED
 	mp.CDIndex = shared.DRIVE_INDEX_UNSPECIFIED
-	mp.Config = NewMountpointConfig(filepath.Join(mountpoint, shared.MEDIUM_CONFIG_INI_NAME))
+	mp.Config = NewMountpointConfig(
+		filepath.Join(mountpoint, shared.MEDIUM_CONFIG_INI_NAME),
+	)
 
 	return &mp
 }

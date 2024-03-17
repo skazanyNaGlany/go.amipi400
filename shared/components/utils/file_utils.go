@@ -58,7 +58,11 @@ func (fu *FileUtils) GetDirSize(path string) (int64, error) {
 	return size, err
 }
 
-func (fu *FileUtils) GetDirFiles(dir string, relative bool, extensions ...string) []string {
+func (fu *FileUtils) GetDirFiles(
+	dir string,
+	relative bool,
+	extensions ...string,
+) []string {
 	result := make([]string, 0)
 	files, err := ioutil.ReadDir(dir)
 
@@ -192,7 +196,11 @@ func (fu *FileUtils) FileWriteBytes(
 	return n, nil
 }
 
-func (fu *FileUtils) CopyFile(sourcePathname string, targetPathname string, callback CopyFileCallback) error {
+func (fu *FileUtils) CopyFile(
+	sourcePathname string,
+	targetPathname string,
+	callback CopyFileCallback,
+) error {
 	stat, err := os.Stat(sourcePathname)
 
 	if err != nil {

@@ -87,7 +87,12 @@ func (afo *AsyncFileOps) executeOneTimeFinal() {
 	}
 }
 
-func (afo *AsyncFileOps) openDirectIOHandle(name string, flag int, perm fs.FileMode, handles map[string]*os.File) (*os.File, error) {
+func (afo *AsyncFileOps) openDirectIOHandle(
+	name string,
+	flag int,
+	perm fs.FileMode,
+	handles map[string]*os.File,
+) (*os.File, error) {
 	handle, exists := handles[name]
 
 	if exists {
@@ -105,7 +110,12 @@ func (afo *AsyncFileOps) openDirectIOHandle(name string, flag int, perm fs.FileM
 	return handle, nil
 }
 
-func (afo *AsyncFileOps) openHandle(name string, flag int, perm fs.FileMode, handles map[string]*os.File) (*os.File, error) {
+func (afo *AsyncFileOps) openHandle(
+	name string,
+	flag int,
+	perm fs.FileMode,
+	handles map[string]*os.File,
+) (*os.File, error) {
 	handle, exists := handles[name]
 
 	if exists {
@@ -123,7 +133,10 @@ func (afo *AsyncFileOps) openHandle(name string, flag int, perm fs.FileMode, han
 	return handle, nil
 }
 
-func (afo *AsyncFileOps) executeDirectReadOperation(ioperation map[string]any, handles map[string]*os.File) {
+func (afo *AsyncFileOps) executeDirectReadOperation(
+	ioperation map[string]any,
+	handles map[string]*os.File,
+) {
 	var err error
 	var n int
 
@@ -175,7 +188,10 @@ func (afo *AsyncFileOps) executeDirectReadOperation(ioperation map[string]any, h
 	}
 }
 
-func (afo *AsyncFileOps) executeWriteOperation(ioperation map[string]any, handles map[string]*os.File) {
+func (afo *AsyncFileOps) executeWriteOperation(
+	ioperation map[string]any,
+	handles map[string]*os.File,
+) {
 	var err error
 	var n int
 
@@ -203,14 +219,24 @@ func (afo *AsyncFileOps) executeWriteOperation(ioperation map[string]any, handle
 		}
 	}
 
-	n, err = utils.FileUtilsInstance.FileWriteBytes(name, offset, buff, flag, perm, useHandle)
+	n, err = utils.FileUtilsInstance.FileWriteBytes(
+		name,
+		offset,
+		buff,
+		flag,
+		perm,
+		useHandle,
+	)
 
 	if callback != nil {
 		callback(name, offset, buff, flag, perm, useHandle, n, err)
 	}
 }
 
-func (afo *AsyncFileOps) executeOperation(ioperation map[string]any, handles map[string]*os.File) {
+func (afo *AsyncFileOps) executeOperation(
+	ioperation map[string]any,
+	handles map[string]*os.File,
+) {
 	if ioperation["type"] == shared.ASYNC_FILE_OP_DIRECT_READ {
 		afo.executeDirectReadOperation(ioperation, handles)
 	} else if ioperation["type"] == shared.ASYNC_FILE_OP_WRITE {
@@ -310,7 +336,10 @@ func (afo *AsyncFileOps) FileWriteBytesOneTimeFinal(
 	afo.oneTimeFinalOperations[name] = op
 }
 
-func (afo *AsyncFileOps) getCountOpsForName(name string, sliceToCheck []map[string]any) int {
+func (afo *AsyncFileOps) getCountOpsForName(
+	name string,
+	sliceToCheck []map[string]any,
+) int {
 	count := 0
 
 	for _, ioperation := range sliceToCheck {

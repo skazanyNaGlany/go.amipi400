@@ -121,7 +121,12 @@ func (mb *MediumBase) Read(path string, buff []byte, ofst int64, fh uint64) (int
 	return result, err
 }
 
-func (mb *MediumBase) Write(path string, buff []byte, ofst int64, fh uint64) (int, error) {
+func (mb *MediumBase) Write(
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+) (int, error) {
 	mb.CallPreWriteCallbacks(mb, path, buff, ofst, fh)
 
 	startTime := time.Now().UnixMilli()
@@ -173,7 +178,9 @@ func (mb *MediumBase) AddPreWriteCallback(preWriteCallback interfaces.PreWriteCa
 	mb.preWriteCallbacks = append(mb.preWriteCallbacks, preWriteCallback)
 }
 
-func (mb *MediumBase) AddPostWriteCallback(postWriteCallback interfaces.PostWriteCallback) {
+func (mb *MediumBase) AddPostWriteCallback(
+	postWriteCallback interfaces.PostWriteCallback,
+) {
 	mb.postWriteCallbacks = append(mb.postWriteCallbacks, postWriteCallback)
 }
 
@@ -181,25 +188,53 @@ func (mb *MediumBase) AddClosedCallback(closedCallback interfaces.ClosedCallback
 	mb.closedCallbacks = append(mb.closedCallbacks, closedCallback)
 }
 
-func (mb *MediumBase) CallPreReadCallbacks(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+func (mb *MediumBase) CallPreReadCallbacks(
+	_medium interfaces.Medium,
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+) {
 	for _, callback := range mb.preReadCallbacks {
 		callback(_medium, path, buff, ofst, fh)
 	}
 }
 
-func (mb *MediumBase) CallPreWriteCallbacks(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64) {
+func (mb *MediumBase) CallPreWriteCallbacks(
+	_medium interfaces.Medium,
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+) {
 	for _, callback := range mb.preWriteCallbacks {
 		callback(_medium, path, buff, ofst, fh)
 	}
 }
 
-func (mb *MediumBase) CallPostReadCallbacks(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+func (mb *MediumBase) CallPostReadCallbacks(
+	_medium interfaces.Medium,
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+	n int,
+	opTimeMs int64,
+) {
 	for _, callback := range mb.postReadCallbacks {
 		callback(_medium, path, buff, ofst, fh, n, opTimeMs)
 	}
 }
 
-func (mb *MediumBase) CallPostWriteCallbacks(_medium interfaces.Medium, path string, buff []byte, ofst int64, fh uint64, n int, opTimeMs int64) {
+func (mb *MediumBase) CallPostWriteCallbacks(
+	_medium interfaces.Medium,
+	path string,
+	buff []byte,
+	ofst int64,
+	fh uint64,
+	n int,
+	opTimeMs int64,
+) {
 	for _, callback := range mb.postWriteCallbacks {
 		callback(_medium, path, buff, ofst, fh, n, opTimeMs)
 	}
@@ -211,7 +246,10 @@ func (mb *MediumBase) CallClosedCallbacks(_medium interfaces.Medium, err error) 
 	}
 }
 
-func (mb *MediumBase) DevicePathnameToPublicFilename(devicePathname string, extension string) string {
+func (mb *MediumBase) DevicePathnameToPublicFilename(
+	devicePathname string,
+	extension string,
+) string {
 	filename := strings.ReplaceAll(
 		devicePathname,
 		"/",
